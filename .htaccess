@@ -1,0 +1,26 @@
+RewriteEngine On
+
+# Чистые URL для страниц
+RewriteRule ^catalog$ catalog.php [L]
+RewriteRule ^calculator$ calculator.php [L]
+RewriteRule ^about$ about.php [L]
+RewriteRule ^contacts$ contacts.php [L]
+RewriteRule ^login$ login.php [L]
+RewriteRule ^register$ register.php [L]
+RewriteRule ^logout$ logout.php [L]
+RewriteRule ^product$ product.php [L]
+RewriteRule ^order$ order.php [L]
+
+# Админ-панель
+RewriteRule ^admin$ admin/index.php [L]
+RewriteRule ^admin/orders$ admin/orders.php [L]
+RewriteRule ^admin/managers$ admin/managers.php [L]
+RewriteRule ^admin/calculator-settings$ admin/calculator-settings.php [L]
+RewriteRule ^admin/edit-product$ admin/edit-product.php [L]
+RewriteRule ^admin/register$ admin/register.php [L]
+RewriteRule ^admin/users$ admin/users.php [L]
+RewriteRule ^admin/products$ admin/products.php [L]
+
+# Личный кабинет
+RewriteRule ^client/dashboard$ client/dashboard.php [L]
+RewriteRule ^client/edit-profile$ client/edit-profile.php [L]
