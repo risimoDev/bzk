@@ -31,16 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Регистрация пользователя | Типография</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="font-sans bg-gray-100">
-
   <!-- Шапка -->
   <?php include_once('../includes/header.php'); ?>
 

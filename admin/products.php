@@ -45,16 +45,6 @@ $stmt = $pdo->query("SELECT * FROM calculator_products");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Управление товарами | Типография</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="font-sans bg-gray-100">
-
   <!-- Шапка -->
   <?php include_once('../includes/header.php'); ?>
 
