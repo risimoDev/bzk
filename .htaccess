@@ -10,6 +10,8 @@ RewriteRule ^register$ register.php [L]
 RewriteRule ^logout$ logout.php [L]
 RewriteRule ^product$ product.php [L]
 RewriteRule ^order$ order.php [L]
+RewriteRule ^requirements$ requirements.php [L]
+RewriteRule ^forgot-password$ forgot-password.php [L]
 
 # Админ-панель
 RewriteRule ^admin$ admin/index.php [L]
@@ -24,3 +26,5 @@ RewriteRule ^admin/products$ admin/products.php [L]
 # Личный кабинет
 RewriteRule ^client/dashboard$ client/dashboard.php [L]
 RewriteRule ^client/edit-profile$ client/edit-profile.php [L]
+
+ErrorDocument 404 /404.php
