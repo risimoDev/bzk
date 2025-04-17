@@ -1,17 +1,9 @@
 <?php
-session_start();
-
+ob_start();
 // Получение уведомлений из сессии
 $notifications = $_SESSION['notifications'] ?? [];
 unset($_SESSION['notifications']); // Очищаем уведомления после отображения
 ?>
-
-<!-- Вывод уведомлений -->
-<?php foreach ($notifications as $notification): ?>
-<div class="notification <?php echo htmlspecialchars($notification['type']); ?> show">
-  <?php echo htmlspecialchars($notification['message']); ?>
-</div>
-<?php endforeach; ?>
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -38,29 +30,17 @@ unset($_SESSION['notifications']); // Очищаем уведомления по
   </script>
 </head>
 <body class="font-sans bg-litegray">
-
-  <!-- Вывод уведомлений -->
+<?php if (!empty($notifications)): ?>
   <?php foreach ($notifications as $notification): ?>
-  <div class="notification <?php echo htmlspecialchars($notification['type']); ?> show">
-    <?php echo htmlspecialchars($notification['message']); ?>
-  </div>
+    <?php
+    $type = htmlspecialchars($notification['type'] ?? 'info');
+    $message = htmlspecialchars($notification['message'] ?? '');
+    if (!empty($message)) {
+        echo '<div class="notification ' . $type . ' show">' . $message . '</div>';
+    }
+    ?>
   <?php endforeach; ?>
-
-  <script>
-    // Автоматически скрываем уведомления через 5 секунд
-    document.addEventListener('DOMContentLoaded', () => {
-      const notifications = document.querySelectorAll('.notification');
-      notifications.forEach(notification => {
-        setTimeout(() => {
-          notification.classList.remove('show');
-          setTimeout(() => {
-            notification.remove();
-          }, 300); // Задержка для завершения анимации
-        }, 5000);
-      });
-    });
-  </script>
-
+<?php endif; ?>
   <!-- Шапка -->
   <header class="bg-white shadow-md py-4">
   <div class="container mx-auto px-4 flex justify-between items-center">
@@ -125,6 +105,20 @@ viewBox="0 0 4000 3000" style type="text/css">
     </nav>
   </div>
 </header>
+<script>
+  // Автоматически скрываем уведомления через 5 секунд
+  document.addEventListener('DOMContentLoaded', () => {
+    const notifications = document.querySelectorAll('.notification');
+    notifications.forEach(notification => {
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          notification.remove();
+        }, 300); // Задержка для завершения анимации
+      }, 5000);
+    });
+  });
+</script>
 
 <script>
   // JavaScript для переключения мобильного меню
@@ -133,11 +127,24 @@ viewBox="0 0 4000 3000" style type="text/css">
     mobileMenu.classList.toggle('hidden');
   });
 </script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('cookiesAccepted')) {
       showNotification('Этот сайт использует куки для улучшения работы.', 'info');
       localStorage.setItem('cookiesAccepted', 'true'); // Сохраняем согласие пользователя
     }
   });
+
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type} show`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => notification.remove(), 300);
+    }, 5000);
+  }
 </script>
