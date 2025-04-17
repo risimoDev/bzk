@@ -1,7 +1,8 @@
 <?php
 session_start();
-$pageTitle = "Восстановление пароля | Типография";
 include_once __DIR__ . '/includes/header.php';
+
+$pageTitle = "Восстановление пароля | Типография";
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
@@ -72,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <main class="container mx-auto px-4 py-8">
   <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Восстановление пароля</h1>
-  <form action="/forgot-password" method="POST" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+  <form action="" method="POST" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
     <div class="mb-4">
       <label for="email" class="block text-gray-700 font-medium mb-2">Email</label>
       <input type="email" id="email" name="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
