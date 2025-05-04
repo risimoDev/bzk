@@ -11,10 +11,10 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 include_once('../includes/db.php');
 
 // Получение статистики
-$total_orders = $pdo->query("SELECT COUNT(*) FROM orders1")->fetchColumn();
-$pending_orders = $pdo->query("SELECT COUNT(*) FROM orders1 WHERE status = 'pending'")->fetchColumn();
-$completed_orders = $pdo->query("SELECT COUNT(*) FROM orders1 WHERE status = 'completed'")->fetchColumn();
-$canceled_orders = $pdo->query("SELECT COUNT(*) FROM orders1 WHERE status = 'canceled'")->fetchColumn();
+$total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+$pending_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn();
+$completed_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn();
+$canceled_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'canceled'")->fetchColumn();
 ?>
 
 <!DOCTYPE html>
@@ -66,9 +66,17 @@ $canceled_orders = $pdo->query("SELECT COUNT(*) FROM orders1 WHERE status = 'can
           <p class="text-xl font-bold text-gray-800">Управление пользователями</p>
           <p class="text-gray-600">Просмотр и изменение ролей</p>
         </a>
-        <a href="/admin/edit-product" class="block bg-white p-6 rounded-lg shadow-md text-center hover:bg-gray-50 transition duration-300">
-          <p class="text-xl font-bold text-gray-800">Редактирование товаров</p>
-          <p class="text-gray-600">Изменение товаров</p>
+        <a href="/admin/discounts" class="block bg-white p-6 rounded-lg shadow-md text-center hover:bg-gray-50 transition duration-300">
+          <p class="text-xl font-bold text-gray-800">Редактирование скидок</p>
+          <p class="text-gray-600">Изменение скидок</p>
+        </a>
+        <a href="/admin/partners" class="block bg-white p-6 rounded-lg shadow-md text-center hover:bg-gray-50 transition duration-300">
+          <p class="text-xl font-bold text-gray-800">Партнеры</p>
+          <p class="text-gray-600">Добавление партнеров на главную страницу</p>
+        </a>
+        <a href="/admin/buhgalt/accountingorders" class="block bg-white p-6 rounded-lg shadow-md text-center hover:bg-gray-50 transition duration-300">
+          <p class="text-xl font-bold text-gray-800">Бухгалтерия</p>
+          <p class="text-gray-600">Графики, добавление, туда-суда</p>
         </a>
       </div>
     </section>

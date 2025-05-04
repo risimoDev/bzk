@@ -1,113 +1,88 @@
 <?php
 session_start();
+$pageTitle = "Управление товарами | Админ-панель";
+include_once('../includes/header.php');
 
 // Проверка авторизации
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: /login");
-    exit();
+  header("Location: /login");
+  exit();
 }
 
 // Подключение к базе данных
 include_once('../includes/db.php');
 
-// Добавление нового товара
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
-    $name = htmlspecialchars($_POST['name']);
-    $base_price = floatval($_POST['base_price']);
-    $image = $_FILES['image'];
 
-    // Проверка загрузки изображения
-    if ($image['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = __DIR__ . '/../../assets/images/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true); // Создаем директорию, если её нет
-        }
-        $image_path = $upload_dir . basename($image['name']);
-        move_uploaded_file($image['tmp_name'], $image_path);
-        $image_url = "/assets/images/" . basename($image['name']);
-    } else {
-        $image_url = "/assets/images/default.jpg"; // Заглушка
-    }
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['action'])) {
+      $action = $_POST['action'];
 
-    $stmt = $pdo->prepare("INSERT INTO calculator_products (name, base_price, image) VALUES (?, ?, ?)");
-    $stmt->execute([$name, $base_price, $image_url]);
-}
+      if ($action === 'add_product') {
+          $name = $_POST['name'];
+          $description = $_POST['description'];
+          $base_price = $_POST['base_price'];
 
-// Удаление товара
-if (isset($_GET['delete_product'])) {
-    $id = intval($_GET['delete_product']);
-    $stmt = $pdo->prepare("DELETE FROM calculator_products WHERE id = ?");
-    $stmt->execute([$id]);
+          $stmt = $pdo->prepare("INSERT INTO products (name, description, base_price) VALUES (?, ?, ?)");
+          $stmt->execute([$name, $description, $base_price]);
+      } elseif ($action === 'delete_product') {
+          $product_id = $_POST['product_id'];
+          $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
+          $stmt->execute([$product_id]);
+      }
+  }
 }
 
 // Получение списка товаров
-$stmt = $pdo->query("SELECT * FROM calculator_products");
+$stmt = $pdo->prepare("SELECT * FROM products");
+$stmt->execute();
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-  <!-- Шапка -->
-  <?php include_once('../includes/header.php'); ?>
+<main class="container mx-auto px-4 py-8">
+<h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Управление товарами</h1>
 
-  <!-- Управление товарами -->
-  <main class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Управление товарами</h1>
+<!-- Форма добавления товара -->
+<form action="" method="POST" class="mb-6">
+  <input type="hidden" name="action" value="add_product">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <input type="text" name="name" placeholder="Название товара" class="w-full px-4 py-2 border rounded-lg" required>
+    <textarea name="description" placeholder="Описание товара" class="w-full px-4 py-2 border rounded-lg"></textarea>
+    <input type="number" step="0.01" name="base_price" placeholder="Базовая цена" class="w-full px-4 py-2 border rounded-lg" required>
+  </div>
+  <button type="submit" class="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
+    Добавить товар
+  </button>
+</form>
 
-    <!-- Форма добавления товара -->
-    <section class="mb-12">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Добавить новый товар</h2>
-      <form action="" method="POST" enctype="multipart/form-data" class="max-w-lg">
-        <div class="mb-4">
-          <label for="name" class="block text-gray-700 font-medium mb-2">Название</label>
-          <input type="text" id="name" name="name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
-        </div>
-        <div class="mb-4">
-          <label for="base_price" class="block text-gray-700 font-medium mb-2">Базовая цена</label>
-          <input type="number" step="0.01" id="base_price" name="base_price" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
-        </div>
-        <div class="mb-6">
-          <label for="image" class="block text-gray-700 font-medium mb-2">Изображение</label>
-          <input type="file" id="image" name="image" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
-        </div>
-        <button type="submit" name="add_product" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300">
-          Добавить товар
-        </button>
-      </form>
-    </section>
+<!-- Список товаров -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <?php foreach ($products as $product): ?>
+    <div class="bg-white p-4 rounded-lg shadow-md">
+      <h2 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($product['name']); ?></h2>
+      <p class="text-gray-600"><?php echo htmlspecialchars($product['description']); ?></p>
+      <p class="text-lg font-semibold text-green-600">Цена: <?php echo htmlspecialchars($product['base_price']); ?> руб.</p>
+      <p class="text-gray-600">
+        Популярный: 
+        <?php echo $product['is_popular'] ? '<span class="text-green-600">Да</span>' : '<span class="text-red-600">Нет</span>'; ?>
+      </p>
 
-    <!-- Таблица товаров -->
-    <section class="overflow-x-auto">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Текущие товары</h2>
-      <table class="min-w-full bg-white border border-gray-200">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="py-2 px-4 text-left">ID</th>
-            <th class="py-2 px-4 text-left">Название</th>
-            <th class="py-2 px-4 text-left">Базовая цена</th>
-            <th class="py-2 px-4 text-left">Изображение</th>
-            <th class="py-2 px-4 text-left">Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($products as $product): ?>
-          <tr class="border-t border-gray-200">
-            <td class="py-2 px-4"><?php echo htmlspecialchars($product['id']); ?></td>
-            <td class="py-2 px-4"><?php echo htmlspecialchars($product['name']); ?></td>
-            <td class="py-2 px-4"><?php echo htmlspecialchars($product['base_price']); ?> ₽</td>
-            <td class="py-2 px-4">
-              <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-16 h-16 object-cover">
-            </td>
-            <td class="py-2 px-4">
-              <a href="?delete_product=<?php echo $product['id']; ?>" class="text-red-600 hover:text-red-700">Удалить</a>
-            </td>
-          </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </section>
-  </main>
+      <div class="flex justify-between mt-4">
+        <a href="/admin/product/edit?id=<?php echo $product['id']; ?>" class="text-blue-600 hover:text-blue-800">Редактировать</a>
+        <form action="" method="POST" onsubmit="return confirm('Вы уверены?')">
+          <input type="hidden" name="action" value="delete_product">
+          <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+          <button type="submit" class="text-red-600 hover:text-red-800">Удалить</button>
+        </form>
+      </div>
 
-  <!-- Футер -->
-  <?php include_once('../includes/footer.php'); ?>
+      <!-- Кнопки управления характеристиками и изображениями -->
+      <div class="mt-4">
+        <a href="/admin/attributes?product_id=<?php echo $product['id']; ?>" class="block text-blue-600 hover:text-blue-800">Управление характеристиками</a>
+        <a href="/admin/images?product_id=<?php echo $product['id']; ?>" class="block text-blue-600 hover:text-blue-800">Управление изображениями</a>
+      </div>
+    </div>
+  <?php endforeach; ?>
+</div>
+</main>
 
-</body>
-</html>
+<?php include_once('../includes/footer.php'); ?>

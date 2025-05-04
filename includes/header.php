@@ -3,6 +3,7 @@ ob_start();
 // Получение уведомлений из сессии
 $notifications = $_SESSION['notifications'] ?? [];
 unset($_SESSION['notifications']); // Очищаем уведомления после отображения
+$cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'], 'quantity')) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -13,6 +14,7 @@ unset($_SESSION['notifications']); // Очищаем уведомления по
   <title><?php echo htmlspecialchars($pageTitle ?? 'Типография'); ?></title>
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/output.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -79,7 +81,22 @@ viewBox="0 0 4000 3000" style type="text/css">
         <a href="/login" class="text-gray-700 hover:text-litegreen transition duration-300">Вход</a>
         <a href="/register" class="text-gray-700 hover:text-litegreen transition duration-300">Регистрация</a>
       <?php endif; ?>
+      <div class="relative">
+      <a href="/cart" class="text-gray-700 hover:text-litegreen transition duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0h2v2H7V15z" />
+        </svg>
+      </a>
+      <?php if ($cart_count > 0): ?>
+        <span class="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full -mr-1 -mt-1">
+          <?php echo $cart_count; ?>
+        </span>
+      <?php endif; ?>
+    </div>
     </nav>
+
+    <!-- Иконка корзины -->
+    
 
     <!-- Гамбургер-меню для мобильных -->
     <button id="menu-toggle" class="md:hidden text-gray-700 hover:text-blue-600 focus:outline-none">
@@ -103,6 +120,18 @@ viewBox="0 0 4000 3000" style type="text/css">
         <a href="/login" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Вход</a>
         <a href="/register" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Регистрация</a>
       <?php endif; ?>
+      <div class="flex justify-center mt-4">
+        <a href="/cart" class="text-gray-700 hover:text-litegreen transition duration-300">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0h2v2H7V15z" />
+          </svg>
+        </a>
+        <?php if ($cart_count > 0): ?>
+          <span class="ml-2 text-sm font-bold text-red-500">
+            <?php echo $cart_count; ?>
+          </span>
+        <?php endif; ?>
+      </div>
     </nav>
   </div>
 </header>
@@ -148,4 +177,22 @@ viewBox="0 0 4000 3000" style type="text/css">
       setTimeout(() => notification.remove(), 300);
     }, 5000);
   }
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Функция для обновления счетчика корзины
+    function updateCartCount() {
+      fetch('/api/cart-count')
+        .then(response => response.json())
+        .then(data => {
+          const cartCountElements = document.querySelectorAll('.cart-count');
+          cartCountElements.forEach(el => {
+            el.textContent = data.count;
+          });
+        });
+    }
+
+    // Обновляем счетчик корзины каждые 5 секунд
+    setInterval(updateCartCount, 5000);
+  });
 </script>

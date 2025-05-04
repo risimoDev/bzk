@@ -1,4 +1,5 @@
 <?php
+session_start();
 $pageTitle = "Страница не найдена | Типография";
 include_once __DIR__ . '/includes/header.php';
 ?>

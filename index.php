@@ -6,133 +6,113 @@ include_once __DIR__ . '/includes/header.php';
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
+
 // Получение популярных товаров
-$stmt = $pdo->query("
-    SELECT id, name, base_price, image 
-    FROM calculator_products 
-    ORDER BY RAND() 
-    LIMIT 6
-");
-$popular_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $pdo->prepare("SELECT * FROM products WHERE is_popular = 1 LIMIT 6");
+$stmt->execute();
+$popularProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Получение партнеров (пример таблицы partners)
+$stmt = $pdo->prepare("SELECT * FROM partners");
+$stmt->execute();
+$partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<main class="container mx-auto px-4 py-8">
-  <!-- Приветственный блок -->
-  <section class="text-center py-12 bg-white rounded-lg shadow-md mb-12">
-    <h1 class="text-4xl font-bold text-gray-800 mb-4">Добро пожаловать в нашу типографию!</h1>
-    <p class="text-xl text-gray-600 mb-6">Мы предлагаем широкий выбор полиграфической продукции высокого качества.</p>
-    <a href="/catalog" class="px-6 py-3 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300">
-      Перейти в каталог
-    </a>
+<main class="font-sans bg-litegray">
+  <!-- Баннер -->
+  <section class="bg-emerald text-white py-20">
+    <div class="container mx-auto px-4 text-center">
+      <h1 class="text-5xl font-bold mb-4">Профессиональная типография</h1>
+      <p class="text-xl mb-8">Высокое качество печати и индивидуальный подход к каждому клиенту.</p>
+      <a href="/catalog" class="px-6 py-3 bg-litegreen rounded-lg hover:bg-green-600 transition duration-300">
+        Перейти в каталог
+      </a>
+    </div>
   </section>
 
   <!-- Популярные товары -->
-  <section>
-    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Популярные товары</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <?php foreach ($popular_products as $product): ?>
-      <a href="/product?id=<?php echo $product['id']; ?>" class="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-        <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-48 object-cover">
-        <div class="p-4">
-          <h3 class="text-xl font-semibold text-gray-800 mb-2"><?php echo htmlspecialchars($product['name']); ?></h3>
-          <p class="text-gray-700">от <?php echo htmlspecialchars($product['base_price']); ?> ₽</p>
-        </div>
-      </a>
-      <?php endforeach; ?>
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Популярные товары</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <?php foreach ($popularProducts as $product): ?>
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <a href="/service?id=<?php echo $product['id']; ?>" class="block">
+              <img src="<?php echo htmlspecialchars($product['image_url']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-48 object-cover rounded-t-lg">
+            </a>
+            <h3 class="text-xl font-bold text-gray-800 mt-4"><?php echo htmlspecialchars($product['name']); ?></h3>
+            <p class="text-gray-600 mt-2"><?php echo htmlspecialchars($product['description']); ?></p>
+            <p class="text-lg font-semibold text-green-600 mt-4"><?php echo htmlspecialchars($product['base_price']); ?> руб.</p>
+            <a href="/service?id=<?php echo $product['id']; ?>" class="block text-blue-600 hover:text-blue-800 mt-4">Подробнее</a>
+          </div>
+        <?php endforeach; ?>
+      </div>
     </div>
   </section>
 
   <!-- О компании -->
-  <section class="py-12">
-    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">О нашей типографии</h2>
-    <div class="flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0 md:space-x-6">
-      <img src="/assets/images/about.jpg" alt="О компании" class="w-full md:w-1/2 h-96 object-cover rounded-lg shadow-md">
-      <div class="w-full md:w-1/2">
-        <p class="text-gray-700 leading-relaxed">
-          Мы работаем на рынке полиграфических услуг уже более 10 лет. Наша команда профессионалов готова воплотить любые ваши идеи в жизнь: от визиток до крупных рекламных баннеров. Мы используем современное оборудование и качественные материалы, чтобы гарантировать высокий результат.
-        </p>
-        <a href="/about" class="mt-4 inline-block px-6 py-3 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300">
-          Узнать больше
-        </a>
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-4">О компании</h2>
+          <p class="text-gray-600 leading-relaxed">
+            Мы — профессиональная типография с многолетним опытом работы. Наша цель — предоставить клиентам высококачественные печатные материалы и услуги, которые соответствуют самым строгим стандартам.
+          </p>
+          <a href="/about" class="inline-block mt-6 px-6 py-3 bg-litegreen text-white rounded-lg hover:bg-green-600 transition duration-300">
+            Узнать больше
+          </a>
+        </div>
+        <div class="flex justify-center">
+          <img src="/assets/images/about.jpg" alt="О компании" class="w-full h-64 object-cover rounded-lg">
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Почему выбирают нас -->
-  <section class="py-12 bg-gray-100 rounded-lg shadow-md">
-    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Почему выбирают нас?</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <h3 class="text-xl font-semibold text-gray-800 mt-4">Гарантия качества</h3>
-        <p class="text-gray-600">Используем только проверенные<br> материалы и технологии.</p>
-      </div>
-      <div class="text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <h3 class="text-xl font-semibold text-gray-800 mt-4">Скорость выполнения</h3>
-        <p class="text-gray-600">Выполняем заказы точно в срок.</p>
-      </div>
-      <div class="text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-6a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        <h3 class="text-xl font-semibold text-gray-800 mt-4">Доступные цены</h3>
-        <p class="text-gray-600">Гибкая система скидок для постоянных клиентов.</p>
-      </div>
-      <div class="text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-        <h3 class="text-xl font-semibold text-gray-800 mt-4">Индивидуальный подход</h3>
-        <p class="text-gray-600">Учитываем все пожелания клиентов.</p>
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Почему выбирают нас?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 class="text-xl font-bold text-gray-800 mt-4">Высокое качество</h3>
+          <p class="text-gray-600 mt-2">Мы гарантируем высокое качество всех наших услуг.</p>
+        </div>
+        <div class="text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 class="text-xl font-bold text-gray-800 mt-4">Скорость выполнения</h3>
+          <p class="text-gray-600 mt-2">Быстрое выполнение заказов без потери качества.</p>
+        </div>
+        <div class="text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-litegreen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <h3 class="text-xl font-bold text-gray-800 mt-4">Индивидуальный подход</h3>
+          <p class="text-gray-600 mt-2">Каждый клиент получает персонализированное обслуживание.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Отзывы клиентов -->
-  <section class="py-12">
-    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Отзывы наших клиентов</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <p class="text-gray-700 leading-relaxed mb-4">Заказывал визитки — все сделали быстро и качественно. Спасибо!</p>
-        <p class="font-semibold text-gray-800">— Иван Иванов</p>
-      </div>
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <p class="text-gray-700 leading-relaxed mb-4">Отличная типография, всегда помогают с дизайном и печатью.</p>
-        <p class="font-semibold text-gray-800">— Мария Петрова</p>
-      </div>
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <p class="text-gray-700 leading-relaxed mb-4">Работаю с этой типографией уже несколько лет, всегда доволен.</p>
-        <p class="font-semibold text-gray-800">— Алексей Сидоров</p>
-      </div>
+<!-- Партнеры -->
+<section class="py-16 bg-litegray">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Наши партнеры</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
+      <?php foreach ($partners as $partner): ?>
+        <div class="flex justify-center items-center">
+          <img src="<?php echo htmlspecialchars($partner['logo_url']); ?>" alt="<?php echo htmlspecialchars($partner['name']); ?>" class="h-12">
+        </div>
+      <?php endforeach; ?>
     </div>
-  </section>
-
-  <!-- Форма обратной связи -->
-  <section class="py-12">
-    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Свяжитесь с нами</h2>
-    <form action="/send-feedback" method="POST" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-      <div class="mb-4">
-        <label for="name" class="block text-gray-700 font-medium mb-2">Имя</label>
-        <input type="text" id="name" name="name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
-      </div>
-      <div class="mb-4">
-        <label for="email" class="block text-gray-700 font-medium mb-2">Email</label>
-        <input type="email" id="email" name="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
-      </div>
-      <div class="mb-4">
-        <label for="message" class="block text-gray-700 font-medium mb-2">Сообщение</label>
-        <textarea id="message" name="message" rows="4" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required></textarea>
-      </div>
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300">
-        Отправить сообщение
-      </button>
-    </form>
-  </section>
+  </div>
+</section>
 </main>
 
 <?php include_once __DIR__ . '/includes/footer.php'; ?>

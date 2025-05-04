@@ -1,5 +1,9 @@
 RewriteEngine On
 
+
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 # Чистые URL для страниц
 RewriteRule ^catalog$ catalog.php [L]
 RewriteRule ^calculator$ calculator.php [L]
@@ -12,6 +16,15 @@ RewriteRule ^product$ product.php [L]
 RewriteRule ^order$ order.php [L]
 RewriteRule ^requirements$ requirements.php [L]
 RewriteRule ^forgot-password$ forgot-password.php [L]
+RewriteRule ^service/([0-9]+)$ service.php?id=$1 [L,QSA]
+RewriteRule ^service$ service.php [L,QSA]
+RewriteRule ^cart$ cart.php [L,QSA]
+RewriteRule ^api/cart-count$ api/cart-count.php [L,QSA]
+RewriteRule ^cart/add$ cart0/add.php [L,QSA]
+RewriteRule ^cart/remove$ cart0/remove.php [L,QSA]
+RewriteRule ^checkoutcart$ checkout.php [L,QSA]
+RewriteRule ^checkoutshopcart/process$ checkoutshopcart/process.php [L,QSA]
+RewriteRule ^checkoutshopcart/confirmation$ checkoutshopcart/comfirmation.php [L,QSA]
 
 # Админ-панель
 RewriteRule ^admin$ admin/index.php [L]
@@ -22,9 +35,34 @@ RewriteRule ^admin/edit-product$ admin/edit-product.php [L]
 RewriteRule ^admin/register$ admin/register.php [L]
 RewriteRule ^admin/users$ admin/users.php [L]
 RewriteRule ^admin/products$ admin/products.php [L]
+RewriteRule ^admin/product/edit$ admin/product/edit.php [L]
+RewriteRule ^admin/attributes$ admin/attributes.php [L]
+RewriteRule ^admin/discounts$ admin/discounts.php [L]
+RewriteRule ^admin/images$ admin/images.php [L,QSA]
+RewriteRule ^admin/image/delete$ admin/image/delete.php [L,QSA]
+RewriteRule ^admin/partners$ admin/partners.php [L,QSA]
+RewriteRule ^admin/order/details/([0-9]+)$ admin/order/details.php?id=$1 [L,QSA]
+RewriteRule ^admin/order/details$ admin/order/details.php [L,QSA]
+RewriteRule ^admin/buhgalt/orderdetail$ admin/buhgalt/order_detail.php [L,QSA]
+RewriteRule ^admin/buhgalt/addexpense$ admin/buhgalt/add_expense.php [L,QSA]
+RewriteRule ^admin/buhgalt/accountingorders$ admin/buhgalt/accounting_orders.php [L,QSA]
+RewriteRule ^admin/buhgalt/addexternalorder$ admin/buhgalt/add_external_order.php [L,QSA]
+RewriteRule ^admin/buhgalt/addpayment$ admin/buhgalt/add_payment.php [L,QSA]
+RewriteRule ^admin/buhgalt/syncorders$ admin/buhgalt/sync_orders.php [L,QSA]
 
 # Личный кабинет
 RewriteRule ^client/dashboard$ client/dashboard.php [L]
 RewriteRule ^client/edit-profile$ client/edit-profile.php [L]
 
 ErrorDocument 404 /404.php
+
+# Кэширование статических файлов
+<FilesMatch "\.(jpg|jpeg|png|gif|css|js)$">
+    Header set Cache-Control "max-age=604800, public"
+</FilesMatch>
+
+# Защита от доступа к .htaccess
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
