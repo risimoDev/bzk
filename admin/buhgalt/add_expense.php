@@ -21,6 +21,6 @@ $stmt->execute([
     $_POST['expense_date']
 ]);
 
-header("Location: admin/buhgalt/orderdetail?id=" . $_POST['order_id']);
+header("Location: /admin/buhgalt/orderdetail?id=" . $_POST['order_id']);
 exit;
 ?>

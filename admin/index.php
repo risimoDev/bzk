@@ -15,6 +15,9 @@ $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
 $pending_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn();
 $completed_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn();
 $canceled_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'canceled'")->fetchColumn();
+$shipped_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'shipped'")->fetchColumn();
+$delivered_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered'")->fetchColumn();
+$processing_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'processing'")->fetchColumn();
 ?>
 
 <!DOCTYPE html>
@@ -47,6 +50,18 @@ $canceled_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'canc
       <div class="bg-white p-6 rounded-lg shadow-md text-center">
         <p class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($completed_orders); ?></p>
         <p class="text-gray-600">Выполненные заказы</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-md text-center">
+        <p class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($delivered_orders); ?></p>
+        <p class="text-gray-600">Передаются в доставку</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-md text-center">
+        <p class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($processing_orders); ?></p>
+        <p class="text-gray-600">Принятые заказы</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-md text-center">
+        <p class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($shipped_orders); ?></p>
+        <p class="text-gray-600">Отправленные заказы</p>
       </div>
     </section>
 

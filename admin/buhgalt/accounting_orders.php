@@ -37,7 +37,9 @@ $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 // Получение заказов
 $sql = "
-    SELECT oa.*, o.total_price 
+    SELECT oa.id, oa.order_id, oa.source, oa.client_name, oa.income, oa.created_at, o.total_price,
+    (SELECT COUNT(*) FROM order_expenses WHERE order_accounting_id = oa.id) AS expenses_count,
+    (SELECT SUM(amount) FROM order_expenses WHERE order_accounting_id = oa.id) AS total_expenses
     FROM orders_accounting oa 
     LEFT JOIN orders o ON oa.order_id = o.id
     $where_sql
@@ -136,7 +138,7 @@ foreach ($orders as $order) {
                     <td class="p-2 border"><?= $order['source'] ?></td>
                     <td class="p-2 border"><?= htmlspecialchars($order['client_name']) ?></td>
                     <td class="p-2 border"><?= number_format($order['income'], 2) ?></td>
-                    <td class="p-2 border"><?= number_format($order['total_expense'], 2) ?></td>
+                    <td class="p-2 border"><?= number_format($order['total_expenses'], 2) ?></td>
                     <td class="p-2 border font-semibold"><?= number_format($order['income'] - $order['total_expense'], 2) ?></td>
                     <td class="p-2 border"><?= $order['status'] ?></td>
                     <td class="p-2 border"><?= $order['created_at'] ?></td>
