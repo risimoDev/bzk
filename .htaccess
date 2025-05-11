@@ -51,8 +51,9 @@ RewriteRule ^admin/buhgalt/addpayment$ admin/buhgalt/add_payment.php [L,QSA]
 RewriteRule ^admin/buhgalt/syncorders$ admin/buhgalt/sync_orders.php [L,QSA]
 
 # Личный кабинет
-RewriteRule ^client/dashboard$ client/dashboard.php [L]
-RewriteRule ^client/edit-profile$ client/edit-profile.php [L]
+RewriteRule ^client/dashboard$ client/dashboard.php [L,QSA]
+RewriteRule ^client/settings$ client/settings.php [L,QSA]
+RewriteRule ^client/orders$ client/orders.php [L,QSA]
 
 ErrorDocument 404 /404.php
 

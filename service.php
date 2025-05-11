@@ -38,21 +38,41 @@ $attributes = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
 ?>
 
 <main class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-center text-gray-800 mb-6"><?php echo htmlspecialchars($product['name']); ?></h1>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
 
   <!-- Галерея изображений -->
-  <div class="mb-6">
-    <div class="flex overflow-x-auto">
-      <?php foreach ($images as $image): ?>
-        <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-48 h-48 object-cover mr-4 rounded-lg">
-      <?php endforeach; ?>
-    </div>
-  </div>
+      <div>
+        <div class="swiper mySwiper">
+          <div class="swiper-wrapper">
+            <div class="swiper-slide">
+               <?php foreach ($images as $image): ?>
+                <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full object-cover mr-4 rounded-lg">
+              <?php endforeach; ?>
+            </div>
+            <div class="swiper-slide">
+              <img src="https://via.placeholder.com/600x400?text=2" class="w-full rounded-lg" />
+            </div>
+            <div class="swiper-slide">
+              <img src="https://via.placeholder.com/600x400?text=3" class="w-full rounded-lg" />
+            </div>
+          </div>
+          <!-- Навигация -->
+          <div class="swiper-button-next"></div>
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
 
-  <p class="text-gray-600 mb-4"><?php echo htmlspecialchars($product['description']); ?></p>
 
-  <!-- Форма выбора характеристик -->
-  <form action="/cart/add" method="POST" class="mb-4">
+      <!-- Информация о товаре -->
+      <div class="flex flex-col space-y-4">
+        <h1 class="text-3xl font-semibold"><?php echo htmlspecialchars($product['name']); ?></h1>
+        <p class="text-gray-600 mb-4"><?php echo htmlspecialchars($product['description']); ?></p>
+
+        <div class="space-y-2">
+          <h2 class="text-lg font-medium">Характеристики:</h2>
+          <form action="/cart/add" method="POST" class="mb-4">
     <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
 
     <div class="mb-4">
@@ -87,6 +107,9 @@ $attributes = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
       Добавить в корзину
     </button>
   </form>
+        </div>
+      </div>
+  </div>
 </main>
 
 <script>

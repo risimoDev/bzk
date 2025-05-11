@@ -15,6 +15,7 @@ $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {

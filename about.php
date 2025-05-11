@@ -37,17 +37,7 @@ include_once __DIR__ . '/includes/header.php';
 
   <!-- Отзывы клиентов -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Отзывы клиентов</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <p class="text-gray-700 leading-relaxed">«Заказывал визитки для своей компании. Все было выполнено быстро и качественно. Рекомендую!»</p>
-        <p class="text-gray-600 mt-4">— Дмитрий, предприниматель</p>
-      </div>
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <p class="text-gray-700 leading-relaxed">«Спасибо за помощь в разработке рекламных материалов! Команда профессионалов, всегда на связи.»</p>
-        <p class="text-gray-600 mt-4">— Анна, маркетолог</p>
-      </div>
-    </div>
+    
   </section>
 
   <!-- Контактная информация -->
