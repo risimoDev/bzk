@@ -16,6 +16,13 @@ $popularProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stmt = $pdo->prepare("SELECT * FROM partners");
 $stmt->execute();
 $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Функция для получения главного изображения товара
+function getProductMainImage($pdo, $product_id) {
+    $stmt = $pdo->prepare("SELECT image_url FROM product_images WHERE product_id = ? AND is_main = 1 LIMIT 1");
+    $stmt->execute([$product_id]);
+    return $stmt->fetchColumn();
+}
 ?>
 
 <main class="font-sans bg-litegray">
@@ -36,15 +43,19 @@ $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Популярные товары</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <?php foreach ($popularProducts as $product): ?>
+          <a href="/service?id=<?php echo $product['id']; ?>">
           <div class="bg-white p-6 rounded-lg shadow-md">
-            <a href="/service?id=<?php echo $product['id']; ?>" class="block">
-              <img src="<?php echo htmlspecialchars($product['image_url']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-48 object-cover rounded-t-lg">
-            </a>
+            <?php
+            // Получаем главное изображение товара
+            $main_image = getProductMainImage($pdo, $product['id']);
+            $image_url = $main_image ?: '/assets/images/no-image.webp'; // Заглушка, если изображение отсутствует
+            ?>
+            <img src="<?php echo htmlspecialchars($image_url); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-60 object-cover rounded-t-lg">
             <h3 class="text-xl font-bold text-gray-800 mt-4"><?php echo htmlspecialchars($product['name']); ?></h3>
             <p class="text-gray-600 mt-2"><?php echo htmlspecialchars($product['description']); ?></p>
             <p class="text-lg font-semibold text-green-600 mt-4"><?php echo htmlspecialchars($product['base_price']); ?> руб.</p>
-            <a href="/service?id=<?php echo $product['id']; ?>" class="block text-blue-600 hover:text-blue-800 mt-4">Подробнее</a>
           </div>
+          </a>
         <?php endforeach; ?>
       </div>
     </div>
