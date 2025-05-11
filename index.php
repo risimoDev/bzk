@@ -29,7 +29,7 @@ function getProductMainImage($pdo, $product_id) {
   <!-- Баннер -->
   <section class="bg-emerald text-white py-20">
     <div class="container mx-auto px-4 text-center">
-      <h1 class="text-5xl font-bold mb-4">Профессиональная типография</h1>
+      <h1 class="text-6xl font-bold mb-4">Типография BZK PRINT</h1>
       <p class="text-xl mb-8">Высокое качество печати и индивидуальный подход к каждому клиенту.</p>
       <a href="/catalog" class="px-6 py-3 bg-litegreen rounded-lg hover:bg-green-600 transition duration-300">
         Перейти в каталог
