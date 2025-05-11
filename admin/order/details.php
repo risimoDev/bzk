@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Детали заказа | Админ-панель";
+$pageTitle = "Детали заказа";
 include_once('../../includes/header.php');
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -73,6 +73,18 @@ function getAttributeNames($pdo, $attributes) {
 ?>
 
 <main class="container mx-auto px-4 py-8">
+  <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
   <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Детали заказа #<?php echo htmlspecialchars($order['id']); ?></h1>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

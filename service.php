@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Товар | Типография";
+$pageTitle = "Товар";
 include_once __DIR__ . '/includes/header.php';
 
 // Подключение к базе данных
@@ -38,6 +38,18 @@ $attributes = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
 ?>
 
 <main class="container mx-auto px-4 py-8">
+  <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
 

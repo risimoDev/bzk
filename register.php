@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+$pageTitle = "Регистрация";
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
@@ -32,6 +32,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
   <!-- Форма регистрации -->
   <main class="container mx-auto px-4 py-8">
+    <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Регистрация</h1>
     <form action="" method="POST" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
       <div class="mb-4">

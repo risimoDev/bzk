@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Детали заказа | Админ-панель";
+$pageTitle = "Бухгалтерия";
 include_once('../../includes/header.php');
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -85,6 +85,18 @@ foreach ($orders as $order) {
     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Сохранить</button>
     <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-500">Отмена</button>
   </form>
+</div>
+<!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
 </div>
 <div class="bg-white shadow rounded p-4 mb-6">
     <h2 class="text-xl font-bold mb-2">Аналитика по месяцам</h2>

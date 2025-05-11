@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Детали заказа | Админ-панель";
+$pageTitle = "Детали заказа | Бухгалтерия";
 include_once('../../includes/header.php');
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -41,7 +41,18 @@ $total_paid = array_sum(array_column($payments, 'amount'));
 $total_expense = array_sum(array_column($expenses, 'amount'));
 $profit = $order['income'] - $total_expense;
 ?>
+<!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
 
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
 <div class="p-6 space-y-6">
     <h1 class="text-2xl font-bold mb-4">Детали заказа #<?= $order_id ?></h1>
 

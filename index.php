@@ -68,7 +68,7 @@ function getProductMainImage($pdo, $product_id) {
         <div>
           <h2 class="text-3xl font-bold text-gray-800 mb-4">О компании</h2>
           <p class="text-gray-600 leading-relaxed">
-            Мы — профессиональная типография с многолетним опытом работы. Наша цель — предоставить клиентам высококачественные печатные материалы и услуги, которые соответствуют самым строгим стандартам.
+            Мы — молодая, быстро развивающаяся типография. Наша цель — предоставить клиентам высококачественные печатные материалы и услуги, которые соответствуют стандартам.
           </p>
           <a href="/about" class="inline-block mt-6 px-6 py-3 bg-litegreen text-white rounded-lg hover:bg-green-600 transition duration-300">
             Узнать больше

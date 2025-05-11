@@ -45,6 +45,36 @@ $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'
     ?>
   <?php endforeach; ?>
 <?php endif; ?>
+<?php
+// Генерация breadcrumbs
+function generateBreadcrumbs($pageTitle) {
+    $baseUrl = "/";
+    $currentPage = htmlspecialchars($pageTitle);
+    $homeText = "Главная";
+    $separator = '<span class="mx-2">/</span>';
+
+    // Определяем текущую страницу и формируем breadcrumbs
+    $breadcrumbs = '
+    <nav class="flex items-center text-gray-600 text-sm">
+        <a href="' . $baseUrl . '" class="hover:text-litegreen transition duration-300">' . $homeText . '</a>
+        ' . ($currentPage ? $separator . '<span>' . $currentPage . '</span>' : '') . '
+    </nav>
+    ';
+    return $breadcrumbs;
+}
+
+// Кнопка "Назад"
+function backButton() {
+    return '
+    <button onclick="history.back()" class="flex items-center text-gray-600 hover:text-litegreen transition duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Назад
+    </button>
+    ';
+}
+?>
   <!-- Шапка -->
   <header class="bg-white shadow-md py-4">
   <div class="container mx-auto px-4 flex justify-between items-center">
@@ -70,7 +100,7 @@ viewBox="0 0 4000 3000" style type="text/css">
     <!-- Меню для десктопа -->
     <nav class="hidden md:flex items-center space-x-4">
       <a href="/catalog" class="text-gray-700 hover:text-litegreen transition duration-300">Каталог</a>
-      <a href="/makets" class="text-gray-700 hover:text-litegreen transition duration-300">Требования к макетам</a>
+      <a href="/requirements" class="text-gray-700 hover:text-litegreen transition duration-300">Требования к макетам</a>
       <a href="/contacts" class="text-gray-700 hover:text-litegreen transition duration-300">Контакты</a>
       <?php if (isset($_SESSION['user_id'])): ?>
         <a href="/client/dashboard" class="text-gray-700 hover:text-litegreen transition duration-300">Личный кабинет</a>
@@ -109,7 +139,7 @@ viewBox="0 0 4000 3000" style type="text/css">
     <!-- Мобильное меню -->
     <nav id="mobile-menu" class="hidden md:hidden absolute top-16 right-4 bg-white p-4 rounded-lg shadow-md w-48">
       <a href="/catalog" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Каталог</a>
-      <a href="/makets" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Требования к макетам</a>
+      <a href="/requirements" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Требования к макетам</a>
       <a href="/contacts" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Контакты</a>
       <?php if (isset($_SESSION['user_id'])): ?>
         <a href="/client/dashboard" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Личный кабинет</a>

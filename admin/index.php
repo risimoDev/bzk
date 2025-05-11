@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+$pageTitle = "Админ-панель";
 // Проверка авторизации
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
     header("Location: /login");
@@ -35,6 +35,18 @@ $processing_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pr
 
   <!-- Главная страница админ-панели -->
   <main class="container mx-auto px-4 py-8">
+    <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Добро пожаловать в админ-панель!</h1>
 
     <!-- Блоки статистики -->

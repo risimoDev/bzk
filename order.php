@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+$pageTitle = "Оформление заказа";
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
@@ -65,6 +65,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <!-- Страница подтверждения заказа -->
   <main class="container mx-auto px-4 py-8">
+    <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Заказ оформлен</h1>
     <p class="text-gray-700 text-center">Спасибо за ваш заказ! Мы свяжемся с вами в ближайшее время.</p>
   </main>

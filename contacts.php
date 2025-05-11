@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Контакты | Типография";
+$pageTitle = "Контакты";
 include_once __DIR__ . '/includes/header.php';
 
 // Обработка отправки формы
@@ -10,8 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
     $message = htmlspecialchars($_POST['message']);
 
     // Отправка email администратору
-    $to = 'admin@example.com';
-    $subject = 'Новое сообщение с сайта';
+    $to = 'bzkprint@yandex.ru';
+    $subject = 'Новое сообщение с сайта bzk print';
     $body = "Имя: $name\nEmail: $email\nСообщение: $message";
     mail($to, $subject, $body);
 
@@ -20,8 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 ?>
 
 <main class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Контакты</h1>
+  <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
 
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
+  <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Контакты</h1>
   <!-- Форма обратной связи -->
   <section class="mb-12">
     <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Свяжитесь с нами</h2>
@@ -55,9 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
   <section>
     <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Контактная информация</h2>
     <div class="text-center">
-      <p class="text-gray-700 mb-2">Телефон: +7 (999) 123-45-67</p>
-      <p class="text-gray-700 mb-2">Email: info@typography.ru</p>
-      <p class="text-gray-700">Адрес: г. Москва, ул. Примерная, д. 10</p>
+      <p class="text-gray-700 mb-2">Телефон: +7 (922) 304-04-65</p>
+      <p class="text-gray-700 mb-2">Email: bzkprint@yandex.ru</p>
+      <p class="text-gray-700">Адрес: г. Пермь, ул. Сухобруса, д. 28. Офис 101</p>
     </div>
   </section>
 </main>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Оформление заказа | Типография";
+$pageTitle = "Оформление заказа";
 include_once __DIR__ . '/includes/header.php';
 
 // Подключение к базе данных
@@ -56,8 +56,19 @@ foreach ($cart as $item) {
 ?>
 
 <main class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Оформление заказа</h1>
+  <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
 
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
+  <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Оформление заказа</h1>
   <!-- Содержимое корзины -->
   <div class="grid grid-cols-1 gap-6 mb-8">
     <?php foreach ($cart_items as $item): ?>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-$pageTitle = "Управление заказами | Админ-панель";
+$pageTitle = "Управление заказами";
 include_once('../includes/header.php');
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
@@ -54,6 +54,18 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <main class="container mx-auto px-4 py-8">
+  <!-- Вставка breadcrumbs и кнопки "Назад" -->
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <!-- Breadcrumbs -->
+    <div>
+        <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+    </div>
+
+    <!-- Кнопка "Назад" -->
+    <div>
+        <?php echo backButton(); ?>
+    </div>
+</div>
 <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Управление заказами</h1>
 
 <!-- Список заказов -->
