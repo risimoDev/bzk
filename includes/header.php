@@ -5,15 +5,14 @@ $notifications = $_SESSION['notifications'] ?? [];
 unset($_SESSION['notifications']); // Очищаем уведомления после отображения
 $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'], 'quantity')) : 0;
 ?>
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo htmlspecialchars($pageTitle ?? 'Типография'); ?></title>
-  <link rel="stylesheet" href="../assets/css/style.css">
-  <link rel="stylesheet" href="../assets/css/output.css">
+  <title><?php echo htmlspecialchars($pageTitle ?? 'Типография BZK PRINT'); ?></title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
   <script src="https://cdn.tailwindcss.com"></script>
@@ -27,11 +26,51 @@ $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'
             dirtgreen: '#5E807F',
             litedirtgreen: '#9DC5BB',
             litegray: '#DEE5E5',
-          }
+          },
+          backgroundImage: {
+          'pattern': `url("image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2317b890' fill-opacity='0.1'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          },
         }
       }
     }
   </script>
+  <style>
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      color: white;
+      z-index: 9999;
+      transform: translateX(120%);
+      transition: transform 0.3s ease-in-out;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 300px;
+    }
+    .notification.show {
+      transform: translateX(0);
+    }
+    .notification.success {
+      background-color: #10B981; /* green-500 */
+    }
+    .notification.error {
+      background-color: #EF4444; /* red-500 */
+    }
+    .notification.info {
+      background-color: #3B82F6; /* blue-500 */
+    }
+    .notification.warning {
+      background-color: #F59E0B; /* amber-500 */
+    }
+    /* Стили для мобильного меню - новый подход */
+    #mobile-menu {
+        display: none;
+    }
+    #mobile-menu.open {
+        display: block;
+    }
+  </style>
 </head>
 <body class="font-sans bg-litegray">
 <?php if (!empty($notifications)): ?>
@@ -51,22 +90,20 @@ function generateBreadcrumbs($pageTitle) {
     $baseUrl = "/";
     $currentPage = htmlspecialchars($pageTitle);
     $homeText = "Главная";
-    $separator = '<span class="mx-2">/</span>';
-
+    $separator = '<span class="mx-2 text-gray-400">/</span>';
     // Определяем текущую страницу и формируем breadcrumbs
     $breadcrumbs = '
-    <nav class="flex items-center text-gray-600 text-sm">
+    <nav class="flex items-center text-gray-600 text-sm" aria-label="Breadcrumb">
         <a href="' . $baseUrl . '" class="hover:text-litegreen transition duration-300">' . $homeText . '</a>
-        ' . ($currentPage ? $separator . '<span>' . $currentPage . '</span>' : '') . '
+        ' . ($currentPage ? $separator . '<span class="text-gray-800 font-medium">' . $currentPage . '</span>' : '') . '
     </nav>
     ';
     return $breadcrumbs;
 }
-
 // Кнопка "Назад"
 function backButton() {
     return '
-    <button onclick="history.back()" class="flex items-center text-gray-600 hover:text-litegreen transition duration-300">
+    <button onclick="history.back()" class="flex items-center text-gray-600 hover:text-litegreen transition duration-300 px-4 py-2 rounded-lg hover:bg-litegray">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -76,11 +113,13 @@ function backButton() {
 }
 ?>
   <!-- Шапка -->
-  <header class="bg-white shadow-md py-4">
-  <div class="container mx-auto px-4 flex justify-between items-center">
-    <!-- Логотип -->
-    <a href="/" class=" pl-7 mx-auto md:mx-10 text-2xl font-bold text-litegreen">
-    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="114px" height="76px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+  <header class="bg-white shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center py-4">
+        <!-- Логотип -->
+        <a href="/" class="flex items-center">
+          <!-- SVG логотип -->
+          <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="114px" height="76px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
 viewBox="0 0 4000 3000" style type="text/css">
   </style>
    <path class="bg-litegreen" d="M2508.72 1844.48c0,-12.72 85.93,-87.94 102.05,-103.45 7.98,-7.69 13.56,-13.7 21.41,-21.54 15.06,-15.06 27.9,-27.86 42.94,-42.94l171.01 -163.34c4.97,7.42 10.57,14.86 16.63,23.24l544.69 774.28 -898.73 0 0 -466.25zm-1696.26 469.31l-493.85 0 0 -711.63 536.79 0c197.58,0 356.75,39.61 435.63,199.33 37.14,75.22 40.88,180.89 17.74,266.31 -6.66,24.59 -19.93,53.96 -32.52,74.84 -28.33,46.94 -56.44,79.44 -103.92,107.73 -53.76,32.03 -136.55,57.91 -206.53,57.26 -21.56,-0.2 -29.15,3.2 -48.95,3.2 -36.53,0.01 -65.53,2.96 -104.39,2.96zm1420.19 -1297.49l0 1294.43 -733.1 0c7.28,-13.76 16.69,-26.58 24.39,-40.03 27.04,-47.28 41.94,-79.38 58.82,-134.42 22.15,-72.23 18.96,-99.03 26.78,-166.49 3.3,-28.46 -6.83,-110.17 -15.59,-143.21 -7.51,-28.33 -1.09,-21.02 28.31,-58.76 128.42,-164.81 278,-337.53 406.22,-501.73 10.13,-12.97 18.4,-23.27 28.63,-35.78 19.93,-24.4 38.02,-46.05 57.64,-71.18 10.13,-12.97 19.36,-23.2 28.95,-35.48 12.4,-15.87 78.98,-100.67 88.95,-107.35zm1429.4 -288.34l36.81 0 0 1490.75c-9.08,-6.66 -31.87,-41.5 -41.19,-53.91 -124.14,-165.18 -246.65,-338.31 -370.72,-503.48l-236.57 -321.69c-4.04,-5.59 -7.18,-9.12 -11.01,-13.53l114.22 -112.76c7.85,-7.27 12.06,-8.88 20.04,-16.78l348.02 -339.06c8.38,-8.29 13.27,-10.27 21.6,-18.28l76.76 -76.61c8.68,-7.26 11.57,-8.55 19.82,-16.99 5.35,-5.47 13.74,-17.66 22.22,-17.66zm-2901.74 628.81l-441.7 0 0 -625.74 466.25 0c166.6,0 339.21,11.07 411.07,150.25 37.02,71.72 39.83,104.31 39.83,187.16 0,102.78 -56.32,193 -143.1,237.26 -40.99,20.9 -92.77,37.08 -148.38,41.79 -59.53,5.03 -118.66,9.28 -183.97,9.28zm1748.41 150.31l0 -779.12 779.11 0c-3.61,13.51 -83.09,87.69 -94.32,98.92l-684.79 680.2zm-1091.99 -779.12l625.74 0c33.97,0 56.13,3.07 88.96,3.07l-45.3 49.79c-9.08,9.15 -11.95,15.33 -21.38,24.63 -4.67,4.61 -7.97,7.34 -12.17,12.37l-55.34 64.28c-5.36,5.77 -5.2,6.54 -9.55,11.93 -97.11,120.25 -192.26,234.9 -288.76,358.45l-234.45 293.15c-7.6,9.68 -14.16,19.8 -23.21,25.86l-46.85 -35.97c-32.83,-23.7 -72.76,-43.27 -110.46,-58.25 -16.58,-6.59 -55.4,-18.49 -60.47,-25.41 32.37,-7.54 131.18,-81.61 158.6,-114.39 27.49,-32.88 35.64,-42.16 58.22,-79.82 108.07,-180.24 75.88,-381.15 -23.58,-529.69zm582.8 -242.32l-1956.98 0 0 2073.54c554.27,0 1099.03,-3.07 1653.31,-3.07l2248.38 0 0 -2070.47c-38.48,0 -67.38,-3.07 -107.35,-3.07 -37.86,0 -75.75,-0.16 -113.6,-0.1 -20.05,0.03 -29.55,3.31 -52.02,3.19l-975.44 -0.02c-118.64,0 -230.79,-3.07 -346.62,-3.07 -116.99,0 -229.96,3.07 -349.68,3.07z"/>
@@ -95,135 +134,215 @@ viewBox="0 0 4000 3000" style type="text/css">
   </g>
  </g>
 </svg>
-    </a>
-
-    <!-- Меню для десктопа -->
-    <nav class="hidden md:flex items-center space-x-4">
-      <a href="/catalog" class="text-gray-700 hover:text-litegreen transition duration-300">Каталог</a>
-      <a href="/requirements" class="text-gray-700 hover:text-litegreen transition duration-300">Требования к макетам</a>
-      <a href="/contacts" class="text-gray-700 hover:text-litegreen transition duration-300">Контакты</a>
-      <?php if (isset($_SESSION['user_id'])): ?>
-        <a href="/client/dashboard" class="text-gray-700 hover:text-litegreen transition duration-300">Личный кабинет</a>
-        <a href="/logout" class="text-gray-700 hover:text-red-600 transition duration-300">Выйти</a>
-        <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'manager'): ?>
-          <a href="/admin" class="px-4 py-2 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300">Админ-панель</a>
-        <?php endif; ?>
-      <?php else: ?>
-        <a href="/login" class="text-gray-700 hover:text-litegreen transition duration-300">Вход</a>
-        <a href="/register" class="text-gray-700 hover:text-litegreen transition duration-300">Регистрация</a>
-      <?php endif; ?>
-      <div class="relative">
-      <a href="/cart" class="text-gray-700 hover:text-litegreen transition duration-300">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0h2v2H7V15z" />
-        </svg>
-      </a>
-      <?php if ($cart_count > 0): ?>
-        <span class="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full -mr-1 -mt-1">
-          <?php echo $cart_count; ?>
-        </span>
-      <?php endif; ?>
-    </div>
-    </nav>
-
-    <!-- Иконка корзины -->
-    
-
-    <!-- Гамбургер-меню для мобильных -->
-    <button id="menu-toggle" class="md:hidden text-gray-700 hover:text-blue-600 focus:outline-none">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-      </svg>
-    </button>
-
-    <!-- Мобильное меню -->
-    <nav id="mobile-menu" class="hidden md:hidden absolute top-16 right-4 bg-white p-4 rounded-lg shadow-md w-48">
-      <a href="/catalog" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Каталог</a>
-      <a href="/requirements" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Требования к макетам</a>
-      <a href="/contacts" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Контакты</a>
-      <?php if (isset($_SESSION['user_id'])): ?>
-        <a href="/client/dashboard" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Личный кабинет</a>
-        <a href="/logout" class="block text-gray-700 hover:text-red-600 transition duration-300 mb-2">Выйти</a>
-        <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'manager'): ?>
-          <a href="/admin" class="block px-4 py-2 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300">Админ-панель</a>
-        <?php endif; ?>
-      <?php else: ?>
-        <a href="/login" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Вход</a>
-        <a href="/register" class="block text-gray-700 hover:text-litegreen transition duration-300 mb-2">Регистрация</a>
-      <?php endif; ?>
-      <div class="flex justify-center mt-4">
-        <a href="/cart" class="text-gray-700 hover:text-litegreen transition duration-300">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0h2v2H7V15z" />
-          </svg>
         </a>
-        <?php if ($cart_count > 0): ?>
-          <span class="ml-2 text-sm font-bold text-red-500">
-            <?php echo $cart_count; ?>
-          </span>
-        <?php endif; ?>
+        <!-- Меню для десктопа -->
+        <nav class="hidden lg:flex items-center space-x-1">
+          <a href="/catalog" class="px-4 py-2 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300 font-medium">Каталог</a>
+          <a href="/requirements" class="px-4 py-2 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300 font-medium">Требования</a>
+          <a href="/contacts" class="px-4 py-2 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300 font-medium">Контакты</a>
+          <?php if (isset($_SESSION['user_id'])): ?>
+            <a href="/client/dashboard" class="px-4 py-2 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300 font-medium">Кабинет</a>
+            <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'manager'): ?>
+              <a href="/admin" class="px-4 py-2 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300 font-medium">Админ</a>
+            <?php endif; ?>
+          <?php endif; ?>
+        </nav>
+        <!-- Иконки корзины, избранного и пользователя -->
+        <div class="flex items-center space-x-4">
+          <!-- Иконка корзины -->
+          <div class="relative">
+            <a href="/cart" class="text-gray-700 hover:text-litegreen transition duration-300 p-2 rounded-full hover:bg-litegray flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0h2v2H7V15z" />
+                 <!-- Альтернативная иконка корзины (закомментирована)
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                 -->
+              </svg>
+              <span class="text-xs mt-1">Корзина</span>
+            </a>
+            <?php if ($cart_count > 0): ?>
+              <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                <?php echo min(99, $cart_count); ?>
+              </span>
+            <?php endif; ?>
+          </div>
+          <?php if (isset($_SESSION['user_id'])): ?>
+            <div class="relative group hidden lg:block">
+              <button class="flex flex-col items-center text-gray-700 hover:text-litegreen transition duration-300 p-2 rounded-full hover:bg-litegray">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span class="text-xs mt-1">Кабинет</span> <!-- Добавлена подпись -->
+              </button>
+              <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
+                <a href="/client/dashboard" class="block px-4 py-2 text-gray-800 hover:bg-litegray">Личный кабинет</a>
+                <a href="/client/orders" class="block px-4 py-2 text-gray-800 hover:bg-litegray">Мои заказы</a>
+                <a href="/client/settings" class="block px-4 py-2 text-gray-800 hover:bg-litegray">Настройки</a>
+                <div class="border-t border-gray-200 my-1"></div>
+                <a href="/logout" class="block px-4 py-2 text-red-600 hover:bg-red-50">Выйти</a>
+              </div>
+            </div>
+          <?php else: ?>
+            <!-- Перемещаем кнопки входа и регистрации вправо -->
+            <div class="hidden lg:flex items-center space-x-2">
+              <a href="/login" class="px-4 py-2 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300 font-medium text-sm">
+                Вход
+              </a>
+              <a href="/register" class="px-4 py-2 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300 font-medium text-sm">
+                Регистрация
+              </a>
+            </div>
+          <?php endif; ?>
+          <!-- Гамбургер-меню для мобильных -->
+          <button id="menu-toggle" class="lg:hidden text-gray-700 hover:text-litegreen focus:outline-none p-2 rounded-full hover:bg-litegray">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Мобильное меню - новый подход -->
+    <nav id="mobile-menu" class="lg:hidden bg-white border-t border-gray-200">
+      <div class="px-4 py-3">
+        <div class="space-y-2 pb-3">
+          <a href="/catalog" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+              </svg>
+              Каталог
+          </a>
+          <a href="/requirements" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Требования
+          </a>
+          <a href="/contacts" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Контакты
+          </a>
+          <?php if (isset($_SESSION['user_id'])): ?>
+            <div class="border-t border-gray-200 my-2"></div>
+            <a href="/client/dashboard" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Личный кабинет
+            </a>
+            <a href="/client/orders" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 000 4h2a2 2 0 000-4M9 9a2 2 0 010 4h2a2 2 0 010-4m0 4a2 2 0 012 2v3m2 4H9.83a3 3 0 01-2.12-.88l-1.88-1.88A3 3 0 015 14.17V12" />
+              </svg>
+              Мои заказы
+            </a>
+            <a href="/client/settings" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Настройки
+            </a>
+            <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'manager'): ?>
+              <a href="/admin" class="flex items-center px-4 py-3 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300 mt-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Админ-панель
+              </a>
+            <?php endif; ?>
+            <div class="border-t border-gray-200 my-2"></div>
+            <a href="/logout" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Выйти
+            </a>
+          <?php else: ?>
+            <div class="border-t border-gray-200 my-2"></div>
+            <a href="/login" class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+              Вход
+            </a>
+            <a href="/register" class="flex items-center px-4 py-3 bg-litegreen text-white rounded-lg hover:bg-emerald transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              Регистрация
+            </a>
+          <?php endif; ?>
+        </div>
+        <!-- Иконки в мобильном меню (без избранного) -->
+        <div class="flex items-center justify-center pt-3 border-t border-gray-200 mt-2">
+          <a href="/cart" class="flex flex-col items-center text-gray-700 hover:text-litegreen transition duration-300 p-2">
+            <div class="relative">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0h2v2H7V15z" />
+              </svg>
+              <?php if ($cart_count > 0): ?>
+                <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
+                  <?php echo min(9, $cart_count); ?>
+                </span>
+              <?php endif; ?>
+            </div>
+            <span class="text-xs mt-1">Корзина</span>
+          </a>
+        </div>
       </div>
     </nav>
-  </div>
-</header>
-<script>
-  // Автоматически скрываем уведомления через 5 секунд
-  document.addEventListener('DOMContentLoaded', () => {
-    const notifications = document.querySelectorAll('.notification');
-    notifications.forEach(notification => {
+  </header>
+  <script>
+    // Автоматически скрываем уведомления через 5 секунд
+    document.addEventListener('DOMContentLoaded', () => {
+      const notifications = document.querySelectorAll('.notification');
+      notifications.forEach(notification => {
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            notification.remove();
+          }, 300); // Задержка для завершения анимации
+        }, 5000);
+      });
+      // Мобильное меню - новый подход
+      const menuToggle = document.getElementById('menu-toggle');
+      const mobileMenu = document.getElementById('mobile-menu');
+      if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener('click', function () {
+          mobileMenu.classList.toggle('open');
+        });
+        // Закрываем меню при клике вне его
+        document.addEventListener('click', function(event) {
+          // Проверяем, является ли цель переключателем меню
+          if (event.target !== menuToggle && !menuToggle.contains(event.target)) {
+            // Проверяем, является ли цель самим меню или его потомком
+            if (mobileMenu.classList.contains('open') && !mobileMenu.contains(event.target)) {
+              mobileMenu.classList.remove('open');
+            }
+          }
+        });
+      }
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('cookiesAccepted')) {
+        showNotification('Этот сайт использует куки для улучшения работы.', 'info');
+        localStorage.setItem('cookiesAccepted', 'true'); // Сохраняем согласие пользователя
+      }
+    });
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type} show`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
       setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => {
-          notification.remove();
-        }, 300); // Задержка для завершения анимации
+        setTimeout(() => notification.remove(), 300);
       }, 5000);
-    });
-  });
-</script>
-
-<script>
-  // JavaScript для переключения мобильного меню
-  document.getElementById('menu-toggle').addEventListener('click', function () {
-    const mobileMenu = document.getElementById('mobile-menu');
-    mobileMenu.classList.toggle('hidden');
-  });
-</script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('cookiesAccepted')) {
-      showNotification('Этот сайт использует куки для улучшения работы.', 'info');
-      localStorage.setItem('cookiesAccepted', 'true'); // Сохраняем согласие пользователя
     }
-  });
-
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type} show`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.classList.remove('show');
-      setTimeout(() => notification.remove(), 300);
-    }, 5000);
-  }
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Функция для обновления счетчика корзины
-    function updateCartCount() {
-      fetch('/api/cart-count')
-        .then(response => response.json())
-        .then(data => {
-          const cartCountElements = document.querySelectorAll('.cart-count');
-          cartCountElements.forEach(el => {
-            el.textContent = data.count;
-          });
-        });
-    }
-
-    // Обновляем счетчик корзины каждые 5 секунд
-    setInterval(updateCartCount, 5000);
-  });
-</script>
+  </script>
