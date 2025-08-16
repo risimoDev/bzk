@@ -125,10 +125,7 @@ function get_total_orders_count($pdo, $start_date = null, $end_date = null) {
 }
 
 function calculate_estimated_expense($pdo, $order_id) {
-    // --- Добавлено логирование для отладки ---
-    error_log("calculate_estimated_expense called with order_id: " . $order_id);
-    // --- Конец логирования ---
-    
+    error_log("Starting calculate_estimated_expense for order_id: " . $order_id);
     $total_estimated_expense = 0.00;
     
     // Получаем все товары в заказе
@@ -140,17 +137,13 @@ function calculate_estimated_expense($pdo, $order_id) {
     $stmt->execute([$order_id]);
     $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // --- Добавлено логирование для отладки ---
-    error_log("Found " . count($order_items) . " items in order " . $order_id);
-    // --- Конец логирования ---
+    error_log("Found " . count($order_items) . " items in order.");
     
     foreach ($order_items as $item) {
         $product_id = $item['product_id'];
         $quantity = $item['quantity'];
         
-        // --- Добавлено логирование для отладки ---
-        error_log("Processing product_id: " . $product_id . ", quantity: " . $quantity);
-        // --- Конец логирования ---
+        error_log("Processing item - Product ID: $product_id, Quantity: $quantity");
         
         // Получаем расходники для этого товара
         $stmt_expenses = $pdo->prepare("
@@ -161,34 +154,79 @@ function calculate_estimated_expense($pdo, $order_id) {
         $stmt_expenses->execute([$product_id]);
         $product_expenses = $stmt_expenses->fetchAll(PDO::FETCH_ASSOC);
         
-        // --- Добавлено логирование для отладки ---
-        error_log("Found " . count($product_expenses) . " expenses for product " . $product_id);
-        // --- Конец логирования ---
+        error_log("Found " . count($product_expenses) . " expenses for product $product_id.");
         
         foreach ($product_expenses as $expense) {
             $quantity_per_unit = $expense['quantity_per_unit'];
             $cost_per_unit = $expense['cost_per_unit'];
             
-            // --- Добавлено логирование для отладки ---
-            error_log("Expense: quantity_per_unit=" . $quantity_per_unit . ", cost_per_unit=" . ($cost_per_unit ?? 'NULL'));
-            // --- Конец логирования ---
+            error_log("Expense - Qty/Unit: $quantity_per_unit, Cost/Unit: " . ($cost_per_unit ?? 'NULL'));
             
             // Если себестоимость указана, считаем расход
             if ($cost_per_unit !== null) {
                 $item_expense = $quantity_per_unit * $cost_per_unit * $quantity;
                 $total_estimated_expense += $item_expense;
-                
-                // --- Добавлено логирование для отладки ---
-                error_log("Added expense: " . $item_expense . ". Running total: " . $total_estimated_expense);
-                // --- Конец логирования ---
+                error_log("Added expense: $item_expense. Running total: $total_estimated_expense");
+            } else {
+                 error_log("Skipping expense: cost_per_unit is NULL.");
             }
         }
     }
     
-    $result = round($total_estimated_expense, 2);
-    // --- Добавлено логирование для отладки ---
-    error_log("Final estimated expense for order " . $order_id . ": " . $result);
-    // --- Конец логирования ---
-    return $result;
+    $final_result = round($total_estimated_expense, 2);
+    error_log("Final estimated expense for order $order_id: $final_result");
+    return $final_result;
 }
+
+
+function create_automatic_expense_record($pdo, $order_accounting_id, $estimated_expense, $description = "Автоматически рассчитанные расходы на материалы") {
+    if ($estimated_expense <= 0) {
+        error_log("INFO: Skipping automatic expense creation for order_accounting_id $order_accounting_id because estimated_expense is $estimated_expense.");
+        return false;
+    }
+
+    try {
+        // Проверим, существует ли категория "Автоматические расходы" или создадим её
+        $stmt_check_cat = $pdo->prepare("SELECT id FROM expenses_categories WHERE name = ?");
+        $stmt_check_cat->execute(['Автоматические расходы']);
+        $category = $stmt_check_cat->fetch(PDO::FETCH_ASSOC);
+        
+        $category_id = null;
+        if ($category) {
+            $category_id = $category['id'];
+        } else {
+            // Создаем категорию, если её нет
+            $stmt_create_cat = $pdo->prepare("INSERT INTO expenses_categories (name) VALUES (?)");
+            $stmt_create_cat->execute(['Автоматические расходы']);
+            $category_id = $pdo->lastInsertId();
+            error_log("INFO: Created new expense category 'Автоматические расходы' with ID $category_id.");
+        }
+        
+        // Вставляем запись в order_expenses
+        $stmt_insert = $pdo->prepare("
+            INSERT INTO order_expenses (order_accounting_id, category_id, amount, description) 
+            VALUES (?, ?, ?, ?)
+        ");
+        $stmt_insert->execute([$order_accounting_id, $category_id, $estimated_expense, $description]);
+        
+        // Обновляем total_expense в orders_accounting
+        // Сначала получим текущее значение total_expense
+        $stmt_get_current = $pdo->prepare("SELECT total_expense FROM orders_accounting WHERE id = ?");
+        $stmt_get_current->execute([$order_accounting_id]);
+        $current_total_expense = $stmt_get_current->fetchColumn() ?? 0;
+        
+        $new_total_expense = $current_total_expense + $estimated_expense;
+        
+        $stmt_update_accounting = $pdo->prepare("UPDATE orders_accounting SET total_expense = ? WHERE id = ?");
+        $stmt_update_accounting->execute([$new_total_expense, $order_accounting_id]);
+        
+        error_log("SUCCESS: Automatic expense record created for order_accounting_id $order_accounting_id. Amount: $estimated_expense. New total_expense: $new_total_expense.");
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("ERROR in create_automatic_expense_record: " . $e->getMessage());
+        return false;
+    }
+}
+
 ?>

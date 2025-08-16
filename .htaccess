@@ -1,16 +1,23 @@
+Options +SymLinksIfOwnerMatch
+
 RewriteEngine On
 
+RewriteCond %{REQUEST_URI} ^/login$
+RewriteRule ^.*$ - [E=MY_LOG:[login_request]]
 
+RewriteBase /
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+
 # Чистые URL для страниц
 RewriteRule ^catalog$ catalog.php [L]
 RewriteRule ^calculator$ calculator.php [L]
 RewriteRule ^about$ about.php [L]
 RewriteRule ^contacts$ contacts.php [L]
-RewriteRule ^login$ login.php [L]
+RewriteRule ^login/?$ login.php [L]
 RewriteRule ^register$ register.php [L]
+RewriteRule ^myacon/process$ myacon/process.php [L]
 RewriteRule ^logout$ logout.php [L]
 RewriteRule ^product$ product.php [L]
 RewriteRule ^order$ order.php [L]

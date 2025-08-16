@@ -1,9 +1,13 @@
 <?php
 ob_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 // Получение уведомлений из сессии
 $notifications = $_SESSION['notifications'] ?? [];
 unset($_SESSION['notifications']); // Очищаем уведомления после отображения
 $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'], 'quantity')) : 0;
+include_once __DIR__ . '/session_check.php';
 ?>
 <!DOCTYPE html>
 <html lang="ru">

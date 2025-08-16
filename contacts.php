@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-800">Адрес</h3>
-                <p class="text-gray-100 text-lg">г. Пермь, ул. Сухобруса, д. 28<br>Офис 101</p>
+                <p class="text-gray-100 text-lg">г. Пермь, ул. Сухобруса, д. 27<br>Офис 101</p>
               </div>
             </div>
           </div>
@@ -155,15 +155,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div class="text-center p-3 bg-[#DEE5E5] rounded-lg">
                 <div class="font-bold text-[#118568]">Пн-Пт</div>
-                <div class="text-gray-700 text-sm">9:00 - 18:00</div>
+                <div class="text-gray-700 text-sm">11:00 - 18:00</div>
               </div>
               <div class="text-center p-3 bg-[#9DC5BB] rounded-lg">
                 <div class="font-bold text-[#17B890]">Сб</div>
-                <div class="text-gray-700 text-sm">10:00 - 16:00</div>
+                <div class="text-gray-700 text-sm">По заявкам</div>
               </div>
               <div class="text-center p-3 bg-[#5E807F] rounded-lg">
                 <div class="font-bold text-white">Вс</div>
-                <div class="text-white text-sm">Выходной</div>
+                <div class="text-white text-sm">по заявкам</div>
               </div>
             </div>
           </div>

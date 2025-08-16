@@ -83,12 +83,13 @@ function getProductMainImage($pdo, $product_id) {
           <label class="block text-sm font-semibold text-gray-700 mb-2">Категория</label>
           <select id="category" onchange="location.href=this.value" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
             <option value="/catalog?type=<?php echo htmlspecialchars($type); ?>">Все категории</option>
-            <?php foreach ($categories as $category): ?>
+            <?php if (is_array($categories)) {
+              foreach ($categories as $category): ?>
               <option value="/catalog?type=<?php echo htmlspecialchars($type); ?>&category=<?php echo $category['id']; ?>" 
                 <?php echo ($category['id'] == $category_id) ? 'selected' : ''; ?>>
                 <?php echo htmlspecialchars($category['name']); ?>
               </option>
-            <?php endforeach; ?>
+            <?php endforeach; } ?>
           </select>
         </div>
 

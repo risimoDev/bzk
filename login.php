@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             </div>
           <?php endif; ?>
 
-          <form action="" method="POST" class="space-y-6">
+          <form action="/myacon/process" method="POST" class="space-y-6">
             <div>
               <label for="email" class="block text-gray-700 font-medium mb-2">Email адрес</label>
               <div class="relative">
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
             <div class="flex items-center justify-between">
               <label class="flex items-center">
-                <input type="checkbox" class="rounded border-gray-300 text-[#118568] focus:ring-[#17B890]">
+                <input type="checkbox" id="remember_me" name="remember_me" value="1" class="rounded border-gray-300 text-[#118568] focus:ring-[#17B890]">
                 <span class="ml-2 text-gray-700">Запомнить меня</span>
               </label>
               <a href="/forgot-password" class="text-[#118568] hover:text-[#0f755a] font-medium transition-colors duration-300">
