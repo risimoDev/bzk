@@ -524,54 +524,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
               <h3 class="text-lg font-bold text-gray-800">Чат по заказу #<?php echo $order_id; ?></h3>
             </div>
             
-            <!-- Сообщения -->
-            <div id="admin-chat-messages" class="flex-grow p-4 overflow-y-auto max-h-96 bg-white">
-              <?php if (empty($messages)): ?>
-                <div class="text-center text-gray-500 py-8">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <p>Сообщений пока нет</p>
-                  <p class="text-xs mt-1">Напишите первое сообщение клиенту</p>
-                </div>
-              <?php else: ?>
-                <?php foreach ($messages as $message): 
-                  $is_own_message = $message['user_id'] == $_SESSION['user_id'];
-                  $message_time = date('H:i', strtotime($message['created_at']));
-                ?>
-                  <div class="mb-4 <?php echo $is_own_message ? 'text-right' : ''; ?>">
-                    <?php if (!$is_own_message): ?>
-                      <div class="text-xs text-gray-500 mb-1">
-                        <?php echo htmlspecialchars($message['sender_name']); ?> 
-                        <?php if ($message['sender_role'] === 'admin'): ?>
-                          <span class="px-1 py-0.5 bg-red-100 text-red-800 text-xs rounded">(Админ)</span>
-                        <?php elseif ($message['sender_role'] === 'manager'): ?>
-                          <span class="px-1 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">(Менеджер)</span>
-                        <?php else: ?>
-                          <span class="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">(Клиент)</span>
-                        <?php endif; ?>
-                        <span class="ml-1"><?php echo $message_time; ?></span>
-                      </div>
-                    <?php endif; ?>
-                    
-                    <div class="inline-block max-w-xs md:max-w-md px-4 py-2 rounded-2xl 
-                      <?php 
-                        if ($is_own_message) {
-                          echo 'bg-[#118568] text-white rounded-tr-none';
-                        } else {
-                          echo 'bg-gray-200 text-gray-800 rounded-tl-none';
-                        }
-                      ?>">
-                      <?php echo nl2br(htmlspecialchars($message['message'])); ?>
-                    </div>
-                    
-                    <?php if ($is_own_message): ?>
-                      <div class="text-xs text-gray-500 mt-1 text-right"><?php echo $message_time; ?></div>
-                    <?php endif; ?>
-                  </div>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </div>
+            <!-- Сообщения в админке -->
+<div id="admin-chat-messages" class="flex-grow p-4 overflow-y-auto max-h-96 bg-white">
+  <?php if (empty($messages)): ?>
+    <div class="text-center text-gray-500 py-8">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+      <p>Сообщений пока нет</p>
+      <p class="text-xs mt-1">Напишите первое сообщение клиенту</p>
+    </div>
+  <?php else: ?>
+    <?php foreach ($messages as $message): 
+      $is_own_message = $message['user_id'] == $_SESSION['user_id'];
+      $message_time = date('H:i', strtotime($message['created_at']));
+      // Определяем роль отправителя для цветовой индикации
+      $sender_role_class = '';
+      if ($message['sender_role'] === 'admin') {
+          $sender_role_class = 'bg-red-100 text-red-800';
+      } elseif ($message['sender_role'] === 'manager') {
+          $sender_role_class = 'bg-purple-100 text-purple-800';
+      } else {
+          $sender_role_class = 'bg-blue-100 text-blue-800';
+      }
+    ?>
+      <div class="mb-4 <?php echo $is_own_message ? 'text-right' : 'text-left'; ?>">
+        <?php if (!$is_own_message): ?>
+          <!-- Информация об отправителе для чужих сообщений -->
+          <div class="text-xs text-gray-500 mb-1 flex items-center <?php echo $is_own_message ? 'justify-end' : 'justify-start'; ?>">
+            <span><?php echo htmlspecialchars($message['sender_name']); ?></span>
+            <span class="ml-1 px-1 py-0.5 <?php echo $sender_role_class; ?> text-xs rounded">
+              <?php 
+              echo $message['sender_role'] === 'admin' ? 'Админ' : 
+                   ($message['sender_role'] === 'manager' ? 'Менеджер' : 'Клиент'); 
+              ?>
+            </span>
+            <span class="ml-1"><?php echo $message_time; ?></span>
+          </div>
+        <?php endif; ?>
+        
+        <!-- Текст сообщения -->
+        <div class="inline-block max-w-xs md:max-w-md px-4 py-3 rounded-2xl
+          <?php 
+            if ($is_own_message) {
+              // Стили для сообщений менеджера/админа (справа, зеленый)
+              echo ' bg-[#118568] text-white rounded-tr-none';
+            } else {
+              // Стили для сообщений других пользователей (слева, серый)
+              echo ' bg-gray-200 text-gray-800 rounded-tl-none';
+            }
+          ?>">
+          <?php echo nl2br(htmlspecialchars($message['message'])); ?>
+        </div>
+        
+        <?php if ($is_own_message): ?>
+          <!-- Время для своих сообщений справа под сообщением -->
+          <div class="text-xs text-gray-500 mt-1 text-right"><?php echo $message_time; ?></div>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</div>
             
             <!-- Форма отправки сообщения -->
             <div class="p-4 border-t border-[#DEE5E5] bg-white rounded-b-2xl">
