@@ -12,6 +12,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 # Чистые URL для страниц
 RewriteRule ^catalog$ catalog.php [L]
+RewriteRule ^payment_delivery$ payment_delivery.php [L]
 RewriteRule ^calculator$ calculator.php [L]
 RewriteRule ^about$ about.php [L]
 RewriteRule ^contacts$ contacts.php [L]
