@@ -11,7 +11,6 @@ if (file_exists($functions_path)) {
     error_log("Functions file included successfully.");
 } else {
     error_log("ERROR: Functions file not found at: " . $functions_path);
-    // Можно установить флаг или обработать ошибку по-другому
 }
 // --- Конец добавленного кода ---
 
@@ -25,6 +24,13 @@ $name = $_POST['name'] ?? '';
 $email = $_POST['email'] ?? '';
 $phone = $_POST['phone'] ?? '';
 $shipping_address = $_POST['shipping_address'] ?? '';
+$comment = $_POST['comment'] ?? '';
+
+// --- Добавлено: Получение данных о срочном заказе и промокоде ---
+$is_urgent = isset($_POST['is_urgent']) && $_POST['is_urgent'] == '1';
+$applied_promo_code = $_SESSION['applied_promo_code'] ?? '';
+$promo_discount_amount = $_SESSION['promo_discount_amount'] ?? 0;
+// --- Конец добавленного кода ---
 
 if (!$name || !$email || !$phone || !$shipping_address) {
     header("Location: /checkout?error=missing_fields");
@@ -32,14 +38,47 @@ if (!$name || !$email || !$phone || !$shipping_address) {
 }
 
 $user_id = $_SESSION['user_id'] ?? null;
-$total_price = array_sum(array_column($cart, 'total_price'));
+
+// --- Обновлено: Расчет итоговой суммы с учетом срочного заказа и промокода ---
+$original_total_price = array_sum(array_column($cart, 'total_price'));
+
+// Применяем срочный заказ (+50%)
+if ($is_urgent) {
+    $total_price = $original_total_price * 1.5;
+    $urgent_fee = $original_total_price * 0.5;
+} else {
+    $total_price = $original_total_price;
+    $urgent_fee = 0;
+}
+
+// Применяем скидку по промокоду
+$total_price -= $promo_discount_amount;
+// Убедимся, что итоговая сумма не отрицательная
+$total_price = max(0, $total_price);
+// --- Конец обновленного кода ---
 
 // Создание заказа
 $stmt = $pdo->prepare("
-    INSERT INTO orders (user_id, total_price, shipping_address, contact_info)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO orders (user_id, total_price, shipping_address, contact_info, is_urgent)
+    VALUES (?, ?, ?, ?, ?)
 ");
-$stmt->execute([$user_id, $total_price, $shipping_address, json_encode(['name' => $name, 'email' => $email, 'phone' => $phone])]);
+$stmt->execute([
+    $user_id, 
+    $total_price, // Используем уже рассчитанную сумму
+    $shipping_address, 
+    json_encode([
+        'name' => $name, 
+        'email' => $email, 
+        'phone' => $phone,
+        'comment' => $comment,
+        // --- Обновлено: Сохранение информации о срочном заказе ---
+        'is_urgent' => $is_urgent,
+        'original_total_price' => $original_total_price,
+        'urgent_fee' => $urgent_fee
+        // --- Конец обновленного кода ---
+    ]),
+    $is_urgent ? 1 : 0
+]);
 
 $order_id = $pdo->lastInsertId();
 // --- Добавлено логирование для отладки ---
@@ -72,8 +111,7 @@ error_log("Order info fetched: " . print_r($order_info, true));
 // --- Конец логирования ---
 
 if ($order_info) {
-    try { // <-- Открывающая скобка try
-
+    try {
         // 1. Добавляем запись в orders_accounting
         // Явно указываем все значения через placeholder'ы для единообразия и лучшей отладки
         $stmt_accounting = $pdo->prepare("
@@ -99,6 +137,45 @@ if ($order_info) {
         if ($execute_result) {
             $order_accounting_id = $pdo->lastInsertId();
             error_log("SUCCESS: Accounting record created with ID: " . $order_accounting_id);
+            
+            // 2. Рассчитываем estimated_expense
+            // Убедитесь, что функция calculate_estimated_expense существует в functions.php
+            if (function_exists('calculate_estimated_expense') && $order_accounting_id !== null) {
+                error_log("Function calculate_estimated_expense exists, calling it...");
+                $estimated_expense = calculate_estimated_expense($pdo, $order_id);
+                error_log("Estimated expense calculated: " . $estimated_expense);
+                
+                // 3. Обновляем запись в orders_accounting с рассчитанным estimated_expense
+                $stmt_update = $pdo->prepare("UPDATE orders_accounting SET estimated_expense = ? WHERE id = ?");
+                $update_result = $stmt_update->execute([$estimated_expense, $order_accounting_id]);
+                
+                if ($update_result) {
+                    error_log("Accounting record updated with estimated expense.");
+                    
+                    // 4. --- Добавлено: Создаем автоматическую запись о расходе ---
+                    if (function_exists('create_automatic_expense_record')) {
+                        $auto_expense_result = create_automatic_expense_record($pdo, $order_accounting_id, $estimated_expense);
+                        if ($auto_expense_result) {
+                            error_log("SUCCESS: Automatic expense record created in order_expenses for order_accounting_id $order_accounting_id.");
+                        } else {
+                            error_log("INFO: Automatic expense record was not created or skipped for order_accounting_id $order_accounting_id.");
+                        }
+                    } else {
+                        error_log("WARNING: Function create_automatic_expense_record does not exist!");
+                    }
+                    // --- Конец добавленного кода ---
+                    
+                } else {
+                    $error_info = $stmt_update->errorInfo();
+                    error_log("ERROR: Failed to update accounting record with estimated expense. Error: " . print_r($error_info, true));
+                }
+            } else {
+                if ($order_accounting_id === null) {
+                    error_log("SKIPPED: Estimated expense calculation/update because accounting record was not created.");
+                } else {
+                    error_log("ERROR: Function calculate_estimated_expense does not exist!");
+                }
+            }
         } else {
             $error_info = $stmt_accounting->errorInfo();
             error_log("CRITICAL ERROR: Failed to create accounting record.");
@@ -122,51 +199,9 @@ if ($order_info) {
             } else {
                 error_log("WARNING: Order with ID $order_id DOES NOT EXIST in the main orders table. Foreign key constraint might fail.");
             }
-            
-            // Продолжаем выполнение, чтобы не сломать основной процесс заказа
-            // Но установим флаг, что бухгалтерия не создана
-            $order_accounting_id = null;
         }
         
-        // 2. Рассчитываем estimated_expense
-        // Убедитесь, что функция calculate_estimated_expense существует в functions.php
-        if (function_exists('calculate_estimated_expense') && $order_accounting_id !== null) {
-            error_log("Function calculate_estimated_expense exists, calling it...");
-            $estimated_expense = calculate_estimated_expense($pdo, $order_id);
-            error_log("Estimated expense calculated: " . $estimated_expense);
-            
-            // 3. Обновляем запись в orders_accounting с рассчитанным estimated_expense
-            $stmt_update = $pdo->prepare("UPDATE orders_accounting SET estimated_expense = ? WHERE id = ?");
-            $update_result = $stmt_update->execute([$estimated_expense, $order_accounting_id]);
-            
-            if ($update_result) {
-                error_log("Accounting record updated with estimated expense.");
-                
-                // 4. --- Добавлено: Создаем автоматическую запись о расходе ---
-                if (function_exists('create_automatic_expense_record')) {
-                    $auto_expense_result = create_automatic_expense_record($pdo, $order_accounting_id, $estimated_expense);
-                    if ($auto_expense_result) {
-                        error_log("SUCCESS: Automatic expense record created in order_expenses for order_accounting_id $order_accounting_id.");
-                    } else {
-                        error_log("INFO: Automatic expense record was not created or skipped for order_accounting_id $order_accounting_id.");
-                    }
-                } else {
-                    error_log("WARNING: Function create_automatic_expense_record does not exist!");
-                }
-                // --- Конец добавленного кода ---
-                
-            } else {
-                $error_info = $stmt_update->errorInfo();
-                error_log("ERROR: Failed to update accounting record with estimated expense. Error: " . print_r($error_info, true));
-            }
-        } else {
-            if ($order_accounting_id === null) {
-                error_log("SKIPPED: Estimated expense calculation/update because accounting record was not created.");
-            } else {
-                error_log("ERROR: Function calculate_estimated_expense does not exist!");
-            }
-        }
-    } catch (Exception $e) { // <-- Добавлен блок catch
+    } catch (Exception $e) {
         // Логируем ошибку, но не прерываем основной процесс заказа
         error_log("ERROR при добавлении заказа в бухгалтерию: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
         // Можно добавить уведомление для администратора
@@ -175,6 +210,37 @@ if ($order_info) {
     error_log("ERROR: Could not fetch order info for accounting.");
 }
 // --- Конец добавленного кода ---
+
+// --- Добавлено: Сохранение информации о промокоде в отдельную таблицу ---
+if (!empty($applied_promo_code) && $promo_discount_amount > 0) {
+    try {
+        // Получаем информацию о промокоде из БД
+        $stmt_promo = $pdo->prepare("SELECT * FROM promocodes WHERE code = ?");
+        $stmt_promo->execute([$applied_promo_code]);
+        $promo = $stmt_promo->fetch(PDO::FETCH_ASSOC);
+        
+        if ($promo) {
+            $stmt_order_promo = $pdo->prepare("
+                INSERT INTO order_promocodes (order_id, promo_code, discount_type, discount_value, applied_discount_amount) 
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            $stmt_order_promo->execute([
+                $order_id,
+                $applied_promo_code,
+                $promo['discount_type'],
+                $promo['discount_value'],
+                $promo_discount_amount
+            ]);
+            
+            error_log("PROMO DEBUG: Promo code info saved to order_promocodes for order_id=$order_id");
+        } else {
+            error_log("PROMO ERROR: Promo code $applied_promo_code not found in database when saving to order_promocodes");
+        }
+    } catch (Exception $e) {
+        error_log("PROMO ERROR saving promo code info to order_promocodes for order_id=$order_id: " . $e->getMessage());
+    }
+}
+
 // --- Добавлено: Создание чата для нового заказа ---
 // Убедитесь, что файл функций чата подключен
 $chat_functions_path = __DIR__ . '/../includes/chat_functions.php';
@@ -196,8 +262,14 @@ if (file_exists($chat_functions_path)) {
 } else {
     error_log("ERROR: Chat functions file not found at: " . $chat_functions_path);
 }
-// Очистка корзины
+// --- Конец добавленного кода ---
+
+// --- Добавлено: Очистка данных о срочном заказе и промокоде ---
 unset($_SESSION['cart']);
+unset($_SESSION['is_urgent_order']);
+unset($_SESSION['applied_promo_code']);
+unset($_SESSION['promo_discount_amount']);
+// --- Конец добавленного кода ---
 
 header("Location: /checkoutshopcart/confirmation");
 exit();

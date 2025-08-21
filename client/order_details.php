@@ -110,6 +110,13 @@ if ($chat) {
                 Дата и статус
               </h3>
               <div class="space-y-2">
+                                      <!-- --- Добавлено: Плашка "Срочный заказ" --- -->
+                <?php if ($order['is_urgent']): ?>
+                  <span class="ml-2 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    Срочный заказ (+50%)
+                  </span>
+                <?php endif; ?>
+                <!-- --- Конец добавленного кода --- -->
                 <p class="text-gray-700">
                   <span class="font-medium">Создан:</span> 
                   <?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?>
@@ -176,6 +183,9 @@ if ($chat) {
               $contact_info = json_decode($order['contact_info'], true);
               ?>
               <div class="space-y-2">
+                <?php 
+                $contact_info = json_decode($order['contact_info'], true);
+                ?>
                 <p class="text-gray-700">
                   <span class="font-medium">Имя:</span> 
                   <?php echo htmlspecialchars($contact_info['name'] ?? 'Не указано'); ?>
@@ -188,21 +198,67 @@ if ($chat) {
                   <span class="font-medium">Телефон:</span> 
                   <?php echo htmlspecialchars($contact_info['phone'] ?? 'Не указано'); ?>
                 </p>
+                <!-- --- Добавлено: Отображение комментария --- -->
+                <?php if (!empty($contact_info['comment'])): ?>
                 <p class="text-gray-700">
-                  <span class="font-medium">Адрес:</span> 
-                  <?php echo htmlspecialchars($order['shipping_address']); ?>
+                  <span class="font-medium">Комментарий:</span> 
+                  <?php echo nl2br(htmlspecialchars($contact_info['comment'])); ?>
                 </p>
+                <?php endif; ?>
+                <!-- --- Конец добавленного кода --- -->
               </div>
             </div>
           </div>
           
-          <div class="mt-6 pt-4 border-t border-gray-200">
-            <div class="flex justify-between items-center">
-              <div class="text-gray-700">
-                <span class="font-medium">Общая сумма:</span>
-              </div>
-              <div class="text-2xl font-bold text-[#118568]">
-                <?php echo number_format($order['total_price'], 2, '.', ' '); ?> ₽
+          <div class="bg-gray-50 rounded-2xl p-4">
+            <h3 class="font-bold text-gray-800 mb-3 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0L5 15.243V19a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2h-3.586l-4.243-4.243z" />
+              </svg>
+              Финансовая информация
+            </h3>
+            <div class="space-y-2">
+              <!-- --- Обновлено: Детализация стоимости с учетом промокода из отдельной таблицы --- -->
+              <?php 
+              // Извлекаем информацию из contact_info
+              $contact_info = json_decode($order['contact_info'], true);
+              $original_total_price = $contact_info['original_total_price'] ?? $order['total_price'];
+              $is_urgent = $contact_info['is_urgent'] ?? false;
+              $urgent_fee = $contact_info['urgent_fee'] ?? 0;
+
+              // Получаем информацию о промокоде из отдельной таблицы
+              $stmt_order_promo = $pdo->prepare("SELECT * FROM order_promocodes WHERE order_id = ?");
+              $stmt_order_promo->execute([$order_id]);
+              $order_promo = $stmt_order_promo->fetch(PDO::FETCH_ASSOC);
+              ?>
+
+              <p class="text-gray-700">
+                <span class="font-medium">Стоимость товаров:</span> 
+                <?php echo number_format($original_total_price, 2, '.', ' '); ?> ₽
+              </p>
+
+              <?php if ($is_urgent): ?>
+              <p class="text-gray-700">
+                <span class="font-medium">Срочный заказ (+50%):</span> 
+                <span class="text-[#17B890]">+<?php echo number_format($urgent_fee, 2, '.', ' '); ?> ₽</span>
+              </p>
+              <?php endif; ?>
+              
+              <?php if ($order_promo): ?>
+              <p class="text-gray-700">
+                <span class="font-medium">Промокод (<?php echo htmlspecialchars($order_promo['promo_code']); ?>):</span> 
+                <span class="text-red-500">-<?php echo number_format($order_promo['applied_discount_amount'], 2, '.', ' '); ?> ₽</span>
+                <div class="text-xs text-gray-500 ml-4">
+                  <?php echo $order_promo['discount_type'] === 'percentage' ? $order_promo['discount_value'] . '%' : number_format($order_promo['discount_value'], 2, '.', ' ') . ' ₽'; ?>
+                </div>
+              </p>
+              <?php endif; ?>
+              
+              <div class="border-t border-gray-200 pt-2 mt-2">
+                <div class="flex justify-between text-lg font-bold">
+                  <span>Итого к оплате:</span>
+                  <span class="text-[#118568]"><?php echo number_format($order['total_price'], 2, '.', ' '); ?> ₽</span>
+                </div>
               </div>
             </div>
           </div>

@@ -241,19 +241,6 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                 Продолжить покупки
               </a>
             </div>
-            
-            <!-- Промокод -->
-            <div class="mt-6 pt-6 border-t border-gray-200">
-              <h3 class="font-medium text-gray-800 mb-3">Промокод</h3>
-              <div class="flex">
-                <input type="text" placeholder="Введите промокод" 
-                       class="flex-grow px-3 py-3 border-2 border-gray-200 rounded-l-lg focus:outline-none focus:border-[#118568]">
-                <button class="px-2 py-3 bg-[#5E807F] text-white rounded-r-lg hover:bg-[#4a6665] transition-colors duration-300 font-medium">
-                  Применить
-                </button>
-              </div>
-            </div>
-            
           </div>
         </div>
       </div>

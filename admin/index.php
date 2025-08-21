@@ -270,7 +270,7 @@ $monthly_orders = array_reverse($stmt->fetchAll());
             <a href="/admin/orders?status=pending" class="p-3 bg-yellow-50 text-yellow-700 rounded-lg text-center hover:bg-yellow-100 transition-colors duration-300 text-sm">
               Новые заказы
             </a>
-            <a href="/admin/products/create" class="p-3 bg-green-50 text-green-700 rounded-lg text-center hover:bg-green-100 transition-colors duration-300 text-sm">
+            <a href="/admin/products" class="p-3 bg-green-50 text-green-700 rounded-lg text-center hover:bg-green-100 transition-colors duration-300 text-sm">
               + Товар
             </a>
             <a href="/admin/users" class="p-3 bg-blue-50 text-blue-700 rounded-lg text-center hover:bg-blue-100 transition-colors duration-300 text-sm">
