@@ -6,6 +6,17 @@ include_once __DIR__ . '/includes/header.php';
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
+foreach ($cart as $item) {
+    $stmt = $pdo->prepare("SELECT quantity FROM products WHERE id = ?");
+    $stmt->execute([$item['product_id']]);
+    $product = $stmt->fetch();
+    
+    if (!$product) {
+        $_SESSION['error'] = "Товар с ID {$item['product_id']} не найден";
+        header("Location: /cart");
+        exit();
+    }
+  }
 $cart = $_SESSION['cart'] ?? [];
 if (empty($cart)) {
     header("Location: /cart");

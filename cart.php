@@ -247,5 +247,109 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
     <?php endif; ?>
   </div>
 </main>
+<script>
+  // Добавить в конец файла cart.php перед
+document.addEventListener('DOMContentLoaded', function() {
+    // Валидация количества товаров
+    const quantityInputs = document.querySelectorAll('input[name="quantity"]');
+    
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const maxQuantity = 1000; // Максимальное количество
+            const minQuantity = 1;    // Минимальное количество
+            
+            if (this.value > maxQuantity) {
+                this.value = maxQuantity;
+                showNotification('Максимальное количество товара: ' + maxQuantity, 'warning');
+            } else if (this.value < minQuantity) {
+                this.value = minQuantity;
+                showNotification('Минимальное количество товара: ' + minQuantity, 'warning');
+            }
+        });
+    });
+    
+    // Плавное удаление товаров из корзины
+    const removeForms = document.querySelectorAll('form[action="/cart/remove"]');
+    
+    removeForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const itemElement = this.closest('.hover\\:bg-gray-50');
+            if (itemElement) {
+                itemElement.style.opacity = '0.5';
+                itemElement.style.transition = 'opacity 0.3s ease';
+            }
+            
+            // AJAX запрос для удаления
+            fetch('/cart/remove', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (itemElement) {
+                        itemElement.style.transition = 'all 0.3s ease';
+                        itemElement.style.height = '0';
+                        itemElement.style.opacity = '0';
+                        itemElement.style.margin = '0';
+                        itemElement.style.padding = '0';
+                        
+                        setTimeout(() => {
+                            itemElement.remove();
+                            updateCartSummary();
+                            showNotification('Товар удален из корзины', 'success');
+                        }, 300);
+                    }
+                } else {
+                    if (itemElement) {
+                        itemElement.style.opacity = '1';
+                    }
+                    showNotification('Ошибка при удалении товара', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (itemElement) {
+                    itemElement.style.opacity = '1';
+                }
+                showNotification('Произошла ошибка', 'error');
+            });
+        });
+    });
+    
+    function updateCartSummary() {
+        // Обновляем итоговую сумму и количество товаров
+        fetch('/api/cart-count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.total_items === 0) {
+                    location.reload(); // Перезагружаем если корзина пуста
+                }
+            });
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Создаем уведомление
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 
+            type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+        }`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Автоматическое скрытие через 3 секунды
+        setTimeout(() => {
+            notification.style.transition = 'opacity 0.5s ease';
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+    }
+});
+</script>
 
 <?php include_once __DIR__ . '/includes/footer.php'; ?>
