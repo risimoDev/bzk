@@ -126,55 +126,23 @@ function get_total_orders_count($pdo, $start_date = null, $end_date = null) {
 
 function calculate_estimated_expense($pdo, $order_id) {
     error_log("Starting calculate_estimated_expense for order_id: " . $order_id);
-    $total_estimated_expense = 0.00;
     
-    // Получаем все товары в заказе
-    $stmt = $pdo->prepare("
-        SELECT oi.product_id, oi.quantity, oi.attributes
-        FROM order_items oi
-        WHERE oi.order_id = ?
-    ");
-    $stmt->execute([$order_id]);
-    $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // 1. Получаем ИТОГОВУЮ сумму заказа с промокодом из таблицы orders
+    $stmt_order = $pdo->prepare("SELECT total_price FROM orders WHERE id = ?");
+    $stmt_order->execute([$order_id]);
+    $order_total = $stmt_order->fetchColumn();
     
-    error_log("Found " . count($order_items) . " items in order.");
+    error_log("Order total price (with promo): " . $order_total);
     
-    foreach ($order_items as $item) {
-        $product_id = $item['product_id'];
-        $quantity = $item['quantity'];
-        
-        error_log("Processing item - Product ID: $product_id, Quantity: $quantity");
-        
-        // Получаем расходники для этого товара
-        $stmt_expenses = $pdo->prepare("
-            SELECT pe.quantity_per_unit, pe.cost_per_unit
-            FROM product_expenses pe
-            WHERE pe.product_id = ?
-        ");
-        $stmt_expenses->execute([$product_id]);
-        $product_expenses = $stmt_expenses->fetchAll(PDO::FETCH_ASSOC);
-        
-        error_log("Found " . count($product_expenses) . " expenses for product $product_id.");
-        
-        foreach ($product_expenses as $expense) {
-            $quantity_per_unit = $expense['quantity_per_unit'];
-            $cost_per_unit = $expense['cost_per_unit'];
-            
-            error_log("Expense - Qty/Unit: $quantity_per_unit, Cost/Unit: " . ($cost_per_unit ?? 'NULL'));
-            
-            // Если себестоимость указана, считаем расход
-            if ($cost_per_unit !== null) {
-                $item_expense = $quantity_per_unit * $cost_per_unit * $quantity;
-                $total_estimated_expense += $item_expense;
-                error_log("Added expense: $item_expense. Running total: $total_estimated_expense");
-            } else {
-                 error_log("Skipping expense: cost_per_unit is NULL.");
-            }
-        }
-    }
+    // 2. Рассчитываем расходы как процент от итоговой суммы
+    // Настройте этот процент под ваш бизнес (30% - пример)
+    $expense_percentage = 0.30; // 30% - себестоимость материалов
+    
+    $total_estimated_expense = $order_total * $expense_percentage;
     
     $final_result = round($total_estimated_expense, 2);
-    error_log("Final estimated expense for order $order_id: $final_result");
+    error_log("Final estimated expense for order $order_id: $final_result ($expense_percentage% of $order_total)");
+    
     return $final_result;
 }
 
@@ -204,8 +172,8 @@ function create_automatic_expense_record($pdo, $order_accounting_id, $estimated_
         
         // Вставляем запись в order_expenses
         $stmt_insert = $pdo->prepare("
-            INSERT INTO order_expenses (order_accounting_id, category_id, amount, description) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO order_expenses (order_accounting_id, category_id, amount, description, expense_date) 
+            VALUES (?, ?, ?, ?, NOW())
         ");
         $stmt_insert->execute([$order_accounting_id, $category_id, $estimated_expense, $description]);
         

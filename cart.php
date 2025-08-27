@@ -6,6 +6,42 @@ include_once __DIR__ . '/includes/header.php';
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
+// --- Добавлено: Обработка действий с корзиной ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action']) && isset($_POST['index'])) {
+        $action = $_POST['action'];
+        $index = intval($_POST['index']);
+        
+        if (isset($_SESSION['cart'][$index])) {
+            if ($action === 'increase') {
+                $_SESSION['cart'][$index]['quantity']++;
+                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара увеличено.'];
+            } elseif ($action === 'decrease' && $_SESSION['cart'][$index]['quantity'] > 1) {
+                $_SESSION['cart'][$index]['quantity']--;
+                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара уменьшено.'];
+            } elseif ($action === 'remove') {
+                unset($_SESSION['cart'][$index]);
+                // Переиндексируем массив, чтобы избежать "дыр" в ключах
+                $_SESSION['cart'] = array_values($_SESSION['cart']);
+                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Товар удален из корзины.'];
+            } elseif ($action === 'update_quantity') {
+                // --- Добавлено: Обработка изменения количества через ручной ввод ---
+                $new_quantity = max(1, intval($_POST['quantity'] ?? 1));
+                $_SESSION['cart'][$index]['quantity'] = $new_quantity;
+                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара обновлено.'];
+                // --- Конец добавленного кода ---
+            }
+        } else {
+            $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Товар не найден в корзине.'];
+        }
+        
+        // Перенаправляем, чтобы избежать повторной отправки при F5
+        header("Location: /cart");
+        exit();
+    }
+}
+// --- Конец добавленного кода ---
+
 $cart = $_SESSION['cart'] ?? [];
 $cart_items = [];
 
@@ -47,7 +83,7 @@ if (!empty($cart)) {
             }
 
             $cart_items[] = [
-                'index' => $index,
+                'index' => $index, // --- Обновлено: Сохраняем индекс для действий ---
                 'product' => $product,
                 'quantity' => $item['quantity'],
                 'attributes' => $selected_attributes,
@@ -63,19 +99,17 @@ if (!empty($cart)) {
 $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
 ?>
 
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
+<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-6xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
-<div class="container mx-auto px-4 py-4 flex justify-between items-center">
-    <!-- Breadcrumbs -->
-    <div>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div class="w-full md:w-auto">
         <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
-    </div>
-    <!-- Кнопка "Назад" -->
-    <div>
+      </div>
+      <div class="w-full md:w-auto">
         <?php echo backButton(); ?>
+      </div>
     </div>
-</div>
 
     <div class="text-center mb-12">
       <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Ваша корзина</h1>
@@ -84,6 +118,16 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
       </p>
       <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
     </div>
+
+    <!-- Уведомления -->
+    <?php if (isset($_SESSION['notifications'])): ?>
+      <?php foreach ($_SESSION['notifications'] as $notification): ?>
+        <div class="mb-6 p-4 rounded-xl <?php echo $notification['type'] === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'; ?>">
+          <?php echo htmlspecialchars($notification['message']); ?>
+        </div>
+      <?php endforeach; ?>
+      <?php unset($_SESSION['notifications']); ?>
+    <?php endif; ?>
 
     <?php if (empty($cart)): ?>
       <div class="bg-white rounded-3xl shadow-2xl p-12 text-center">
@@ -132,36 +176,39 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                           <!-- Характеристики -->
                           <?php if (!empty($item['attributes'])): ?>
                             <div class="mb-3">
-                              <?php foreach ($item['attributes'] as $attribute): ?>
-                                <div class="flex items-center text-sm text-gray-600 mb-1">
-                                  <span class="font-medium"><?php echo htmlspecialchars($attribute['attribute_name']); ?>:</span>
-                                  <span class="ml-2"><?php echo htmlspecialchars($attribute['value']); ?></span>
-                                  <?php if ($attribute['price_modifier'] > 0): ?>
-                                    <span class="ml-2 text-[#17B890]">+<?php echo number_format($attribute['price_modifier'], 0, '', ' '); ?> руб.</span>
-                                  <?php endif; ?>
-                                </div>
-                              <?php endforeach; ?>
+                              <div class="text-sm text-gray-600 mb-1">Характеристики:</div>
+                              <div class="flex flex-wrap gap-2">
+                                <?php foreach ($item['attributes'] as $attribute): ?>
+                                  <span class="px-2 py-1 bg-[#DEE5E5] text-gray-700 text-xs rounded-full">
+                                    <?php echo htmlspecialchars($attribute['attribute_name']); ?>: 
+                                    <?php echo htmlspecialchars($attribute['value']); ?>
+                                    <?php if ($attribute['price_modifier'] > 0): ?>
+                                      <span class="text-[#17B890]">(+<?php echo number_format($attribute['price_modifier'], 0, '', ' '); ?> руб.)</span>
+                                    <?php endif; ?>
+                                  </span>
+                                <?php endforeach; ?>
+                              </div>
                             </div>
                           <?php endif; ?>
                         </div>
                         
                         <!-- Цена и количество -->
                         <div class="text-right">
-                          <div class="text-2xl font-bold text-[#118568] mb-2">
+                          <div class="text-2xl font-bold text-[#118568]">
                             <?php echo number_format($item['total_price'], 0, '', ' '); ?> <span class="text-lg">руб.</span>
                           </div>
-                          <div class="text-gray-500 text-sm">
+                          <div class="text-gray-600 text-sm mt-1">
                             <?php echo number_format($item['base_price'] + $item['total_attributes_price'], 0, '', ' '); ?> руб. × <?php echo $item['quantity']; ?> шт.
                           </div>
                         </div>
                       </div>
-                      
                       <!-- Контролы количества и удаления -->
                       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
                         <div class="flex items-center">
-                          <form action="/cart/update" method="POST" class="flex items-center">
+                          <!-- --- Исправлено: Форма изменения количества с ручным вводом --- -->
+                          <form action="" method="POST" class="flex items-center">
                             <input type="hidden" name="index" value="<?php echo $item['index']; ?>">
-                            
+
                             <button type="submit" name="action" value="decrease" 
                                     class="w-10 h-10 bg-[#DEE5E5] rounded-l-lg hover:bg-[#9DC5BB] transition-colors duration-300 flex items-center justify-center <?php echo $item['quantity'] <= 1 ? 'opacity-50 cursor-not-allowed' : ''; ?>"
                                     <?php echo $item['quantity'] <= 1 ? 'disabled' : ''; ?>>
@@ -169,12 +216,15 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                               </svg>
                             </button>
-                            
+
+                            <!-- --- Добавлено: Поле ввода количества с обработкой onchange --- -->
                             <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" 
                                    min="1" 
                                    class="w-16 h-10 text-center border-y border-gray-200 focus:outline-none font-bold text-lg"
-                                   onchange="this.form.submit()">
-                            
+                                   onchange="updateCartItemQuantity(this)"
+                                   data-index="<?php echo $item['index']; ?>">
+                            <!-- --- Конец добавленного кода --- -->
+
                             <button type="submit" name="action" value="increase" 
                                     class="w-10 h-10 bg-[#DEE5E5] rounded-r-lg hover:bg-[#9DC5BB] transition-colors duration-300 flex items-center justify-center">
                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -182,14 +232,15 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                               </svg>
                             </button>
                           </form>
+                          <!-- --- Конец исправленного кода --- -->
                         </div>
-                        
-                        <form action="/cart/remove" method="POST">
+
+                        <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этот товар из корзины?')" class="m-0">
                           <input type="hidden" name="index" value="<?php echo $item['index']; ?>">
-                          <button type="submit" 
-                                  class="flex items-center text-red-600 hover:text-red-800 transition-colors duration-300 group">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
+                          <button type="submit" name="action" value="remove" 
+                                  class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                             Удалить
                           </button>
@@ -210,24 +261,24 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
             
             <div class="space-y-4 mb-6">
               <div class="flex justify-between">
-                <span class="text-gray-600">Товары (<?php echo count($cart_items); ?>)</span>
+                <span class="text-gray-600">Товары (<?php echo array_sum(array_column($cart_items, 'quantity')); ?> шт.):</span>
                 <span class="font-medium"><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
               </div>
               
-              <div class="flex justify-between">
-                <span class="text-gray-600">Доставка</span>
+              <!--<div class="flex justify-between">
+                <span class="text-gray-600">Доставка:</span>
                 <span class="font-medium">Бесплатно</span>
               </div>
               
-              <div class="flex justify-between">
-                <span class="text-gray-600">Налоги</span>
+              <!--<div class="flex justify-between">
+                <span class="text-gray-600">Налоги:</span>
                 <span class="font-medium">0 руб.</span>
-              </div>
+              </div> -->
               
               <div class="border-t border-gray-200 pt-4">
-                <div class="flex justify-between text-xl font-bold text-gray-800">
-                  <span>Итого</span>
-                  <span><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
+                <div class="flex justify-between text-xl font-bold">
+                  <span>Итого к оплате:</span>
+                  <span class="text-[#118568]"><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
                 </div>
               </div>
             </div>
@@ -248,108 +299,47 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
   </div>
 </main>
 <script>
-  // Добавить в конец файла cart.php перед
-document.addEventListener('DOMContentLoaded', function() {
-    // Валидация количества товаров
-    const quantityInputs = document.querySelectorAll('input[name="quantity"]');
+function updateCartItemQuantity(inputElement) {
+    const index = inputElement.getAttribute('data-index');
+    const newQuantity = parseInt(inputElement.value) || 1;
     
-    quantityInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const maxQuantity = 1000; // Максимальное количество
-            const minQuantity = 1;    // Минимальное количество
-            
-            if (this.value > maxQuantity) {
-                this.value = maxQuantity;
-                showNotification('Максимальное количество товара: ' + maxQuantity, 'warning');
-            } else if (this.value < minQuantity) {
-                this.value = minQuantity;
-                showNotification('Минимальное количество товара: ' + minQuantity, 'warning');
-            }
-        });
-    });
-    
-    // Плавное удаление товаров из корзины
-    const removeForms = document.querySelectorAll('form[action="/cart/remove"]');
-    
-    removeForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const itemElement = this.closest('.hover\\:bg-gray-50');
-            if (itemElement) {
-                itemElement.style.opacity = '0.5';
-                itemElement.style.transition = 'opacity 0.3s ease';
-            }
-            
-            // AJAX запрос для удаления
-            fetch('/cart/remove', {
-                method: 'POST',
-                body: new FormData(this)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (itemElement) {
-                        itemElement.style.transition = 'all 0.3s ease';
-                        itemElement.style.height = '0';
-                        itemElement.style.opacity = '0';
-                        itemElement.style.margin = '0';
-                        itemElement.style.padding = '0';
-                        
-                        setTimeout(() => {
-                            itemElement.remove();
-                            updateCartSummary();
-                            showNotification('Товар удален из корзины', 'success');
-                        }, 300);
-                    }
-                } else {
-                    if (itemElement) {
-                        itemElement.style.opacity = '1';
-                    }
-                    showNotification('Ошибка при удалении товара', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (itemElement) {
-                    itemElement.style.opacity = '1';
-                }
-                showNotification('Произошла ошибка', 'error');
-            });
-        });
-    });
-    
-    function updateCartSummary() {
-        // Обновляем итоговую сумму и количество товаров
-        fetch('/api/cart-count')
-            .then(response => response.json())
-            .then(data => {
-                if (data.total_items === 0) {
-                    location.reload(); // Перезагружаем если корзина пуста
-                }
-            });
+    // Ограничиваем минимальное и максимальное значение
+    if (newQuantity < 1) {
+        inputElement.value = 1;
+        return;
+    }
+    if (newQuantity > 1000) {
+        inputElement.value = 1000;
+        return;
     }
     
-    function showNotification(message, type = 'info') {
-        // Создаем уведомление
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white ${
-            type === 'success' ? 'bg-green-500' : 
-            type === 'error' ? 'bg-red-500' : 
-            type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-        }`;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        
-        // Автоматическое скрытие через 3 секунды
-        setTimeout(() => {
-            notification.style.transition = 'opacity 0.5s ease';
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 500);
-        }, 3000);
-    }
-});
+    // Создаем форму для отправки
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '';
+    
+    // Добавляем скрытые поля
+    const indexInput = document.createElement('input');
+    indexInput.type = 'hidden';
+    indexInput.name = 'index';
+    indexInput.value = index;
+    form.appendChild(indexInput);
+    
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'update_quantity';
+    form.appendChild(actionInput);
+    
+    const quantityInput = document.createElement('input');
+    quantityInput.type = 'hidden';
+    quantityInput.name = 'quantity';
+    quantityInput.value = newQuantity;
+    form.appendChild(quantityInput);
+    
+    // Добавляем форму в документ и отправляем
+    document.body.appendChild(form);
+    form.submit();
+}
 </script>
-
 <?php include_once __DIR__ . '/includes/footer.php'; ?>

@@ -1,22 +1,18 @@
 <?php
 session_start();
+
+unset($_SESSION['applied_promo_code']);
+unset($_SESSION['promo_discount_amount']);
+
+$promo_data = $_SESSION['promo_data'] ?? null;
+$promo_discount = $promo_data['discount'] ?? 0;
+
 $pageTitle = "Оформление заказа";
 include_once __DIR__ . '/includes/header.php';
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
-foreach ($cart as $item) {
-    $stmt = $pdo->prepare("SELECT quantity FROM products WHERE id = ?");
-    $stmt->execute([$item['product_id']]);
-    $product = $stmt->fetch();
-    
-    if (!$product) {
-        $_SESSION['error'] = "Товар с ID {$item['product_id']} не найден";
-        header("Location: /cart");
-        exit();
-    }
-  }
 $cart = $_SESSION['cart'] ?? [];
 if (empty($cart)) {
     header("Location: /cart");
@@ -24,7 +20,6 @@ if (empty($cart)) {
 }
 
 if (!isset($_SESSION['user_id'])) {
-    // Если пользователь не авторизован, перенаправляем на страницу входа/регистрации
     $_SESSION['notifications'][] = ['type' => 'info', 'message' => 'Для оформления заказа необходимо войти или зарегистрироваться.'];
     header("Location: /login");
     exit();
@@ -89,16 +84,9 @@ foreach ($cart as $item) {
 }
 
 // Проверяем, был ли выбран срочный заказ
-$is_urgent = isset($_SESSION['is_urgent_order']) ? $_SESSION['is_urgent_order'] : false;
+$is_urgent = $_SESSION['is_urgent_order'] ?? false;
 $urgent_multiplier = $is_urgent ? 1.5 : 1;
-$final_total = $total_price * $urgent_multiplier;
-
-$applied_promo_code = $_SESSION['applied_promo_code'] ?? '';
-$promo_discount_amount = $_SESSION['promo_discount_amount'] ?? 0;
-$promo_code_error = $_SESSION['promo_code_error'] ?? '';
-
-// Очищаем сообщения из сессии после отображения
-unset($_SESSION['promo_code_error'], $_SESSION['promo_discount_amount']);
+$final_total = ($total_price * $urgent_multiplier) - $promo_discount;
 ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
@@ -207,17 +195,17 @@ unset($_SESSION['promo_code_error'], $_SESSION['promo_discount_amount']);
               </div>
               <?php endif; ?>
               
-              <?php if ($promo_discount_amount > 0): ?>
+              <?php if ($promo_discount > 0): ?>
               <div class="flex justify-between text-red-500">
                 <span class="font-medium">Скидка по промокоду:</span>
-                <span class="font-bold">-<?php echo number_format($promo_discount_amount, 0, '', ' '); ?> руб.</span>
+                <span class="font-bold">-<?php echo number_format($promo_discount, 0, '', ' '); ?> руб.</span>
               </div>
               <?php endif; ?>
               
               <div class="border-t border-[#DEE5E5] pt-4">
                 <div class="flex justify-between text-xl font-bold">
                   <span>Итого к оплате:</span>
-                  <span class="text-[#118568]"><?php echo number_format($final_total - $promo_discount_amount, 0, '', ' '); ?> руб.</span>
+                  <span class="text-[#118568]"><?php echo number_format($final_total, 0, '', ' '); ?> руб.</span>
                 </div>
               </div>
             </div>
@@ -344,27 +332,25 @@ unset($_SESSION['promo_code_error'], $_SESSION['promo_discount_amount']);
 
             <!-- Промокод -->
             <div class="p-4 bg-gray-50 rounded-2xl">
-              <label for="promo_code" class="block text-gray-700 font-medium mb-2">Промокод</label>
-              <div class="flex">
-                <input type="text" id="promo_code" name="promo_code" 
-                       value="<?php echo htmlspecialchars($applied_promo_code); ?>"
-                       class="flex-grow px-4 py-3 border-2 border-gray-200 rounded-l-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
-                       placeholder="Введите промокод">
-                <button type="button" id="apply_promo" 
-                        class="px-4 py-3 bg-[#118568] text-white rounded-r-lg hover:bg-[#0f755a] transition-colors duration-300">
-                  Применить
-                </button>
-              </div>
-              <div id="promo_message" class="mt-2 text-sm">
-                <?php if ($promo_code_error): ?>
-                  <span class="text-red-600"><?php echo htmlspecialchars($promo_code_error); ?></span>
-                <?php elseif ($applied_promo_code): ?>
-                  <span class="text-green-600">
-                    Промокод "<?php echo htmlspecialchars($applied_promo_code); ?>" применен! 
-                    Скидка: <?php echo number_format($promo_discount_amount, 0, '', ' '); ?> руб.
-                  </span>
-                <?php endif; ?>
-              </div>
+                <label for="promo_code" class="block text-gray-700 font-medium mb-2">Промокод</label>
+                <div class="flex">
+                    <input type="text" id="promo_code" name="promo_code" 
+                           value="<?php echo $promo_data['code'] ?? ''; ?>"
+                           class="flex-grow px-4 py-3 border-2 border-gray-200 rounded-l-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                           placeholder="Введите промокод">
+                    <button type="button" id="apply_promo" 
+                            class="px-4 py-3 bg-[#118568] text-white rounded-r-lg hover:bg-[#0f755a] transition-colors duration-300">
+                        Применить
+                    </button>
+                </div>
+                <div id="promo_message" class="mt-2 text-sm">
+                    <?php if ($promo_data): ?>
+                        <span class="text-green-600">
+                            Промокод "<?php echo $promo_data['code']; ?>" применен! 
+                            Скидка: <?php echo number_format($promo_discount, 0, '', ' '); ?> руб.
+                        </span>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <div class="pt-4 border-t border-[#DEE5E5]">
@@ -424,10 +410,7 @@ unset($_SESSION['promo_code_error'], $_SESSION['promo_discount_amount']);
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const urgentCheckbox = document.getElementById('is_urgent');
-    const applyPromoButton = document.getElementById('apply_promo');
-    const promoCodeInput = document.getElementById('promo_code');
-    const promoMessage = document.getElementById('promo_message');
-    
+
     if (urgentCheckbox) {
         urgentCheckbox.addEventListener('change', function() {
             // Отправляем AJAX-запрос для обновления состояния срочного заказа
@@ -453,38 +436,24 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+});
+document.getElementById('apply_promo').addEventListener('click', function() {
+    const promoCode = document.getElementById('promo_code').value.trim();
     
-    if (applyPromoButton) {
-        applyPromoButton.addEventListener('click', function() {
-            const promoCode = promoCodeInput.value.trim();
-            if (!promoCode) {
-                alert('Пожалуйста, введите промокод.');
-                return;
-            }
-            
-            // Отправляем AJAX-запрос для проверки промокода
-            const formData = new FormData();
-            formData.append('promo_code', promoCode);
-            
-            fetch('/ajax/check_promo_code.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Перезагружаем страницу для обновления итоговой суммы
-                    location.reload();
-                } else {
-                    promoMessage.innerHTML = '<span class="text-red-600">' + data.message + '</span>';
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                promoMessage.innerHTML = '<span class="text-red-600">Произошла ошибка при проверке промокода.</span>';
-            });
-        });
-    }
+    fetch('/ajax/apply_promo.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'promo_code=' + encodeURIComponent(promoCode)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            document.getElementById('promo_message').innerHTML = 
+                '<span class="text-red-600">' + data.message + '</span>';
+        }
+    });
 });
 </script>
 
