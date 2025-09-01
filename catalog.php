@@ -6,11 +6,14 @@ include_once __DIR__ . '/includes/header.php';
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
+
+
 // Получение параметров из GET-запроса
 $category_id = $_GET['category'] ?? null;
 $type = $_GET['type'] ?? 'product'; // По умолчанию показываем товары
 $sort = $_GET['sort'] ?? 'default'; // По умолчанию без сортировки
-
+$cat_stmt = $pdo->query("SELECT id, name FROM categories ORDER BY name ASC");
+$categories = $cat_stmt->fetchAll();
 // Формирование SQL-запроса
 $query = "SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.type = :type";
 $params = [':type' => $type];
@@ -126,7 +129,7 @@ function getProductMainImage($pdo, $product_id) {
     <?php else: ?>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         <?php foreach ($products as $product): ?>
-        <a href="/service?id=<?php echo $product['id']; ?>" class="group">
+        <a href="<?php echo $type === 'product' ? '/service?id='.$product['id'] : '/service?id='.$product['id'].'&type=service'; ?>" class="group">
           <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col">
             <?php
             // Получаем главное изображение товара

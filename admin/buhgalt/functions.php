@@ -1,20 +1,19 @@
 <?php
 // admin/buhgalt/functions.php
 
-function calculate_profit($income, $total_expense) {
-    return $income - $total_expense;
+function calculate_profit($income, $total_expense, $tax_amount = 0) {
+    return $income - ($total_expense + $tax_amount);
 }
 
 function get_order_profit($pdo, $order_accounting_id) {
-    $stmt = $pdo->prepare("SELECT income, total_expense FROM orders_accounting WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT income, total_expense, tax_amount FROM orders_accounting WHERE id = ?");
     $stmt->execute([$order_accounting_id]);
     $order = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($order) {
-        return calculate_profit($order['income'], $order['total_expense']);
+        return calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']);
     }
     return 0;
 }
-
 function get_total_income($pdo, $start_date = null, $end_date = null) {
     $sql = "SELECT SUM(income) as total FROM orders_accounting WHERE 1=1";
     $params = [];
@@ -23,7 +22,6 @@ function get_total_income($pdo, $start_date = null, $end_date = null) {
         $params[] = $start_date;
     }
     if ($end_date) {
-        // Предполагаем, что дата окончания включает весь день
         $sql .= " AND created_at < DATE_ADD(?, INTERVAL 1 DAY)";
         $params[] = $end_date;
     }
@@ -34,7 +32,7 @@ function get_total_income($pdo, $start_date = null, $end_date = null) {
 }
 
 function get_total_expense($pdo, $start_date = null, $end_date = null) {
-    $sql = "SELECT SUM(total_expense) as total FROM orders_accounting WHERE 1=1";
+    $sql = "SELECT SUM(total_expense + tax_amount) as total FROM orders_accounting WHERE 1=1";
     $params = [];
     if ($start_date) {
         $sql .= " AND created_at >= ?";
@@ -94,12 +92,10 @@ function get_orders_with_finances($pdo, $start_date = null, $end_date = null, $p
     
     $stmt = $pdo->prepare($sql);
     
-    // Привязываем обычные параметры
     foreach ($params as $key => $value) {
         $stmt->bindValue($key + 1, $value);
     }
     
-    // Привязываем LIMIT и OFFSET как целые числа
     $stmt->bindValue(count($params) + 1, $limit, PDO::PARAM_INT);
     $stmt->bindValue(count($params) + 2, $offset, PDO::PARAM_INT);
     
@@ -124,77 +120,136 @@ function get_total_orders_count($pdo, $start_date = null, $end_date = null) {
     return $result['total'] ?? 0;
 }
 
+/**
+ * ✅ Новый расчёт расходов: на основе product_expenses
+ */
 function calculate_estimated_expense($pdo, $order_id) {
     error_log("Starting calculate_estimated_expense for order_id: " . $order_id);
-    
-    // 1. Получаем ИТОГОВУЮ сумму заказа с промокодом из таблицы orders
-    $stmt_order = $pdo->prepare("SELECT total_price FROM orders WHERE id = ?");
-    $stmt_order->execute([$order_id]);
-    $order_total = $stmt_order->fetchColumn();
-    
-    error_log("Order total price (with promo): " . $order_total);
-    
-    // 2. Рассчитываем расходы как процент от итоговой суммы
-    // Настройте этот процент под ваш бизнес (30% - пример)
-    $expense_percentage = 0.30; // 30% - себестоимость материалов
-    
-    $total_estimated_expense = $order_total * $expense_percentage;
-    
-    $final_result = round($total_estimated_expense, 2);
-    error_log("Final estimated expense for order $order_id: $final_result ($expense_percentage% of $order_total)");
-    
-    return $final_result;
-}
 
+    $stmt = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+    $stmt->execute([$order_id]);
+    $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-function create_automatic_expense_record($pdo, $order_accounting_id, $estimated_expense, $description = "Автоматически рассчитанные расходы на материалы") {
-    if ($estimated_expense <= 0) {
-        error_log("INFO: Skipping automatic expense creation for order_accounting_id $order_accounting_id because estimated_expense is $estimated_expense.");
-        return false;
+    $total_expense = 0;
+
+    foreach ($items as $item) {
+        $stmt_exp = $pdo->prepare("
+            SELECT material_name, quantity_per_unit, cost_per_unit
+            FROM product_expenses
+            WHERE product_id = ?
+        ");
+        $stmt_exp->execute([$item['product_id']]);
+        $expenses = $stmt_exp->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($expenses as $exp) {
+            $qty = $exp['quantity_per_unit'] * $item['quantity'];
+            $cost = $exp['cost_per_unit'] * $qty;
+            $total_expense += $cost;
+        }
     }
 
+    $final_result = round($total_expense, 2);
+    error_log("Final estimated expense for order $order_id: $final_result");
+
+    return $final_result;
+}
+/**
+ * Получить значение настройки (например, налог)
+ */
+function get_setting(PDO $pdo, string $name, $default = null) {
+    $stmt = $pdo->prepare("SELECT value FROM settings WHERE name = ?");
+    $stmt->execute([$name]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? $row['value'] : $default;
+}
+
+/**
+ * Установить значение настройки
+ */
+function set_setting(PDO $pdo, string $name, $value): bool {
+    $stmt = $pdo->prepare("
+        INSERT INTO settings (name, value) VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE value = VALUES(value)
+    ");
+    return $stmt->execute([$name, $value]);
+}
+
+/**
+ * Рассчитать налог с заказа и записать в orders_accounting
+ */
+function calculate_and_save_tax(PDO $pdo, int $order_accounting_id, float $income): float {
+    $tax_rate = (float) get_setting($pdo, 'tax_rate', 20.0); // % по умолчанию 20
+    $tax_amount = round($income * ($tax_rate / 100), 2);
+
+    $stmt = $pdo->prepare("UPDATE orders_accounting SET tax_amount = ? WHERE id = ?");
+    $stmt->execute([$tax_amount, $order_accounting_id]);
+
+    return $tax_amount;
+}
+/**
+ * ✅ Создание детальных автоматических расходов по заказу
+ */
+function create_automatic_expense_record($pdo, $order_accounting_id, $order_id, $description = "Автоматически рассчитанные расходы по материалам") {
     try {
-        // Проверим, существует ли категория "Автоматические расходы" или создадим её
-        $stmt_check_cat = $pdo->prepare("SELECT id FROM expenses_categories WHERE name = ?");
-        $stmt_check_cat->execute(['Автоматические расходы']);
-        $category = $stmt_check_cat->fetch(PDO::FETCH_ASSOC);
-        
-        $category_id = null;
-        if ($category) {
-            $category_id = $category['id'];
-        } else {
-            // Создаем категорию, если её нет
-            $stmt_create_cat = $pdo->prepare("INSERT INTO expenses_categories (name) VALUES (?)");
-            $stmt_create_cat->execute(['Автоматические расходы']);
-            $category_id = $pdo->lastInsertId();
-            error_log("INFO: Created new expense category 'Автоматические расходы' with ID $category_id.");
+        // Удаляем старые расходы по этому заказу
+        $stmt = $pdo->prepare("DELETE FROM order_expenses WHERE order_accounting_id = ?");
+        $stmt->execute([$order_accounting_id]);
+
+        $stmt_items = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+        $stmt_items->execute([$order_id]);
+        $items = $stmt_items->fetchAll(PDO::FETCH_ASSOC);
+
+        $total_expense = 0;
+
+        foreach ($items as $item) {
+            $stmt_exp = $pdo->prepare("
+                SELECT material_name, quantity_per_unit, unit, cost_per_unit
+                FROM product_expenses
+                WHERE product_id = ?
+            ");
+            $stmt_exp->execute([$item['product_id']]);
+            $expenses = $stmt_exp->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($expenses as $exp) {
+                $material_name = $exp['material_name'];
+                $unit = $exp['unit'] ?? '';
+                $total_qty = $exp['quantity_per_unit'] * $item['quantity'];
+                $cost_per_unit = $exp['cost_per_unit'] ?? 0;
+                $total_cost = $total_qty * $cost_per_unit;
+
+                $total_expense += $total_cost;
+
+                $stmt_insert = $pdo->prepare("
+                    INSERT INTO order_expenses
+                        (order_accounting_id, material_name, quantity, unit, cost_per_unit, total_cost, amount, description, expense_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $stmt_insert->execute([
+                    $order_accounting_id,
+                    $material_name,
+                    $total_qty,
+                    $unit,
+                    $cost_per_unit,
+                    $total_cost,
+                    $total_cost,
+                    "Автоматический расход: $material_name"
+                ]);
+            }
         }
-        
-        // Вставляем запись в order_expenses
-        $stmt_insert = $pdo->prepare("
-            INSERT INTO order_expenses (order_accounting_id, category_id, amount, description, expense_date) 
-            VALUES (?, ?, ?, ?, NOW())
+
+        // Обновляем orders_accounting
+        $stmt_update = $pdo->prepare("
+            UPDATE orders_accounting
+            SET estimated_expense = ?, total_expense = ?
+            WHERE id = ?
         ");
-        $stmt_insert->execute([$order_accounting_id, $category_id, $estimated_expense, $description]);
-        
-        // Обновляем total_expense в orders_accounting
-        // Сначала получим текущее значение total_expense
-        $stmt_get_current = $pdo->prepare("SELECT total_expense FROM orders_accounting WHERE id = ?");
-        $stmt_get_current->execute([$order_accounting_id]);
-        $current_total_expense = $stmt_get_current->fetchColumn() ?? 0;
-        
-        $new_total_expense = $current_total_expense + $estimated_expense;
-        
-        $stmt_update_accounting = $pdo->prepare("UPDATE orders_accounting SET total_expense = ? WHERE id = ?");
-        $stmt_update_accounting->execute([$new_total_expense, $order_accounting_id]);
-        
-        error_log("SUCCESS: Automatic expense record created for order_accounting_id $order_accounting_id. Amount: $estimated_expense. New total_expense: $new_total_expense.");
+        $stmt_update->execute([$total_expense, $total_expense, $order_accounting_id]);
+
+        error_log("SUCCESS: Auto expenses created for order_accounting_id $order_accounting_id. Total: $total_expense");
         return true;
-        
     } catch (Exception $e) {
         error_log("ERROR in create_automatic_expense_record: " . $e->getMessage());
         return false;
     }
 }
-
 ?>

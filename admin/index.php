@@ -359,6 +359,18 @@ $monthly_orders = array_reverse($stmt->fetchAll());
           </div>
           <p class="text-gray-600 text-sm">Финансовые отчеты и учет</p>
         </a>
+
+        <a href="/admin/tax_settings" class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Налоги</h3>
+          </div>
+          <p class="text-gray-600 text-sm">Настройка налога</p>
+        </a>
       </div>
     </div>
 
@@ -381,7 +393,7 @@ $monthly_orders = array_reverse($stmt->fetchAll());
         </div>
         <div class="p-4 bg-gray-50 rounded-lg">
           <div class="text-sm text-gray-600 mb-1">Версия системы</div>
-          <div class="font-bold text-gray-800">v1.2.0</div>
+          <div class="font-bold text-gray-800">v1.7.0</div>
         </div>
       </div>
     </div>

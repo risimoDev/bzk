@@ -86,6 +86,29 @@ include_once __DIR__ . '/session_check.php';
     #mobile-menu.open {
       display: block;
     }
+
+    /* Цвет стрелок */
+    .swiper-button-next::after,
+    .swiper-button-prev::after {
+      color: #118568; /* зелёный */
+      font-size: 24px; /* размер иконки */
+    }
+
+    /* При наведении */
+    .swiper-button-next:hover::after,
+    .swiper-button-prev:hover::after {
+      color: #0f755a; /* более тёмный оттенок */
+    }
+    /* Базовый цвет точек */
+    .swiper-pagination-bullet {
+      background-color: #DEE5E5;
+      opacity: 1; /* чтобы не были полупрозрачными */
+    }
+
+    /* Активная точка */
+    .swiper-pagination-bullet-active {
+      background-color: #118568 !important; /* зелёный */
+    }
   </style>
 </head>
 

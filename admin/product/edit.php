@@ -37,12 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = !empty($_POST['category_id']) ? $_POST['category_id'] : null;
     $type = $_POST['type'] ?? 'product';
     $is_popular = isset($_POST['is_popular']) ? 1 : 0;
-    $discount = $_POST['discount'] ?? 0;
+    
+    // --- Добавлено: Получение данных о кратности и минимальном количестве ---
+    $min_quantity = intval($_POST['min_quantity'] ?? 1);
+    $multiplicity = intval($_POST['multiplicity'] ?? 1);
+    $unit = trim($_POST['unit'] ?? 'шт.');
+    // --- Конец добавленного кода ---
 
     if (!empty($name) && is_numeric($base_price) && $base_price >= 0) {
-        // Обновление данных товара
-        $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, base_price = ?, is_popular = ?, category_id = ?, type = ?, discount = ? WHERE id = ?");
-        $result = $stmt->execute([$name, $description, $base_price, $is_popular, $category_id, $type, $discount, $product_id]);
+        $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, base_price = ?, category_id = ?, type = ?, is_popular = ?, min_quantity = ?, multiplicity = ?, unit = ? WHERE id = ?");
+        $result = $stmt->execute([$name, $description, $base_price, $category_id, $type, $is_popular, $min_quantity, $multiplicity, $unit, $product_id]);
         
         if ($result) {
             $_SESSION['notifications'][] = [
@@ -184,7 +188,30 @@ $orders_count = $stmt_orders->fetchColumn();
                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
                        placeholder="0.00" min="0" required>
               </div>
-              
+              <div>
+                <label for="min_quantity" class="block text-gray-700 font-medium mb-2">Минимальное количество *</label>
+                <input type="number" id="min_quantity" name="min_quantity" 
+                       value="<?php echo htmlspecialchars($product['min_quantity'] ?? 1); ?>"
+                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                       placeholder="1" min="1" required>
+              </div>
+
+              <div>
+                <label for="multiplicity" class="block text-gray-700 font-medium mb-2">Кратность *</label>
+                <input type="number" id="multiplicity" name="multiplicity" 
+                       value="<?php echo htmlspecialchars($product['multiplicity'] ?? 1); ?>"
+                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                       placeholder="1" min="1" required>
+              </div>
+              <!-- --- Конец добавленного кода --- -->
+
+              <div>
+                <label for="unit" class="block text-gray-700 font-medium mb-2">Единица измерения</label>
+                <input type="text" id="unit" name="unit" 
+                       value="<?php echo htmlspecialchars($product['unit'] ?? 'шт.'); ?>"
+                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                       placeholder="шт.">
+              </div>
               <div>
                 <label for="category_id" class="block text-gray-700 font-medium mb-2">Категория</label>
                 <select id="category_id" name="category_id" 

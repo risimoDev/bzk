@@ -35,7 +35,16 @@ if (!$end_date) {
 // Статистика
 $total_income = get_total_income($pdo, $start_date, $end_date);
 $total_expense = get_total_expense($pdo, $start_date, $end_date);
-$total_profit = calculate_profit($total_income, $total_expense);
+// Сумма налогов за период
+$stmt = $pdo->prepare("SELECT SUM(tax_amount) as total_tax FROM orders_accounting WHERE created_at BETWEEN ? AND ?");
+$stmt->execute([$start_date, date('Y-m-d 23:59:59', strtotime($end_date))]);
+$total_tax = $stmt->fetchColumn() ?? 0;
+
+// Общие расходы теперь = расходы + налоги
+$total_expense_with_tax = $total_expense + $total_tax;
+
+// Прибыль учитывает налог
+$total_profit = calculate_profit($total_income, $total_expense, $total_tax);
 
 // Расходы по категориям
 $expenses_by_category = get_expenses_by_category($pdo, $start_date, $end_date);
@@ -98,7 +107,7 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
     </div>
 
     <!-- Сводка -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
         <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mx-auto mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,6 +127,16 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
         <div class="text-2xl font-bold text-red-500 mb-2"><?php echo number_format($total_expense, 2, '.', ' '); ?> ₽</div>
         <div class="text-gray-600">Общий расход</div>
       </div>
+
+      <div class="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
+        <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="text-2xl font-bold text-yellow-600 mb-2"><?php echo number_format($total_tax, 2, '.', ' '); ?> ₽</div>
+        <div class="text-gray-600">Налоги</div>
+      </div>
       
       <div class="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
         <div class="w-12 h-12 <?php echo $total_profit >= 0 ? 'bg-[#17B890]' : 'bg-red-500'; ?> rounded-full flex items-center justify-center mx-auto mb-4">
@@ -128,6 +147,7 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
         <div class="text-2xl font-bold <?php echo $total_profit >= 0 ? 'text-[#17B890]' : 'text-red-500'; ?> mb-2"><?php echo number_format($total_profit, 2, '.', ' '); ?> ₽</div>
         <div class="text-gray-600">Чистая прибыль</div>
       </div>
+
     </div>
 
     <!-- Расходы по категориям -->
@@ -178,6 +198,7 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
               <th class="py-4 px-6 text-left">Дата</th>
               <th class="py-4 px-6 text-left">Доход</th>
               <th class="py-4 px-6 text-left">Расход</th>
+              <th class="py-4 px-6 text-left">Налог</th>
               <th class="py-4 px-6 text-left">Прибыль</th>
               <th class="py-4 px-6 text-left">Статус</th>
               <th class="py-4 px-6 text-left">Действия</th>
@@ -217,9 +238,11 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
                   <td class="py-4 px-6 text-gray-600 text-sm"><?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?></td>
                   <td class="py-4 px-6 font-bold text-[#118568]"><?php echo number_format($order['income'], 2, '.', ' '); ?> ₽</td>
                   <td class="py-4 px-6 font-medium text-red-500"><?php echo number_format($order['total_expense'], 2, '.', ' '); ?> ₽</td>
-                  <td class="py-4 px-6 font-bold <?php echo (calculate_profit($order['income'], $order['total_expense']) >= 0) ? 'text-[#17B890]' : 'text-red-500'; ?>">
-                    <?php echo number_format(calculate_profit($order['income'], $order['total_expense']), 2, '.', ' '); ?> ₽
+                  <td class="py-4 px-6 font-bold"><?php echo number_format($order['tax_amount'], 2, '.', ' '); ?> ₽</td>
+                  <td class="py-4 px-6 font-bold <?php echo (calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']) >= 0) ? 'text-[#17B890]' : 'text-red-500'; ?>">
+                    <?php echo number_format(calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']), 2, '.', ' '); ?> ₽
                   </td>
+
                   <td class="py-4 px-6">
                     <span class="px-2 py-1 text-xs rounded-full 
                         <?php 

@@ -34,10 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $category_id = !empty($_POST['category_id']) ? $_POST['category_id'] : null;
           $type = $_POST['type'] ?? 'product';
           $is_popular = isset($_POST['is_popular']) ? 1 : 0;
+          
+          // --- Добавлено: Получение данных о кратности и минимальном количестве ---
+          $min_quantity = intval($_POST['min_quantity'] ?? 1);
+          $multiplicity = intval($_POST['multiplicity'] ?? 1);
+          $unit = trim($_POST['unit'] ?? 'шт.');
+          // --- Конец добавленного кода ---
 
           if (!empty($name) && is_numeric($base_price) && $base_price >= 0) {
-              $stmt = $pdo->prepare("INSERT INTO products (name, description, base_price, category_id, type, is_popular) VALUES (?, ?, ?, ?, ?, ?)");
-              $result = $stmt->execute([$name, $description, $base_price, $category_id, $type, $is_popular]);
+              $stmt = $pdo->prepare("INSERT INTO products (name, description, base_price, category_id, type, is_popular, min_quantity, multiplicity, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              $result = $stmt->execute([$name, $description, $base_price, $category_id, $type, $is_popular, $min_quantity, $multiplicity, $unit]);
               
               if ($result) {
                   $_SESSION['notifications'][] = [
@@ -184,7 +190,7 @@ $products_with_images = $pdo->query("
     <!-- Форма добавления товара -->
     <div class="bg-white rounded-3xl shadow-2xl p-6 mb-12">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Добавить новый товар</h2>
-      
+        
       <form action="" method="POST" class="space-y-6">
         <input type="hidden" name="action" value="add_product">
         
@@ -203,6 +209,32 @@ $products_with_images = $pdo->query("
                    placeholder="0.00" min="0" required>
           </div>
           
+          <!-- --- Добавлено: Поля для кратности и минимального количества --- -->
+          <div>
+            <label for="min_quantity" class="block text-gray-700 font-medium mb-2">Минимальное количество *</label>
+            <input type="number" id="min_quantity" name="min_quantity" 
+                   value="1"
+                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                   placeholder="1" min="1" required>
+          </div>
+          
+          <div>
+            <label for="multiplicity" class="block text-gray-700 font-medium mb-2">Кратность *</label>
+            <input type="number" id="multiplicity" name="multiplicity" 
+                   value="1"
+                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                   placeholder="1" min="1" required>
+          </div>
+          <!-- --- Конец добавленного кода --- -->
+          
+          <div>
+            <label for="unit" class="block text-gray-700 font-medium mb-2">Единица измерения</label>
+            <input type="text" id="unit" name="unit" 
+                   value="шт."
+                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                   placeholder="шт.">
+          </div>
+          
           <div>
             <label for="category_id" class="block text-gray-700 font-medium mb-2">Категория</label>
             <select id="category_id" name="category_id" 
@@ -215,7 +247,7 @@ $products_with_images = $pdo->query("
               <?php endforeach; ?>
             </select>
           </div>
-          
+              
           <div>
             <label for="type" class="block text-gray-700 font-medium mb-2">Тип</label>
             <select id="type" name="type" 
@@ -225,20 +257,20 @@ $products_with_images = $pdo->query("
             </select>
           </div>
         </div>
-        
+              
         <div>
           <label for="description" class="block text-gray-700 font-medium mb-2">Описание товара</label>
           <textarea id="description" name="description" rows="3" 
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
                     placeholder="Введите описание товара"></textarea>
         </div>
-        
+              
         <div class="flex items-center">
           <input type="checkbox" id="is_popular" name="is_popular" value="1" 
                  class="rounded border-gray-300 text-[#118568] focus:ring-[#17B890] w-5 h-5">
           <label for="is_popular" class="ml-2 text-gray-700 font-medium">Популярный товар</label>
         </div>
-        
+              
         <button type="submit" 
                 class="w-full bg-gradient-to-r from-[#118568] to-[#0f755a] text-white py-4 rounded-xl hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
           Добавить товар

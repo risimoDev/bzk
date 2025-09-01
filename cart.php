@@ -13,23 +13,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $index = intval($_POST['index']);
         
         if (isset($_SESSION['cart'][$index])) {
-            if ($action === 'increase') {
-                $_SESSION['cart'][$index]['quantity']++;
-                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара увеличено.'];
-            } elseif ($action === 'decrease' && $_SESSION['cart'][$index]['quantity'] > 1) {
-                $_SESSION['cart'][$index]['quantity']--;
-                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара уменьшено.'];
-            } elseif ($action === 'remove') {
-                unset($_SESSION['cart'][$index]);
-                // Переиндексируем массив, чтобы избежать "дыр" в ключах
-                $_SESSION['cart'] = array_values($_SESSION['cart']);
-                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Товар удален из корзины.'];
-            } elseif ($action === 'update_quantity') {
-                // --- Добавлено: Обработка изменения количества через ручной ввод ---
-                $new_quantity = max(1, intval($_POST['quantity'] ?? 1));
-                $_SESSION['cart'][$index]['quantity'] = $new_quantity;
-                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара обновлено.'];
-                // --- Конец добавленного кода ---
+                $product_id = $_SESSION['cart'][$index]['product_id'];
+                $stmt_step = $pdo->prepare("SELECT multiplicity FROM products WHERE id = ?");
+                $stmt_step->execute([$product_id]);
+                $step = (int)$stmt_step->fetchColumn() ?: 1;
+
+                if ($action === 'increase') {
+                    $_SESSION['cart'][$index]['quantity'] += $step;
+                    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара увеличено.'];
+                } elseif ($action === 'decrease' && $_SESSION['cart'][$index]['quantity'] > $step) {
+                    $_SESSION['cart'][$index]['quantity'] = max($step, $_SESSION['cart'][$index]['quantity'] - $step);
+                    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара уменьшено.'];
+                } elseif ($action === 'remove') {
+                    unset($_SESSION['cart'][$index]);
+                    $_SESSION['cart'] = array_values($_SESSION['cart']);
+                    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Товар удален из корзины.'];
+                } elseif ($action === 'update_quantity') {
+                    $new_quantity = max($step, intval($_POST['quantity'] ?? $step));
+                    // округляем вниз до ближайшего кратного
+                    $new_quantity = floor($new_quantity / $step) * $step;
+                    if ($new_quantity < $step) $new_quantity = $step;
+                    $_SESSION['cart'][$index]['quantity'] = $new_quantity;
+                    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Количество товара обновлено.'];
+                }
             }
         } else {
             $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Товар не найден в корзине.'];
@@ -38,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Перенаправляем, чтобы избежать повторной отправки при F5
         header("Location: /cart");
         exit();
-    }
 }
 // --- Конец добавленного кода ---
 
@@ -83,14 +88,15 @@ if (!empty($cart)) {
             }
 
             $cart_items[] = [
-                'index' => $index, // --- Обновлено: Сохраняем индекс для действий ---
+                'index' => $index,
                 'product' => $product,
                 'quantity' => $item['quantity'],
                 'attributes' => $selected_attributes,
                 'base_price' => $base_price,
                 'total_attributes_price' => $total_attributes_price,
                 'total_price' => $item_total_price,
-                'main_image' => $main_image
+                'main_image' => $main_image,
+                'step' => (int)($product['quantity_step'] ?? 1) // --- Кратность ---
             ];
         }
     }
@@ -218,11 +224,14 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                             </button>
 
                             <!-- --- Добавлено: Поле ввода количества с обработкой onchange --- -->
-                            <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" 
-                                   min="1" 
-                                   class="w-16 h-10 text-center border-y border-gray-200 focus:outline-none font-bold text-lg"
-                                   onchange="updateCartItemQuantity(this)"
-                                   data-index="<?php echo $item['index']; ?>">
+                                                        <input type="number" name="quantity"
+                                  value="<?php echo $item['quantity']; ?>"
+                                  min="<?php echo $item['step']; ?>"
+                                  step="<?php echo $item['step']; ?>"
+                                  class="w-16 h-10 text-center border-y border-gray-200 focus:outline-none font-bold text-lg"
+                                  onchange="updateCartItemQuantity(this)"
+                                  data-index="<?php echo $item['index']; ?>"
+                                  data-step="<?php echo $item['step']; ?>">
                             <!-- --- Конец добавленного кода --- -->
 
                             <button type="submit" name="action" value="increase" 
@@ -301,43 +310,39 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
 <script>
 function updateCartItemQuantity(inputElement) {
     const index = inputElement.getAttribute('data-index');
-    const newQuantity = parseInt(inputElement.value) || 1;
-    
-    // Ограничиваем минимальное и максимальное значение
-    if (newQuantity < 1) {
-        inputElement.value = 1;
-        return;
-    }
-    if (newQuantity > 1000) {
-        inputElement.value = 1000;
-        return;
-    }
-    
+    const step = parseInt(inputElement.getAttribute('data-step')) || 1;
+    let newQuantity = parseInt(inputElement.value) || step;
+
+    // Округляем до кратности
+    newQuantity = Math.max(step, Math.round(newQuantity / step) * step);
+
+    if (newQuantity > 1000) newQuantity = 1000;
+
+    inputElement.value = newQuantity;
+
     // Создаем форму для отправки
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '';
-    
-    // Добавляем скрытые поля
+
     const indexInput = document.createElement('input');
     indexInput.type = 'hidden';
     indexInput.name = 'index';
     indexInput.value = index;
     form.appendChild(indexInput);
-    
+
     const actionInput = document.createElement('input');
     actionInput.type = 'hidden';
     actionInput.name = 'action';
     actionInput.value = 'update_quantity';
     form.appendChild(actionInput);
-    
+
     const quantityInput = document.createElement('input');
     quantityInput.type = 'hidden';
     quantityInput.name = 'quantity';
     quantityInput.value = newQuantity;
     form.appendChild(quantityInput);
-    
-    // Добавляем форму в документ и отправляем
+
     document.body.appendChild(form);
     form.submit();
 }

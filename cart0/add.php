@@ -1,49 +1,64 @@
 <?php
 session_start();
+require_once __DIR__ . '/../includes/db.php';
 
-// Подключение к базе данных
-include_once('../includes/db.php');
+// CSRF (простейшая проверка)
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: /catalog");
+    exit();
+}
 
-$product_id = $_POST['product_id'] ?? null;
-$quantity = $_POST['quantity'] ?? 1;
+$product_id = (int)($_POST['product_id'] ?? 0);
+$quantity = max(1, (int)($_POST['quantity'] ?? 1));
 $attributes = $_POST['attributes'] ?? [];
 
-if (!$product_id || !$quantity || empty($attributes)) {
-    header("Location: /catalog");
-    exit();
-}
-
-// Получение информации о товаре
+// Получаем товар
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->execute([$product_id]);
-$product = $stmt->fetch(PDO::FETCH_ASSOC);
+$product = $stmt->fetch();
 
 if (!$product) {
-    header("Location: /catalog");
+    header("Location: /catalog?error=product_not_found");
     exit();
 }
 
-// Вычисление стоимости с учетом характеристик
+// Считаем цену
 $total_price = $product['base_price'] * $quantity;
-foreach ($attributes as $attribute_id => $value_id) {
-    $stmt = $pdo->prepare("SELECT price_modifier FROM attribute_values WHERE id = ?");
-    $stmt->execute([$value_id]);
-    $modifier = $stmt->fetchColumn();
-    $total_price += $modifier * $quantity;
+
+if (!empty($attributes)) {
+    foreach ($attributes as $value_id) {
+        $stmt = $pdo->prepare("SELECT price_modifier FROM attribute_values WHERE id = ?");
+        $stmt->execute([$value_id]);
+        $modifier = $stmt->fetchColumn();
+        $total_price += ($modifier ?? 0) * $quantity;
+    }
 }
 
-// Добавление товара в корзину
+// Корзина
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-$_SESSION['cart'][] = [
-    'product_id' => $product_id,
-    'quantity' => $quantity,
-    'attributes' => $attributes,
-    'total_price' => $total_price,
-];
+// Если товар с теми же атрибутами уже есть → увеличиваем количество
+$found = false;
+foreach ($_SESSION['cart'] as &$item) {
+    if ($item['product_id'] == $product_id && $item['attributes'] == $attributes) {
+        $item['quantity'] += $quantity;
+        $item['total_price'] += $total_price;
+        $found = true;
+        break;
+    }
+}
+unset($item);
+
+if (!$found) {
+    $_SESSION['cart'][] = [
+        'product_id' => $product_id,
+        'quantity' => $quantity,
+        'attributes' => $attributes,
+        'total_price' => $total_price,
+    ];
+}
 
 header("Location: /cart");
 exit();
-?>
