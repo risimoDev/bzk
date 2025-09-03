@@ -193,22 +193,46 @@ function get_total_general_expenses($pdo, $start_date = null, $end_date = null) 
 /**
  * ✅ Новый расчёт расходов: на основе product_expenses
  */
-function calculate_estimated_expense(PDO $pdo, int $order_id): float {
-    $stmt = $pdo->prepare("
-        SELECT oi.quantity, pm.quantity_per_unit, m.cost_per_unit
-        FROM order_items oi
-        JOIN product_materials pm ON oi.product_id = pm.product_id
-        JOIN materials m ON pm.material_id = m.id
-        WHERE oi.order_id = ?
-    ");
-    $stmt->execute([$order_id]);
+function calculate_estimated_expense(PDO $pdo, int $order_id, string $source = 'site'): float {
+    $total_expense = 0;
 
-    $total_expense = 0.0;
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $q = (float)$row['quantity'];
-        $per_unit = (float)$row['quantity_per_unit'];
-        $cost = (float)$row['cost_per_unit'];
-        $total_expense += $q * $per_unit * $cost;
+    if ($source === 'site') {
+        // Товары из обычных заказов
+        $stmt = $pdo->prepare("
+            SELECT oi.product_id, oi.quantity
+            FROM order_items oi
+            WHERE oi.order_id = ?
+        ");
+        $stmt->execute([$order_id]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } elseif ($source === 'external') {
+        // Товары из внешних заказов
+        $stmt = $pdo->prepare("
+            SELECT eoi.product_id, eoi.quantity
+            FROM external_order_items eoi
+            WHERE eoi.external_order_id = ?
+        ");
+        $stmt->execute([$order_id]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        return 0;
+    }
+
+    // Считаем себестоимость по расходникам
+    foreach ($items as $item) {
+        $stmt = $pdo->prepare("
+            SELECT pm.quantity_per_unit, m.cost_per_unit
+            FROM product_materials pm
+            JOIN materials m ON pm.material_id = m.id
+            WHERE pm.product_id = ?
+        ");
+        $stmt->execute([$item['product_id']]);
+        $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($materials as $mat) {
+            $total_expense += $mat['quantity_per_unit'] * $mat['cost_per_unit'] * $item['quantity'];
+        }
     }
 
     return round($total_expense, 2);

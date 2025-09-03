@@ -154,6 +154,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
   header("Location: " . $_SERVER['REQUEST_URI']);
   exit();
 }
+// Получаем запись в бухгалтерии
+$stmt = $pdo->prepare("SELECT id, status FROM orders_accounting WHERE order_id = ?");
+$stmt->execute([$order_id]);
+$accounting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Обработка изменения статуса оплаты
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_payment_status'])) {
+    $new_status = $_POST['payment_status'] ?? 'unpaid';
+    if ($accounting) {
+        $stmt = $pdo->prepare("UPDATE orders_accounting SET status = ? WHERE id = ?");
+        $stmt->execute([$new_status, $accounting['id']]);
+        $accounting['status'] = $new_status;
+
+        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Статус оплаты успешно изменен.'];
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
 
 ?>
 
@@ -287,6 +305,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
                     </svg>
                     Финансовая информация
                 </h3>
+                <div class="mt-4 pb-2">
+                  <form method="POST" class="flex items-center gap-2">
+                    <input type="hidden" name="update_payment_status" value="1">
+                    <label for="payment_status" class="font-medium text-gray-700">Оплата:</label>
+                    <select name="payment_status" id="payment_status" onchange="this.form.submit()" 
+                            class="rounded-lg border-gray-300 focus:border-[#118568] focus:ring-[#17B890]">
+                      <option value="unpaid" <?php echo ($accounting['status'] ?? '') === 'unpaid' ? 'selected' : ''; ?>>Не оплачен</option>
+                      <option value="partial" <?php echo ($accounting['status'] ?? '') === 'partial' ? 'selected' : ''; ?>>Частично</option>
+                      <option value="paid" <?php echo ($accounting['status'] ?? '') === 'paid' ? 'selected' : ''; ?>>Оплачен</option>
+                    </select>
+                  </form>
+                </div>
                 <div class="space-y-2">
                     <?php 
                     // Извлекаем информацию из contact_info

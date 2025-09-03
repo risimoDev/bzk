@@ -1,0 +1,1 @@
+[03-Sep-2025 20:55:29 Europe/Moscow] Ошибка внешнего заказа: SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row: a foreign key constraint fails (`shop`.`orders_accounting`, CONSTRAINT `orders_accounting_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE)
