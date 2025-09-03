@@ -58,7 +58,13 @@ RewriteRule ^admin/buhgalt/index$ admin/buhgalt/index.php [L,QSA]
 RewriteRule ^admin/buhgalt/add_external_order$ admin/buhgalt/add_external_order.php [L,QSA]
 RewriteRule ^admin/buhgalt/add_payment$ admin/buhgalt/add_payment.php [L,QSA]
 RewriteRule ^admin/buhgalt/add_expense$ admin/buhgalt/add_expense.php [L,QSA]
+RewriteRule ^admin/buhgalt/add_general_expense$ admin/buhgalt/add_general_expense.php [L,QSA]
 RewriteRule ^admin/orderform$ admin/order_form.php [L,QSA]
+RewriteRule ^admin/materials$ admin/materials/index.php [L,QSA]
+RewriteRule ^admin/materials/add$ admin/materials/add.php [L,QSA]
+RewriteRule ^admin/materials/edit$ admin/materials/edit.php [L,QSA]
+RewriteRule ^admin/materials/movements$ admin/materials/movements.php [L,QSA]
+RewriteRule ^admin/materials/movementadd$ admin/materials/movement_add.php [L,QSA]
 
 # Личный кабинет
 RewriteRule ^client/dashboard$ client/dashboard.php [L,QSA]

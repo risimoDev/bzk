@@ -5,6 +5,8 @@ require_once __DIR__ . '/../includes/db.php';
 $functions_path = __DIR__ . '/../admin/buhgalt/functions.php';
 if (file_exists($functions_path)) {
     require_once $functions_path;
+} else {
+    error_log("process.php: functions.php not found at $functions_path");
 }
 
 $cart = $_SESSION['cart'] ?? [];
@@ -19,19 +21,14 @@ $phone = trim($_POST['phone'] ?? '');
 $shipping_address = trim($_POST['shipping_address'] ?? '');
 $comment = trim($_POST['comment'] ?? '');
 
-if (
-    !$name ||
-    !filter_var($email, FILTER_VALIDATE_EMAIL) ||
-    !preg_match('/^[0-9\-\+\s]{6,20}$/', $phone) ||
-    !$shipping_address
-) {
+if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^[0-9\-\+\s]{6,20}$/', $phone) || !$shipping_address) {
     header("Location: /checkout?error=invalid_fields");
     exit();
 }
 
 $is_urgent = isset($_POST['is_urgent']) && $_POST['is_urgent'] == '1';
 $promo_data = $_SESSION['promo_data'] ?? null;
-$promo_discount = $promo_data['discount'] ?? 0;
+$promo_discount = floatval($promo_data['discount'] ?? 0);
 
 $user_id = $_SESSION['user_id'] ?? null;
 $original_total_price = array_sum(array_column($cart, 'total_price'));
@@ -103,11 +100,12 @@ try {
         $stmt_update->execute([$promo_data['code']]);
     }
 
-    // Бухгалтерия
+    // Бухгалтерия — создаём запись в orders_accounting
     $stmt_accounting = $pdo->prepare("
-        INSERT INTO orders_accounting (source, order_id, client_name, income, total_expense, estimated_expense, status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO orders_accounting (source, order_id, client_name, income, total_expense, estimated_expense, status, tax_amount) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
+    // По умолчанию total_expense & estimated_expense = 0, tax_amount = 0 (потом можно считать/обновлять)
     $stmt_accounting->execute([
         'site',
         $order_id,
@@ -115,18 +113,33 @@ try {
         $total_price,
         0,
         0,
-        'unpaid'
+        'unpaid',
+        0
     ]);
 
     $order_accounting_id = $pdo->lastInsertId();
 
-    // ✅ Новый расчет расходов
-    if (function_exists('create_automatic_expense_record')) {
-        create_automatic_expense_record($pdo, $order_accounting_id, $order_id);
+    // Рассчитываем предполагаемые расходы по материалам
+    if (function_exists('calculate_estimated_expense')) {
+        $estimated_expense = calculate_estimated_expense($pdo, $order_id);
+        // Обновляем estimated_expense в accounting
+        $stmt_update = $pdo->prepare("UPDATE orders_accounting SET estimated_expense = ? WHERE id = ?");
+        $stmt_update->execute([$estimated_expense, $order_accounting_id]);
+
+        // Создаём автоматическую запись расхода и обновляем total_expense
+        if (function_exists('create_automatic_expense_record')) {
+            if (!create_automatic_expense_record($pdo, $order_accounting_id, $estimated_expense)) {
+                error_log("process.php: automatic expense record failed for order_accounting_id={$order_accounting_id}");
+            }
+        }
     }
-    // ✅ Новый расчет налогов
+    // ✅ Добавляем налог
     if (function_exists('calculate_and_save_tax')) {
-        calculate_and_save_tax($pdo, $order_accounting_id, $total_price);
+        $tax_amount = calculate_and_save_tax($pdo, $order_accounting_id, $total_price);
+        error_log("process.php: налог для order_accounting_id={$order_accounting_id} = {$tax_amount}");
+    }
+    else {
+        error_log("process.php: calculate_estimated_expense not defined");
     }
 
     $pdo->commit();

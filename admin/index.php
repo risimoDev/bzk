@@ -371,6 +371,19 @@ $monthly_orders = array_reverse($stmt->fetchAll());
           </div>
           <p class="text-gray-600 text-sm">Настройка налога</p>
         </a>
+
+                <a href="/admin/materials" class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Материалы</h3>
+          </div>
+          <p class="text-gray-600 text-sm">Добавление и редактирование расходников</p>
+        </a>
+
       </div>
     </div>
 
