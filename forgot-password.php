@@ -1,6 +1,5 @@
 <?php
 session_start();
-include_once __DIR__ . '/includes/header.php';
 
 $pageTitle = "Восстановление пароля";
 
@@ -70,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 ?>
-
+<?php include_once __DIR__ . '/includes/header.php';?>
 <main class="container mx-auto px-4 py-8">
   <!-- Вставка breadcrumbs и кнопки "Назад" -->
 <div class="container mx-auto px-4 py-4 flex justify-between items-center">

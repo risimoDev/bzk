@@ -130,15 +130,7 @@ $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $total_partners = count($partners);
 ?>
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Админ-панель | Управление партнерами</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="font-sans bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] min-h-screen">
+
 
   <!-- Шапка -->
   <?php include_once('../includes/header.php'); ?>

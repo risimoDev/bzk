@@ -1,7 +1,7 @@
 <?php
 session_start();
 $pageTitle = "Каталог";
-include_once __DIR__ . '/includes/header.php';
+
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
@@ -42,7 +42,7 @@ function getProductMainImage($pdo, $product_id) {
     return $stmt->fetchColumn();
 }
 ?>
-
+<?php include_once __DIR__ . '/includes/header.php';?>
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
@@ -176,6 +176,7 @@ function getProductMainImage($pdo, $product_id) {
               <div class="mt-auto">
                 <div class="flex items-center justify-between">
                   <div class="text-2xl font-bold text-[#118568]">
+                    <span class="text-lg">от </span>
                     <?php echo number_format($product['base_price'], 0, '', ' '); ?> 
                     <span class="text-lg">руб.</span>
                   </div>

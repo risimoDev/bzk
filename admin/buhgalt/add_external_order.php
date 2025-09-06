@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin')) {
     exit();
 }
 
-include_once('../../includes/header.php');
 include_once('../../includes/db.php');
 
 // Обработка уведомлений
@@ -55,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-4xl">

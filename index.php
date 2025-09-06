@@ -1,7 +1,7 @@
 <?php
 session_start();
 $pageTitle = "Главная страница | Типография";
-include_once __DIR__ . '/includes/header.php';
+
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
@@ -24,6 +24,8 @@ function getProductMainImage($pdo, $product_id) {
     return $stmt->fetchColumn();
 }
 ?>
+
+<?php include_once __DIR__ . '/includes/header.php';?>
 
 <main class="font-sans bg-pattern min-h-screen">
   <!-- Баннер -->
@@ -104,6 +106,7 @@ function getProductMainImage($pdo, $product_id) {
                 <div class="mt-auto">
                   <div class="flex items-center justify-between">
                     <div class="text-2xl font-bold text-[#118568]">
+                      <span class="text-lg">от </span>
                       <?php echo number_format($product['base_price'], 0, '', ' '); ?> 
                       <span class="text-lg">руб.</span>
                     </div>
@@ -168,7 +171,6 @@ function getProductMainImage($pdo, $product_id) {
           
           <p class="text-lg text-gray-600 leading-relaxed mb-10">
             Каждый проект мы рассматриваем как возможность создать что-то уникальное и запоминающееся. 
-            Наши специалисты используют современное оборудование и передовые технологии печати.
           </p>
           
           <div class="space-y-4 mb-10">
@@ -178,7 +180,7 @@ function getProductMainImage($pdo, $product_id) {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span class="text-gray-700">Современное оборудование</span>
+              <span class="text-gray-700">Качественные материалы</span>
             </div>
             <div class="flex items-center">
               <div class="w-8 h-8 bg-[#17B890] rounded-full flex items-center justify-center mr-4">
@@ -198,7 +200,7 @@ function getProductMainImage($pdo, $product_id) {
             </div>
           </div>
           
-          <a href="/about" class="inline-block px-8 py-4 bg-[#118568] text-white rounded-xl hover:bg-[#0f755a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
+          <a href="#" class="inline-block px-8 py-4 bg-[#118568] text-white rounded-xl hover:bg-[#0f755a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
             Узнать больше о нас
           </a>
         </div>

@@ -8,7 +8,7 @@ $promo_data = $_SESSION['promo_data'] ?? null;
 $promo_discount = $promo_data['discount'] ?? 0;
 
 $pageTitle = "Оформление заказа";
-include_once __DIR__ . '/includes/header.php';
+
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
@@ -88,7 +88,7 @@ $is_urgent = $_SESSION['is_urgent_order'] ?? false;
 $urgent_multiplier = $is_urgent ? 1.5 : 1;
 $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
 ?>
-
+<?php include_once __DIR__ . '/includes/header.php';?>
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->

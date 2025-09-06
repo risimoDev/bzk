@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin')) {
   exit();
 }
 
-include_once('../../includes/header.php');
 include_once('../../includes/db.php');
 include_once('functions.php');
 
@@ -80,6 +79,8 @@ $total_pages = ceil($total_orders_count / $limit);
 
 $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
@@ -159,7 +160,7 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
         </div>
         <div class="text-2xl font-bold text-red-500 mb-2"><?php echo number_format($total_expense, 2, '.', ' '); ?> ₽
         </div>
-        <div class="text-gray-600">Общий расход (без налогов)</div>
+        <div class="text-gray-600">Общий расход</div>
       </div>
 
       <div class="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">

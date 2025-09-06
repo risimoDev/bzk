@@ -2,7 +2,6 @@
 // admin/order/details.php
 session_start();
 $pageTitle = "Детали заказа";
-include_once('../../includes/header.php');
 
 // --- Добавлено: Подключение функций чата ---
 include_once('../../includes/chat_functions.php');
@@ -174,6 +173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_payment_status
 }
 
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">

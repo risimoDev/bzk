@@ -1,8 +1,9 @@
 <?php
 session_start();
 $pageTitle = "Требования к макетам";
-include_once __DIR__ . '/includes/header.php';
 ?>
+
+<?php include_once __DIR__ . '/includes/header.php';?>
 
 <main class="bg-pattern min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-6xl">

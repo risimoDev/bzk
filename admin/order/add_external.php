@@ -95,8 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $stmt = $pdo->query("SELECT id, name, base_price FROM products ORDER BY name");
 $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-include_once('../../includes/header.php');
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-10">
   <div class="container mx-auto px-6 max-w-7xl">

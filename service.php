@@ -1,7 +1,7 @@
 <?php
 session_start();
 $pageTitle = "Товар";
-include_once __DIR__ . '/includes/header.php';
+
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
@@ -68,7 +68,7 @@ if ($active_discount) {
 $base_price = (float)$product['base_price'];
 $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $base_price;
 ?>
-
+<?php include_once __DIR__ . '/includes/header.php';?>
 <!-- Подключение Swiper CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
@@ -236,7 +236,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                 <div class="bg-gradient-to-r from-[#118568] to-[#0f755a] rounded-2xl p-6 text-white">
                   <div class="flex justify-between items-center">
                     <div>
-                      <div class="text-lg">Итоговая стоимость</div>
+                      <div class="text-lg">Примерная стоимость</div>
                       <?php if ($discount_value): ?>
                         <div class="text-sm opacity-90">Скидка <?php echo $discount_value; ?>%</div>
                       <?php endif; ?>

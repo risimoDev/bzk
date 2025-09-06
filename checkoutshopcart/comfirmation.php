@@ -1,8 +1,10 @@
 <?php
 session_start();
 $pageTitle = "Подтверждение заказа | Типография";
-include_once('../includes/header.php');
+
 ?>
+
+<?php include_once('../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-4xl">

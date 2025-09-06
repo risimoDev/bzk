@@ -1,7 +1,6 @@
 <?php
 session_start();
 $pageTitle = "Сброс пароля";
-include_once __DIR__ . '/includes/header.php';
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
@@ -49,6 +48,8 @@ if (!$user) {
     exit();
 }
 ?>
+
+<?php include_once __DIR__ . '/includes/header.php';?>
 
 <main class="container mx-auto px-4 py-8">
   <!-- Вставка breadcrumbs и кнопки "Назад" -->

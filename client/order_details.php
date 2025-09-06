@@ -43,7 +43,6 @@ if (!$order) {
 
 // Заголовок страницы
 $pageTitle = "Заказ #" . $order['id'];
-include_once __DIR__ . '/../includes/header.php';
 
 // ---------------------------
 // 1) Получаем товары заказа (одним запросом)
@@ -205,6 +204,9 @@ $urgent_fee = $contact_info['urgent_fee'] ?? 0;
 // 6) Вывод страницы
 // ---------------------------
 ?>
+
+<?php include_once('../includes/header.php');?>
+
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- breadcrumbs + назад -->

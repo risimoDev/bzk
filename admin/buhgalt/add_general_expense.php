@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-include_once('../../includes/header.php');
 include_once('../../includes/db.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,6 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // категории
 $categories = $pdo->query("SELECT * FROM expenses_categories ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-3xl">

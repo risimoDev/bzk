@@ -1,7 +1,6 @@
 <?php
 session_start();
 $pageTitle = "Управление изображениями";
-include_once('../includes/header.php');
 
 // Проверка авторизации
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
@@ -208,6 +207,8 @@ $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $total_images = count($images);
 $main_images = array_filter($images, function($img) { return $img['is_main'] == 1; });
 ?>
+
+<?php include_once('../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">

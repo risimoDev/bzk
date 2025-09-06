@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
     header("Location: /login"); exit();
 }
 
-include_once('../../includes/header.php');
 include_once('../../includes/db.php');
 
 $id = $_GET['id'] ?? null;
@@ -27,6 +26,9 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     header("Location: index.php"); exit();
 }
 ?>
+
+<?php include_once('../../includes/header.php');?>
+
 <main class="min-h-screen bg-gray-100 py-8">
   <div class="container mx-auto max-w-3xl bg-white p-6 rounded-2xl shadow-lg">
     <h1 class="text-3xl font-bold mb-6">Редактировать материал</h1>

@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
     header("Location: /login"); exit();
 }
 
-include_once('../../includes/header.php');
 include_once('../../includes/db.php');
 
 $material_id = $_GET['material_id'] ?? null;
@@ -21,6 +20,9 @@ $stmt = $pdo->prepare("SELECT * FROM materials_movements WHERE material_id=? ORD
 $stmt->execute([$material_id]);
 $movements = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+<?php include_once('../../includes/header.php');?>
+
 <main class="min-h-screen bg-gray-100 py-8">
   <div class="container mx-auto max-w-5xl bg-white p-6 rounded-2xl shadow-lg">
     <h1 class="text-3xl font-bold mb-6">История движения: <?= htmlspecialchars($material['name']); ?></h1>

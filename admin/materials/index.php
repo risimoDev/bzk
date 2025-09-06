@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
     exit();
 }
 
-include_once('../../includes/header.php');
 include_once('../../includes/db.php');
 
 // Уведомления
@@ -71,6 +70,8 @@ $stmt = $pdo->query("
 ");
 $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">

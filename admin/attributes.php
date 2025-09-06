@@ -1,7 +1,6 @@
 <?php
 session_start();
 $pageTitle = "Управление характеристиками";
-include_once('../includes/header.php');
 
 // Проверка авторизации
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
@@ -137,6 +136,8 @@ $total_attributes = count($attributes);
 $text_attributes = array_filter($attributes, function($attr) { return $attr['type'] === 'text'; });
 $choice_attributes = array_filter($attributes, function($attr) { return $attr['type'] !== 'text'; });
 ?>
+
+<?php include_once('../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">

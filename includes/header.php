@@ -3,6 +3,17 @@ ob_start();
 if (session_status() == PHP_SESSION_NONE) {
   session_start();
 }
+$current_page = basename($_SERVER['SCRIPT_NAME'], ".php"); // например "contacts"
+$stmt = $pdo->prepare("SELECT * FROM seo_settings WHERE page = ?");
+$stmt->execute([$current_page]);
+$seo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$meta_title = $seo['title'] ?? "Типография BZK-PRINT";
+$meta_description = $seo['description'] ?? "Описание по умолчанию";
+$meta_keywords = $seo['keywords'] ?? "";
+$og_title = $seo['og_title'] ?? $meta_title;
+$og_description = $seo['og_description'] ?? $meta_description;
+$og_image = $seo['og_image'] ?? "/assets/img/default-og.png";
 // Получение уведомлений из сессии
 $notifications = $_SESSION['notifications'] ?? [];
 unset($_SESSION['notifications']); // Очищаем уведомления после отображения
@@ -15,12 +26,24 @@ include_once __DIR__ . '/session_check.php';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo htmlspecialchars($pageTitle ?? 'Типография BZK PRINT'); ?></title>
+  <title><?= htmlspecialchars($meta_title) ?></title>
+  <meta name="description" content="<?= htmlspecialchars($meta_description) ?>">
+  <meta name="keywords" content="<?= htmlspecialchars($meta_keywords) ?>">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="<?= htmlspecialchars($og_title) ?>">
+  <meta property="og:description" content="<?= htmlspecialchars($og_description) ?>">
+  <meta property="og:image" content="<?= htmlspecialchars($og_image) ?>">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="<?= htmlspecialchars("https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>">
+
+  
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="/assets/css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
     tailwind.config = {
       theme: {
@@ -110,6 +133,19 @@ include_once __DIR__ . '/session_check.php';
       background-color: #118568 !important; /* зелёный */
     }
   </style>
+  <!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=104056668', 'ym');
+
+    ym(104056668, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/104056668" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 </head>
 
 <body class="font-sans bg-litegray">

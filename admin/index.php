@@ -44,14 +44,6 @@ $monthly_orders = array_reverse($stmt->fetchAll());
 $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status = 'new'")->fetchColumn();
 ?>
 
-<!DOCTYPE html>
-<html lang="ru">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Админ-панель | Типография</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .admin-gradient {
@@ -412,7 +404,7 @@ $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status 
             </div>
             <h3 class="text-lg font-bold text-gray-800">Партнеры</h3>
           </div>
-          <p class="text-gray-600 text-sm">Управление партнерами</p>
+          <p class="text-gray-600 text-sm">Управление логотипами партнеров на главном экране</p>
         </a>
 
         <a href="/admin/buhgalt/index"
@@ -493,6 +485,32 @@ $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status 
               <?php echo $new_messages; ?>
             </span>
           <?php endif; ?>
+        </a>
+
+        <a href="/admin/statistic"
+           class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 11V3H5a2 2 0 00-2 2v6h8zM13 13h8v6a2 2 0 01-2 2h-6v-8zM3 13h8v8H5a2 2 0 01-2-2v-6zM13 3h6a2 2 0 012 2v6h-8V3z"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">Статистика</h3>
+          </div>
+          <p class="text-gray-600 text-sm">Графики, заказы, пользователи и Метрика</p>
+        </a>
+
+        <a href="/admin/seo/home"
+           class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 bg-[#9DC5BB] rounded-lg flex items-center justify-center mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 .895-4 2s1.79 2 4 2 4 .895 4 2-1.79 2-4 2M12 4v2m0 12v2m8-10h2m-2 4h2m-18-4h2m-2 4h2"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">SEO-настройки</h3>
+          </div>
+          <p class="text-gray-600 text-sm">Заголовки и мета-описания страниц</p>
         </a>
 
       </div>

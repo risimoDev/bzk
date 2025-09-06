@@ -1,7 +1,6 @@
 <?php
 session_start();
 $pageTitle = "История заказов";
-include_once('../includes/header.php');
 
 // Подключение к базе данных
 include_once('../includes/db.php');
@@ -71,6 +70,8 @@ $stmt_statuses = $pdo->prepare("SELECT DISTINCT status FROM orders WHERE user_id
 $stmt_statuses->execute([$user_id]);
 $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
 ?>
+
+<?php include_once('../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">

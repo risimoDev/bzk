@@ -8,7 +8,6 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
     exit();
 }
 
-include_once('../includes/header.php');
 include_once('../includes/db.php');
 require_once __DIR__ . '/buhgalt/functions.php';
 
@@ -35,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tax_rate'])) {
 // Текущая ставка
 $current_tax = get_setting($pdo, 'tax_rate', 20.0);
 ?>
-
+<?php include_once('../includes/header.php'); ?>
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-4xl">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

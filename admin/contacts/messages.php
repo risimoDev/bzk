@@ -8,12 +8,13 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 require_once '../../includes/db.php';
-include_once '../../includes/header.php';
 
 $stmt = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC");
 $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $pdo->query("UPDATE contact_messages SET status = 'read' WHERE status = 'new'");
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gray-50 py-8">
     <div class="container mx-auto px-4 max-w-7xl">

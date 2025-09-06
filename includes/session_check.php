@@ -6,7 +6,7 @@ function login_with_remember_cookie($pdo) {
     if (!isset($_COOKIE['remember_user'])) {
         return false; // Кука не установлена
     }
-
+    
     // 1. Разбираем значение куки
     $cookie_data = explode(':', $_COOKIE['remember_user'], 2);
     if (count($cookie_data) !== 2) {
@@ -48,7 +48,37 @@ function login_with_remember_cookie($pdo) {
         setcookie('remember_user', '', time() - 3600, '/', '', true, true);
         return false;
     }
+    if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_user'])) {
+    [$user_id, $token] = explode(':', $_COOKIE['remember_user'], 2);
 
+    if ($user_id && $token) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            // Проверка токена
+            $token_hash = hash('sha256', $token);
+            $is_valid_token = !empty($user['remember_token']) 
+                && hash_equals($user['remember_token'], $token_hash)
+                && strtotime($user['remember_token_expires_at']) > time();
+
+            if ($is_valid_token) {
+                // 🔒 Проверяем, не заблокирован ли аккаунт
+                if (!empty($user['is_blocked']) && (int)$user['is_blocked'] === 1) {
+                    // Удаляем куку, чтобы заблокированный не входил
+                    setcookie("remember_user", "", time() - 3600, "/");
+                } else {
+                    // Восстанавливаем сессию
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['name'];
+                    $_SESSION['role'] = $user['role'];
+                    $_SESSION['is_authenticated'] = true;
+                }
+            }
+        }
+    }
+}
     // 5. Токен действителен! Восстанавливаем сессию
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_name'] = $user['name']; // Добавляем имя пользователя

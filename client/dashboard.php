@@ -1,7 +1,7 @@
 <?php
 session_start();
 $pageTitle = "Личный кабинет";
-include_once('../includes/header.php');
+
 
 // Подключение к базе данных
 include_once('../includes/db.php');
@@ -31,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 ?>
+
+<?php include_once('../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-6xl">

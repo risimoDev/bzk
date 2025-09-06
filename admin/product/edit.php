@@ -1,7 +1,6 @@
 <?php
 session_start();
 $pageTitle = "Редактирование товара";
-include_once('../../includes/header.php');
 
 // Проверка авторизации
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
@@ -93,6 +92,8 @@ $stmt_orders = $pdo->prepare("SELECT COUNT(*) FROM order_items WHERE product_id 
 $stmt_orders->execute([$product_id]);
 $orders_count = $stmt_orders->fetchColumn();
 ?>
+
+<?php include_once('../../includes/header.php');?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">

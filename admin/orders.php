@@ -1,7 +1,7 @@
 <?php
 session_start();
 $pageTitle = "Управление заказами";
-include_once('../includes/header.php');
+
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
     header("Location: /login");
@@ -91,6 +91,8 @@ foreach ($stmt_stats->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $status_stats[$row['status']] = (int)$row['cnt'];
 }
 ?>
+
+<?php include_once('../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
