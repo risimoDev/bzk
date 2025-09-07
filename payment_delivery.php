@@ -1,10 +1,9 @@
 <?php
 session_start();
-$pageTitle = "Оплата и доставка";
 ?>
 
-
 <?php include_once __DIR__ . '/includes/header.php';?>
+
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
     <div class="container mx-auto px-4 max-w-7xl">
         <!-- Вставка breadcrumbs и кнопки "Назад" -->

@@ -9,7 +9,6 @@ $promo_discount = $promo_data['discount'] ?? 0;
 
 $pageTitle = "Оформление заказа";
 
-
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
@@ -33,6 +32,25 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 $cart_items = [];
 $total_price = 0;
 
+/**
+ * Получение цены за единицу с учётом диапазонов
+ */
+function getUnitPrice($pdo, $product_id, $quantity, $base_price) {
+    $stmt = $pdo->prepare("
+        SELECT price 
+        FROM product_quantity_prices
+        WHERE product_id = ? 
+          AND min_qty <= ? 
+          AND (max_qty IS NULL OR max_qty >= ?)
+        ORDER BY min_qty DESC 
+        LIMIT 1
+    ");
+    $stmt->execute([$product_id, $quantity, $quantity]);
+    $price = $stmt->fetchColumn();
+
+    return $price !== false ? (float)$price : (float)$base_price;
+}
+
 foreach ($cart as $item) {
     $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
     $stmt->execute([$item['product_id']]);
@@ -41,7 +59,7 @@ foreach ($cart as $item) {
     if ($product) {
         $selected_attributes = [];
         $total_attributes_price = 0;
-        
+
         foreach ($item['attributes'] as $attribute_id => $value_id) {
             $stmt = $pdo->prepare("
                 SELECT av.value, av.price_modifier, pa.name as attribute_name
@@ -57,8 +75,9 @@ foreach ($cart as $item) {
             }
         }
 
-        $base_price = $product['base_price'];
-        $item_total_price = ($base_price + $total_attributes_price) * $item['quantity'];
+        // ✅ правильная переменная, без двойного $$
+        $unit_price = getUnitPrice($pdo, $product['id'], $item['quantity'], $product['base_price']);
+        $item_total_price = ($unit_price + $total_attributes_price) * $item['quantity'];
 
         // Получаем главное изображение товара
         $main_image = null;
@@ -73,7 +92,7 @@ foreach ($cart as $item) {
             'product' => $product,
             'quantity' => $item['quantity'],
             'attributes' => $selected_attributes,
-            'base_price' => $base_price,
+            'unit_price' => $unit_price, // ✅ сохраняем правильную цену за штуку
             'total_attributes_price' => $total_attributes_price,
             'total_price' => $item_total_price,
             'main_image' => $main_image
@@ -88,7 +107,9 @@ $is_urgent = $_SESSION['is_urgent_order'] ?? false;
 $urgent_multiplier = $is_urgent ? 1.5 : 1;
 $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
 ?>
-<?php include_once __DIR__ . '/includes/header.php';?>
+
+<?php include_once __DIR__ . '/includes/header.php'; ?>
+
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
@@ -164,7 +185,7 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
                         
                         <div class="flex flex-wrap items-center gap-4 text-sm">
                           <span class="font-medium">Количество: <?php echo htmlspecialchars($item['quantity']); ?> шт.</span>
-                          <span class="font-medium">Цена за единицу: <?php echo number_format($item['base_price'] + $item['total_attributes_price'], 0, '', ' '); ?> руб.</span>
+                          <span class="font-medium">Цена за единицу: <?php echo number_format($item['unit_price'] + $item['total_attributes_price'], 0, '', ' '); ?> руб.</span>
                         </div>
                       </div>
                       

@@ -239,6 +239,33 @@ function calculate_estimated_expense(PDO $pdo, int $order_id, string $source = '
 }
 
 
+function getUnitPrice($pdo, $product_id, $quantity) {
+    // Получаем все диапазоны для товара
+    $stmt = $pdo->prepare("SELECT * FROM product_quantity_prices WHERE product_id = ? ORDER BY min_qty ASC");
+    $stmt->execute([$product_id]);
+    $ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $unitPrice = null;
+
+    foreach ($ranges as $r) {
+        $min = (int)$r['min_qty'];
+        $max = $r['max_qty'] ? (int)$r['max_qty'] : PHP_INT_MAX;
+
+        if ($quantity >= $min && $quantity <= $max) {
+            $unitPrice = (float)$r['price'];
+        }
+    }
+
+    // Если диапазон не найден → используем базовую цену
+    if ($unitPrice === null) {
+        $stmt = $pdo->prepare("SELECT base_price FROM products WHERE id = ?");
+        $stmt->execute([$product_id]);
+        $unitPrice = (float)$stmt->fetchColumn();
+    }
+
+    return $unitPrice;
+}
+
 /**
  * Получить значение настройки (например, налог)
  */

@@ -3,6 +3,8 @@ ob_start();
 if (session_status() == PHP_SESSION_NONE) {
   session_start();
 }
+include_once __DIR__ . '/db.php';
+
 $current_page = basename($_SERVER['SCRIPT_NAME'], ".php"); // например "contacts"
 $stmt = $pdo->prepare("SELECT * FROM seo_settings WHERE page = ?");
 $stmt->execute([$current_page]);

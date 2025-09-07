@@ -273,6 +273,90 @@ $orders_count = $stmt_orders->fetchColumn();
             </div>
           </form>
         </div>
+          <div class="bg-white rounded-3xl shadow-2xl p-6 mt-4">
+            <h3 class="text-lg font-bold mb-2">Цены по количеству</h3>
+            <table class="w-full border mb-3 text-center">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="p-2 border">От (шт)</th>
+                  <th class="p-2 border">До (шт)</th>
+                  <th class="p-2 border">Цена за 1 шт</th>
+                  <th class="p-2 border">Действие</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $stmt = $pdo->prepare("SELECT * FROM product_quantity_prices WHERE product_id = ? ORDER BY min_qty ASC");
+                $stmt->execute([$product_id]);
+                $ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                              
+                if ($ranges):
+                    foreach ($ranges as $range): ?>
+                      <tr class="hover:bg-gray-50 transition-colors duration-300">
+                        <td class="p-2 border"><?php echo htmlspecialchars($range['min_qty']); ?></td>
+                        <td class="p-2 border"><?php echo $range['max_qty'] ? htmlspecialchars($range['max_qty']) : '∞'; ?></td>
+                        <td class="p-2 border font-medium text-[#118568]"><?php echo number_format($range['price'], 2, '.', ' '); ?> ₽</td>
+                        <td class="p-2 border">
+                          <a href="delete_price_range.php?id=<?php echo $range['id']; ?>&product_id=<?php echo $product_id; ?>" 
+                             class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 text-sm flex items-center justify-center"
+                             onclick="return confirm('Вы уверены, что хотите удалить этот диапазон цен?')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Удалить
+                          </a>
+                        </td>
+                      </tr>
+                <?php endforeach; else: ?>
+                  <tr>
+                    <td colspan="4" class="p-6 text-gray-500 text-center">
+                      <div class="w-16 h-16 bg-[#DEE5E5] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#5E807F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2H9a2 2 0 01-2-2v-5a2 2 0 012-2z" />
+                        </svg>
+                      </div>
+                      <p>Диапазоны цен пока не заданы</p>
+                    </td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+                  
+            <form method="post" action="add_price_range.php" class="flex flex-wrap gap-3 items-end">
+              <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+              
+              <div>
+                <label class="block text-gray-700 text-sm font-medium mb-1">От (шт) *</label>
+                <input type="number" name="min_qty" placeholder="1" 
+                       class="border-2 border-gray-200 rounded-lg p-2 w-24 focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                       min="1" step="1" required>
+              </div>
+              
+              <div>
+                <label class="block text-gray-700 text-sm font-medium mb-1">До (шт)</label>
+                <input type="number" name="max_qty" placeholder="∞" 
+                       class="border-2 border-gray-200 rounded-lg p-2 w-24 focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                       min="1" step="1">
+              </div>
+              
+              <div>
+                <label class="block text-gray-700 text-sm font-medium mb-1">Цена за 1 шт (₽) *</label>
+                <input type="number" name="price" placeholder="0.00" 
+                       class="border-2 border-gray-200 rounded-lg p-2 w-32 focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                       min="0" step="0.01" required>
+              </div>
+              
+              <div>
+                <button type="submit" 
+                        class="px-4 py-2 bg-gradient-to-r from-[#118568] to-[#0f755a] text-white rounded-lg hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-medium shadow-lg hover:shadow-xl flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Добавить
+                </button>
+              </div>
+            </form>
+          </div>
       </div>
 
       <!-- Боковая панель -->

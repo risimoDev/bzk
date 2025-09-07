@@ -47,6 +47,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 // --- Конец добавленного кода ---
 
+function getUnitPrice($pdo, $product_id, $quantity) {
+    // Получаем все диапазоны для товара
+    $stmt = $pdo->prepare("SELECT * FROM product_quantity_prices WHERE product_id = ? ORDER BY min_qty ASC");
+    $stmt->execute([$product_id]);
+    $ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $unitPrice = null;
+
+    foreach ($ranges as $r) {
+        $min = (int)$r['min_qty'];
+        $max = $r['max_qty'] ? (int)$r['max_qty'] : PHP_INT_MAX;
+
+        if ($quantity >= $min && $quantity <= $max) {
+            $unitPrice = (float)$r['price'];
+        }
+    }
+
+    // Если диапазон не найден → используем базовую цену
+    if ($unitPrice === null) {
+        $stmt = $pdo->prepare("SELECT base_price FROM products WHERE id = ?");
+        $stmt->execute([$product_id]);
+        $unitPrice = (float)$stmt->fetchColumn();
+    }
+
+    return $unitPrice;
+}
+
+
+
 $cart = $_SESSION['cart'] ?? [];
 $cart_items = [];
 
@@ -75,8 +104,8 @@ if (!empty($cart)) {
                 }
             }
 
-            $base_price = $product['base_price'];
-            $item_total_price = ($base_price + $total_attributes_price) * $item['quantity'];
+            $unit_price = getUnitPrice($pdo, $product['id'], $item['quantity'], $product['base_price']);
+            $item_total_price = ($unit_price + $total_attributes_price) * $item['quantity'];
 
             // Получаем главное изображение товара
             $main_image = null;
@@ -204,7 +233,10 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                             <?php echo number_format($item['total_price'], 0, '', ' '); ?> <span class="text-lg">руб.</span>
                           </div>
                           <div class="text-gray-600 text-sm mt-1">
-                            <?php echo number_format($item['base_price'] + $item['total_attributes_price'], 0, '', ' '); ?> руб. × <?php echo $item['quantity']; ?> шт.
+                            <?php 
+$unitPrice = getUnitPrice($pdo, $product['id'], $item['quantity']); 
+?>
+<?= number_format($unitPrice, 0, '', ' ') ?> руб. × <?= $item['quantity'] ?> шт.
                           </div>
                         </div>
                       </div>

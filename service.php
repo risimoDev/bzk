@@ -21,6 +21,10 @@ if (!$product) {
     die("Товар не найден.");
 }
 
+$stmt = $pdo->prepare("SELECT min_qty, max_qty, price FROM product_quantity_prices WHERE product_id = ? ORDER BY min_qty ASC");
+$stmt->execute([$product_id]);
+$price_ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Получение изображений товара
 $stmt = $pdo->prepare("SELECT image_url FROM product_images WHERE product_id = ? ORDER BY is_main DESC, id ASC");
 $stmt->execute([$product_id]);
@@ -304,10 +308,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalPriceEl = document.getElementById('total-price');
     const attributeInputs = document.querySelectorAll('input[name^="attributes"]');
 
+    let basePrice = <?php echo (float)$final_price; ?>;
+    let priceRanges = <?php echo json_encode($price_ranges); ?>;
+
+    function getUnitPrice(quantity) {
+        let unitPrice = basePrice;
+
+        priceRanges.forEach(r => {
+            let min = parseInt(r.min_qty);
+            let max = r.max_qty ? parseInt(r.max_qty) : Infinity;
+
+            if (quantity >= min && quantity <= max) {
+                unitPrice = parseFloat(r.price);
+            }
+        });
+
+        return unitPrice;
+    }
+
     function updateTotalPrice() {
-        let basePrice = <?php echo (float)$product['base_price']; ?>;
         let quantity = parseInt(quantityInput.value) || 1;
-        let total = basePrice * quantity;
+        let unitPrice = getUnitPrice(quantity);
+
+        let total = unitPrice * quantity;
 
         attributeInputs.forEach(input => {
             if (input.checked) {
@@ -319,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
         totalPriceEl.textContent = total.toLocaleString('ru-RU');
     }
 
-    // Обработчики
+    // --- Обработчики ---
     if (quantityInput) {
         quantityInput.addEventListener('input', updateTotalPrice);
     }
@@ -327,7 +350,6 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', updateTotalPrice);
     });
 
-    // Кнопки +/- (которые ты уже сделал)
     document.querySelectorAll('.decrease-quantity').forEach(btn => {
         btn.addEventListener('click', () => {
             let min = parseInt(quantityInput.dataset.min) || 1;
@@ -337,6 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotalPrice();
         });
     });
+
     document.querySelectorAll('.increase-quantity').forEach(btn => {
         btn.addEventListener('click', () => {
             let min = parseInt(quantityInput.dataset.min) || 1;
@@ -347,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    updateTotalPrice(); // первый вызов
+    updateTotalPrice(); // Первый вызов
 });
 
 document.addEventListener('DOMContentLoaded', function() {
