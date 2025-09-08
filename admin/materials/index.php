@@ -141,18 +141,17 @@ $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <input type="number" step="0.01" name="cost_per_unit" value="<?= $m['cost_per_unit']; ?>" class="border rounded p-1 w-24">
                   </td>
                   <td class="p-2"><?= number_format($m['stock'], 2, '.', ' '); ?></td>
-                  <td class="p-2 flex gap-2">
-                    <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded">💾</button>
+                  <td class="py-3 px-4 flex gap-2">
+                    <button type="submit" class="px-3 py-1 bg-blue-500 text-white text-sm rounded">Сохранить</button>
                 </form>
                 <form method="POST" onsubmit="return confirm('Удалить материал?')">
                   <input type="hidden" name="action" value="delete_material">
                   <input type="hidden" name="id" value="<?= $m['id']; ?>">
-                  <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded">🗑</button>
+                  <button type="submit" class="px-3 py-1 bg-red-500 text-white text-sm rounded">Удалить</button>
                 </form>
                   </td>
                 <td class="py-3 px-4">
                   <div class="flex flex-wrap gap-2">
-                    <a href="edit?id=<?= $m['id']; ?>" class="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">Редактировать</a>
                     <a href="movementadd?material_id=<?= $m['id']; ?>" class="px-3 py-1 bg-[#118568] text-white rounded text-sm hover:bg-[#0f755a]">Движение</a>
                     <a href="movements?material_id=<?= $m['id']; ?>" class="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600">История</a>
                   </div>
