@@ -81,10 +81,10 @@ viewBox="0 0 4000 3000" style type="text/css">
         <a href="/" class="text-sm text-gray-600 transition-colors duration-300 hover:text-deep-purple-accent-400"></a>
       </li>
       <li>
-        <a href="/" class="text-sm text-gray-600 transition-colors duration-300 hover:text-deep-purple-accent-400">Политика конфиденциальности</a>
+        <a href="/privacy" class="text-sm text-gray-600 transition-colors duration-300 hover:text-deep-purple-accent-400">Политика конфиденциальности</a>
       </li>
       <li>
-        <a href="/" class="text-sm text-gray-600 transition-colors duration-300 hover:text-deep-purple-accent-400">Обработка персональных данных</a>
+        <a href="/terms" class="text-sm text-gray-600 transition-colors duration-300 hover:text-deep-purple-accent-400">Условия использования</a>
       </li>
     </ul>
   </div>

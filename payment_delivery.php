@@ -1,5 +1,6 @@
 <?php
 session_start();
+$pageTitle = "Оплата и доставка";
 ?>
 
 <?php include_once __DIR__ . '/includes/header.php';?>
