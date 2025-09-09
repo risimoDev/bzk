@@ -329,4 +329,175 @@ function create_automatic_expense_record(PDO $pdo, int $order_accounting_id, flo
     }
 }
 
+// ---------- NEW: списание/возврат материалов при изменении количества товара ----------
+// ---------- Списание/возврат материалов для товара (дельта количества) ----------
+function apply_materials_delta_for_product(PDO $pdo, int $order_id, int $product_id, int $deltaQty, string $comment = ''): void {
+    if ($deltaQty === 0) return;
+
+    // Связка товар -> материалы
+    $stmt = $pdo->prepare("
+        SELECT pm.material_id, pm.quantity_per_unit, m.name
+        FROM product_materials pm
+        JOIN materials m ON m.id = pm.material_id
+        WHERE pm.product_id = ?
+    ");
+    $stmt->execute([$product_id]);
+    $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($materials as $row) {
+        $material_id = (int)$row['material_id'];
+        $qtyPerUnit  = (float)$row['quantity_per_unit'];
+        $delta       = $qtyPerUnit * $deltaQty; // может быть отрицательной (возврат)
+
+        if (abs($delta) < 1e-9) continue;
+
+        $type   = $delta > 0 ? 'out' : 'in';
+        $absQty = abs($delta);
+
+        // Гарантируем наличие строки в остатках
+        $stmt = $pdo->prepare("
+            INSERT INTO materials_stock (material_id, quantity) VALUES (?, 0)
+            ON DUPLICATE KEY UPDATE material_id = material_id
+        ");
+        $stmt->execute([$material_id]);
+
+        // Обновляем остаток
+        if ($type === 'out') {
+            $stmt = $pdo->prepare("UPDATE materials_stock SET quantity = GREATEST(quantity - ?, 0) WHERE material_id = ?");
+            $stmt->execute([$absQty, $material_id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE materials_stock SET quantity = quantity + ? WHERE material_id = ?");
+            $stmt->execute([$absQty, $material_id]);
+        }
+
+        // Движение по складу
+        $stmt = $pdo->prepare("
+            INSERT INTO materials_movements (material_id, type, quantity, reference_type, reference_id, comment)
+            VALUES (?, ?, ?, 'order', ?, ?)
+        ");
+        $stmt->execute([$material_id, $type, $absQty, $order_id, $comment ?: 'Автодвижение по заказу']);
+    }
+}
+// ---------- NEW: пересчет итогов заказа, промо и налогов ----------
+// ---------- Пересчет итогов заказа, промокода, налога, себестоимости ----------
+function recalc_order_totals(PDO $pdo, int $order_id): array {
+    $pdo->beginTransaction();
+    try {
+        // 1) Чистая сумма позиций
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM order_items WHERE order_id = ?");
+        $stmt->execute([$order_id]);
+        $original = (float)$stmt->fetchColumn();
+
+        // 2) Данные заказа
+        $stmt = $pdo->prepare("SELECT id, is_urgent, contact_info FROM orders WHERE id = ? FOR UPDATE");
+        $stmt->execute([$order_id]);
+        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$order) {
+            throw new Exception("Order not found");
+        }
+
+        $is_urgent  = ((int)$order['is_urgent'] === 1);
+        $urgent_fee = $is_urgent ? round($original * 0.5, 2) : 0.0;
+        $subtotal   = round($original + $urgent_fee, 2);
+
+        // 3) Промокод
+        $stmt = $pdo->prepare("SELECT id, discount_type, discount_value FROM order_promocodes WHERE order_id = ? LIMIT 1");
+        $stmt->execute([$order_id]);
+        $promo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $discount = 0.0;
+        if ($promo) {
+            if ($promo['discount_type'] === 'percentage') {
+                $discount = round($subtotal * ((float)$promo['discount_value'] / 100), 2);
+            } else {
+                $discount = min((float)$promo['discount_value'], $subtotal);
+            }
+            // Обновляем примененную скидку
+            $stmt = $pdo->prepare("UPDATE order_promocodes SET applied_discount = ? WHERE id = ?");
+            $stmt->execute([$discount, (int)$promo['id']]);
+        }
+
+        $new_total = max(0, round($subtotal - $discount, 2));
+
+        // 4) Обновляем заказ (total_price и contact_info.original_total_price/urgent_fee)
+        $ci = json_decode($order['contact_info'] ?: '{}', true);
+        if (!is_array($ci)) $ci = [];
+        $ci['original_total_price'] = $original;
+        $ci['urgent_fee']           = $urgent_fee;
+
+        $stmt = $pdo->prepare("UPDATE orders SET total_price = ?, contact_info = ? WHERE id = ?");
+        $stmt->execute([$new_total, json_encode($ci, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $order_id]);
+
+        // 5) Бухгалтерия
+        $stmt = $pdo->prepare("SELECT id FROM orders_accounting WHERE order_id = ? FOR UPDATE");
+        $stmt->execute([$order_id]);
+        $acc = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($acc) {
+            // Доход
+            $stmt = $pdo->prepare("UPDATE orders_accounting SET income = ? WHERE id = ?");
+            $stmt->execute([$new_total, (int)$acc['id']]);
+
+            // Налог
+            $tax_amount = calculate_and_save_tax($pdo, (int)$acc['id'], $new_total);
+
+            // Оценочная себестоимость
+            $estimated = calculate_estimated_expense($pdo, $order_id, 'site');
+            $stmt = $pdo->prepare("UPDATE orders_accounting SET estimated_expense = ? WHERE id = ?");
+            $stmt->execute([$estimated, (int)$acc['id']]);
+
+            // Коррекция автоматических расходов (дельтой)
+            $stmt = $pdo->prepare("
+                SELECT COALESCE(SUM(amount),0) 
+                FROM order_expenses 
+                WHERE order_accounting_id = ? 
+                  AND description LIKE 'Автоматический расчет себестоимости материалов%'
+            ");
+            $stmt->execute([(int)$acc['id']]);
+            $auto_sum = (float)$stmt->fetchColumn();
+
+            $delta = round($estimated - $auto_sum, 2);
+            if (abs($delta) >= 0.01) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO order_expenses (order_accounting_id, amount, description, expense_date)
+                    VALUES (?, ?, 'Автоматический расчет себестоимости материалов (коррекция)', NOW())
+                ");
+                $stmt->execute([(int)$acc['id'], $delta]);
+
+                $stmt = $pdo->prepare("UPDATE orders_accounting SET total_expense = total_expense + ? WHERE id = ?");
+                $stmt->execute([$delta, (int)$acc['id']]);
+            }
+        }
+
+        $pdo->commit();
+        return [
+            'original'   => $original,
+            'urgent_fee' => $urgent_fee,
+            'discount'   => $discount,
+            'total'      => $new_total,
+        ];
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+}
+// Пересчитать сумму расходов в orders_accounting по фактическим записям order_expenses
+function recalc_accounting_total_expense(PDO $pdo, int $order_accounting_id): float {
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM order_expenses WHERE order_accounting_id = ?");
+    $stmt->execute([$order_accounting_id]);
+    $total = (float)$stmt->fetchColumn();
+
+    $upd = $pdo->prepare("UPDATE orders_accounting SET total_expense = ? WHERE id = ?");
+    $upd->execute([$total, $order_accounting_id]);
+
+    return $total;
+}
+
+// Получить id бухгалтерской записи по id заказа
+function get_accounting_id_by_order(PDO $pdo, int $order_id): ?int {
+    $stmt = $pdo->prepare("SELECT id FROM orders_accounting WHERE order_id = ? LIMIT 1");
+    $stmt->execute([$order_id]);
+    $acc_id = $stmt->fetchColumn();
+    return $acc_id ? (int)$acc_id : null;
+}
 ?>
