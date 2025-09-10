@@ -87,8 +87,8 @@ try {
 
     // Создание заказа
     $stmt = $pdo->prepare("
-        INSERT INTO orders (user_id, total_price, shipping_address, contact_info, is_urgent)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO orders (user_id, total_price, shipping_address, contact_info, is_urgent, is_new)
+        VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $user_id,
@@ -104,7 +104,9 @@ try {
             'urgent_fee' => $urgent_fee,
             'promo_data' => $promo_data
         ]),
-        $is_urgent ? 1 : 0
+        $is_urgent ? 1 : 0,
+        1
+        
     ]);
 
     $order_id = $pdo->lastInsertId();

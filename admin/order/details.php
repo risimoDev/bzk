@@ -367,6 +367,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header("Location: " . $_SERVER['REQUEST_URI']);
     exit();
 }
+// пометим просмотренный заказ как прочитанный (если админ/менеджер)
+if (isset($_SESSION['user_id']) && ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'manager')) {
+    $order_id = (int)($_GET['id'] ?? 0);
+    if ($order_id) {
+        $stmt = $pdo->prepare("UPDATE orders SET is_new = 0 WHERE id = ?");
+        $stmt->execute([$order_id]);
+    }
+}
+
 
 include_once('../../includes/header.php');
 ?>

@@ -294,7 +294,6 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
               <th class="py-4 px-6 text-left">Налог</th>
               <th class="py-4 px-6 text-left">Прибыль</th>
               <th class="py-4 px-6 text-left">Статус</th>
-              <th class="py-4 px-6 text-left">Действия</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[#DEE5E5]">
@@ -366,28 +365,6 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
                       echo $status_names[$order['status']] ?? $order['status'];
                       ?>
                     </span>
-                  </td>
-                  <td class="py-4 px-6">
-                    <div class="flex flex-wrap gap-1">
-                      <a href="add_expense.php?order_accounting_id=<?php echo $order['id']; ?>"
-                        class="px-2 py-1 bg-[#5E807F] text-white text-xs rounded hover:bg-[#4a6665] transition-colors duration-300"
-                        title="Добавить расход">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      </a>
-                      <a href="add_payment.php?order_accounting_id=<?php echo $order['id']; ?>"
-                        class="px-2 py-1 bg-[#17B890] text-white text-xs rounded hover:bg-[#14a380] transition-colors duration-300"
-                        title="Добавить платеж">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </a>
-                    </div>
                   </td>
                 </tr>
               <?php endforeach; ?>

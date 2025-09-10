@@ -242,4 +242,77 @@ foreach ($stmt_stats->fetchAll(PDO::FETCH_ASSOC) as $row) {
   </div>
 </main>
 
+  <script>
+(function() {
+  const badgeSelector = '#orders-badge';
+  const linkSelector = '#admin-orders-link';
+  const fetchUrl = '/ajax/new_orders_count.php';
+  const markSeenUrl = '/ajax/mark_orders_seen.php';
+
+  async function fetchNewCount() {
+    try {
+      const res = await fetch(fetchUrl, { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      updateBadge(data.count || 0);
+    } catch (e) {
+      console.error('fetchNewCount error', e);
+    }
+  }
+
+  function updateBadge(count) {
+    const link = document.querySelector(linkSelector);
+    if (!link) return;
+    let badge = document.querySelector(badgeSelector);
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'orders-badge';
+        badge.className = 'absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white';
+        link.appendChild(badge);
+      }
+      badge.textContent = count;
+      badge.style.display = '';
+    } else {
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
+  // Периодический опрос (каждые 15 сек)
+  let pollInterval = 15000;
+  setInterval(() => {
+    if (!document.hidden) fetchNewCount();
+  }, pollInterval);
+
+  // Обновить при загрузке
+  document.addEventListener('DOMContentLoaded', fetchNewCount);
+
+  // При клике на ссылку пометим заказы как прочитанные.
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest(linkSelector);
+    if (!target) return;
+
+    // Используем sendBeacon, чтобы запрос успел уйти даже при навигации
+    try {
+      const params = new URLSearchParams();
+      params.append('all', '1');
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(markSeenUrl, params);
+      } else {
+        // fallback: fire-and-forget fetch but non-blocking
+        fetch(markSeenUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: params
+        }).catch(()=>{});
+      }
+    } catch (err) {
+      // ignore
+    }
+    // навигация дальше по ссылке произойдёт как обычно
+  });
+
+})();
+</script>
+
 <?php include_once('../includes/footer.php'); ?>

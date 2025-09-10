@@ -4,6 +4,29 @@ $pageTitle = "Регистрация";
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
 
+function verify_turnstile($token) {
+    $secret = "0x4AAAAAABzFgRfqlk2ZuC2mzrnXuuyroVI"; // ⚡ вставь свой ключ
+    $url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+    $data = [
+        "secret" => $secret,
+        "response" => $token,
+        "remoteip" => $_SERVER['REMOTE_ADDR']
+    ];
+
+    $options = [
+        "http" => [
+            "header"  => "Content-type: application/x-www-form-urlencoded\r\n",
+            "method"  => "POST",
+            "content" => http_build_query($data)
+        ]
+    ];
+    $context  = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+
+    return json_decode($result, true);
+}
+
 // Обработка регистрации
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $name = htmlspecialchars($_POST['name']);
@@ -11,17 +34,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $phone = htmlspecialchars($_POST['phone']);
 
-    // Проверка уникальности email
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    if ($stmt->fetch()) {
-        echo "<p class='text-red-600 text-center'>Пользователь с таким email уже зарегистрирован.</p>";
+    $token = $_POST['cf-turnstile-response'] ?? '';
+    $captcha = verify_turnstile($token);
+
+    if (!$captcha['success']) {
+        $error_message = "Проверка безопасности не пройдена!";
     } else {
-        // Роль по умолчанию: user
-        $role = 'user';
-        $stmt = $pdo->prepare("INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $email, $password, $phone, $role]);
-        echo "<p class='text-green-600 text-center'>Вы успешно зарегистрировались!</p>";
+      // Проверка уникальности email
+      $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+      $stmt->execute([$email]);
+      if ($stmt->fetch()) {
+          echo "<p class='text-red-600 text-center'>Пользователь с таким email уже зарегистрирован.</p>";
+      } else {
+          // Роль по умолчанию: user
+          $role = 'user';
+          $stmt = $pdo->prepare("INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)");
+          $stmt->execute([$name, $email, $password, $phone, $role]);
+          echo "<p class='text-green-600 text-center'>Вы успешно зарегистрировались!</p>";
+      }
     }
 }
 ?>
@@ -57,12 +87,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
           <div class="flex items-center">
             <div class="w-12 h-12 bg-[#17B890] rounded-full flex items-center justify-center mr-4">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
               <h3 class="font-semibold text-gray-800">Персональные скидки</h3>
-              <p class="text-gray-600 text-sm">Получайте специальные предложения для новых клиентов</p>
+              <p class="text-gray-600 text-sm">Специальные предложения для постоянных клиентов</p>
             </div>
           </div>
           
@@ -73,20 +103,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
               </svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-800">Быстрое оформление</h3>
-              <p class="text-gray-600 text-sm">Ускоренное оформление заказов и доставка</p>
+              <h3 class="font-semibold text-gray-800">История заказов</h3>
+              <p class="text-gray-600 text-sm">Отслеживайте все ваши заказы в одном месте</p>
             </div>
           </div>
           
           <div class="flex items-center">
             <div class="w-12 h-12 bg-[#5E807F] rounded-full flex items-center justify-center mr-4">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-800">Избранное</h3>
-              <p class="text-gray-600 text-sm">Сохраняйте любимые товары для быстрого доступа</p>
+              <h3 class="font-semibold text-gray-800">Безопасность данных</h3>
+              <p class="text-gray-600 text-sm">Ваши персональные данные надежно защищены</p>
             </div>
           </div>
         </div>
@@ -192,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
                 </span>
               </label>
             </div>
-
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAABzFgQHD_KaZTnsZ"></div>
             <button type="submit" name="register" 
                     class="w-full bg-gradient-to-r from-[#17B890] to-[#118568] text-white py-4 rounded-lg hover:from-[#14a380] hover:to-[#0f755a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
               Создать аккаунт

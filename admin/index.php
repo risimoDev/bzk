@@ -42,6 +42,17 @@ $monthly_orders = array_reverse($stmt->fetchAll());
 
 // Количество непрочитанных сообщений
 $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status = 'new'")->fetchColumn();
+
+$new_orders_count = 0;
+if (isset($pdo)) {
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE is_new = 1");
+        $stmt->execute();
+        $new_orders_count = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        $new_orders_count = 0;
+    }
+}
 ?>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -332,8 +343,9 @@ $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status 
     <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Управление системой</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
         <a href="/admin/orders"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          class="relative block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
           <div class="flex items-center mb-3">
             <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
@@ -345,6 +357,11 @@ $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status 
             <h3 class="text-lg font-bold text-gray-800">Заказы</h3>
           </div>
           <p class="text-gray-600 text-sm">Управление заказами и статусами</p>
+            <!-- бейдж -->
+        <span id="orders-badge" class="absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white"
+              style="<?php echo $new_orders_count > 0 ? '' : 'display:none;'; ?>">
+          <?php echo $new_orders_count > 0 ? $new_orders_count : ''; ?>
+        </span>
         </a>
 
         <a href="/admin/products"
@@ -612,6 +629,78 @@ $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status 
       });
     });
   </script>
+    <script>
+(function() {
+  const badgeSelector = '#orders-badge';
+  const linkSelector = '#admin-orders-link';
+  const fetchUrl = '/ajax/new_orders_count.php';
+  const markSeenUrl = '/ajax/mark_orders_seen.php';
+
+  async function fetchNewCount() {
+    try {
+      const res = await fetch(fetchUrl, { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      updateBadge(data.count || 0);
+    } catch (e) {
+      console.error('fetchNewCount error', e);
+    }
+  }
+
+  function updateBadge(count) {
+    const link = document.querySelector(linkSelector);
+    if (!link) return;
+    let badge = document.querySelector(badgeSelector);
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'orders-badge';
+        badge.className = 'absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white';
+        link.appendChild(badge);
+      }
+      badge.textContent = count;
+      badge.style.display = '';
+    } else {
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
+  // Периодический опрос (каждые 15 сек)
+  let pollInterval = 15000;
+  setInterval(() => {
+    if (!document.hidden) fetchNewCount();
+  }, pollInterval);
+
+  // Обновить при загрузке
+  document.addEventListener('DOMContentLoaded', fetchNewCount);
+
+  // При клике на ссылку пометим заказы как прочитанные.
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest(linkSelector);
+    if (!target) return;
+
+    // Используем sendBeacon, чтобы запрос успел уйти даже при навигации
+    try {
+      const params = new URLSearchParams();
+      params.append('all', '1');
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(markSeenUrl, params);
+      } else {
+        // fallback: fire-and-forget fetch but non-blocking
+        fetch(markSeenUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: params
+        }).catch(()=>{});
+      }
+    } catch (err) {
+      // ignore
+    }
+    // навигация дальше по ссылке произойдёт как обычно
+  });
+
+})();
+</script>
 
 </body>
 
