@@ -1,32 +1,33 @@
 <?php
-session_start();
+require_once __DIR__ . '/includes/session.php';
 $pageTitle = "Контакты";
 require_once __DIR__ . '/includes/db.php';
 
 // Сообщения для уведомлений
 $success_message = $error_message = null;
 
-function verify_turnstile($token) {
-    $secret = "0x4AAAAAABzFgRfqlk2ZuC2mzrnXuuyroVI"; // ⚡ вставь свой ключ
-    $url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+function verify_turnstile($token)
+{
+  $secret = "0x4AAAAAABzFgRfqlk2ZuC2mzrnXuuyroVI"; // ⚡ вставь свой ключ
+  $url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-    $data = [
-        "secret" => $secret,
-        "response" => $token,
-        "remoteip" => $_SERVER['REMOTE_ADDR']
-    ];
+  $data = [
+    "secret" => $secret,
+    "response" => $token,
+    "remoteip" => $_SERVER['REMOTE_ADDR']
+  ];
 
-    $options = [
-        "http" => [
-            "header"  => "Content-type: application/x-www-form-urlencoded\r\n",
-            "method"  => "POST",
-            "content" => http_build_query($data)
-        ]
-    ];
-    $context  = stream_context_create($options);
-    $result = file_get_contents($url, false, $context);
+  $options = [
+    "http" => [
+      "header" => "Content-type: application/x-www-form-urlencoded\r\n",
+      "method" => "POST",
+      "content" => http_build_query($data)
+    ]
+  ];
+  $context = stream_context_create($options);
+  $result = file_get_contents($url, false, $context);
 
-    return json_decode($result, true);
+  return json_decode($result, true);
 }
 
 // Обработка отправки формы
@@ -42,20 +43,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
   $captcha = verify_turnstile($token);
 
   if (!$captcha['success']) {
-      $error_message = "Проверка безопасности не пройдена!";
+    $error_message = "Проверка безопасности не пройдена!";
   } else {
-      if ($name && filter_var($email, FILTER_VALIDATE_EMAIL) && $message && $agreement) {
+    if ($name && filter_var($email, FILTER_VALIDATE_EMAIL) && $message && $agreement) {
       try {
         $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, phone, preferred_contact, message, status, created_at) 
                          VALUES (?, ?, ?, ?, ?, 'new', NOW())");
         $stmt->execute([$name, $email, $phone, $preferred_contact, $message]);
-      
+
         // Отправка email администратору (оставим как было)
         $to = 'bzkprint@yandex.ru';
         $subject = 'Новое сообщение с сайта bzk print';
         $body = "Имя: $name\nEmail: $email\nТелефон: $phone\nСвязь: $preferred_contact\nСообщение: $message";
         mail($to, $subject, $body);
-      
+
         $success_message = "Ваше сообщение успешно отправлено!";
       } catch (Exception $e) {
         error_log("Ошибка записи сообщения: " . $e->getMessage());
@@ -67,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
   }
 }
 ?>
-<?php include_once __DIR__ . '/includes/header.php';?>
+<?php include_once __DIR__ . '/includes/header.php'; ?>
 <main class="min-h-screen bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-6xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->

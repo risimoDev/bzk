@@ -79,11 +79,6 @@ RewriteRule ^client/orders$ client/orders.php [L,QSA]
 
 ErrorDocument 404 /404.php
 
-# Кэширование статических файлов
-<FilesMatch "\.(jpg|jpeg|png|gif|css|js)$">
-    Header set Cache-Control "max-age=604800, public"
-</FilesMatch>
-
 # Защита от доступа к .htaccess
 <Files .htaccess>
     Order allow,deny

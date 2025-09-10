@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 $pageTitle = "Админ-панель";
 
 // Проверка авторизации
@@ -45,39 +45,39 @@ $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status 
 
 $new_orders_count = 0;
 if (isset($pdo)) {
-    try {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE is_new = 1");
-        $stmt->execute();
-        $new_orders_count = (int)$stmt->fetchColumn();
-    } catch (Exception $e) {
-        $new_orders_count = 0;
-    }
+  try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE is_new = 1");
+    $stmt->execute();
+    $new_orders_count = (int) $stmt->fetchColumn();
+  } catch (Exception $e) {
+    $new_orders_count = 0;
+  }
 }
 ?>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .admin-gradient {
-      background: linear-gradient(135deg, #118568 0%, #17B890 100%);
-    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .admin-gradient {
+    background: linear-gradient(135deg, #118568 0%, #17B890 100%);
+  }
 
-    .stat-card {
-      transition: all 0.3s ease;
-    }
+  .stat-card {
+    transition: all 0.3s ease;
+  }
 
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
 
-    .quick-link {
-      transition: all 0.3s ease;
-    }
+  .quick-link {
+    transition: all 0.3s ease;
+  }
 
-    .quick-link:hover {
-      transform: scale(1.02);
-    }
-  </style>
+  .quick-link:hover {
+    transform: scale(1.02);
+  }
+</style>
 </head>
 
 <body class="font-sans bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] min-h-screen">
@@ -357,11 +357,12 @@ if (isset($pdo)) {
             <h3 class="text-lg font-bold text-gray-800">Заказы</h3>
           </div>
           <p class="text-gray-600 text-sm">Управление заказами и статусами</p>
-            <!-- бейдж -->
-        <span id="orders-badge" class="absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white"
-              style="<?php echo $new_orders_count > 0 ? '' : 'display:none;'; ?>">
-          <?php echo $new_orders_count > 0 ? $new_orders_count : ''; ?>
-        </span>
+          <!-- бейдж -->
+          <span id="orders-badge"
+            class="absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white"
+            style="<?php echo $new_orders_count > 0 ? '' : 'display:none;'; ?>">
+            <?php echo $new_orders_count > 0 ? $new_orders_count : ''; ?>
+          </span>
         </a>
 
         <a href="/admin/products"
@@ -505,11 +506,13 @@ if (isset($pdo)) {
         </a>
 
         <a href="/admin/statistic"
-           class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
           <div class="flex items-center mb-3">
             <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 11V3H5a2 2 0 00-2 2v6h8zM13 13h8v6a2 2 0 01-2 2h-6v-8zM3 13h8v8H5a2 2 0 01-2-2v-6zM13 3h6a2 2 0 012 2v6h-8V3z"/>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M11 11V3H5a2 2 0 00-2 2v6h8zM13 13h8v6a2 2 0 01-2 2h-6v-8zM3 13h8v8H5a2 2 0 01-2-2v-6zM13 3h6a2 2 0 012 2v6h-8V3z" />
               </svg>
             </div>
             <h3 class="text-lg font-bold text-gray-800">Статистика</h3>
@@ -518,11 +521,13 @@ if (isset($pdo)) {
         </a>
 
         <a href="/admin/seo/home"
-           class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
+          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
           <div class="flex items-center mb-3">
             <div class="w-10 h-10 bg-[#9DC5BB] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 .895-4 2s1.79 2 4 2 4 .895 4 2-1.79 2-4 2M12 4v2m0 12v2m8-10h2m-2 4h2m-18-4h2m-2 4h2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8c-2.21 0-4 .895-4 2s1.79 2 4 2 4 .895 4 2-1.79 2-4 2M12 4v2m0 12v2m8-10h2m-2 4h2m-18-4h2m-2 4h2" />
               </svg>
             </div>
             <h3 class="text-lg font-bold text-gray-800">SEO-настройки</h3>
@@ -629,78 +634,78 @@ if (isset($pdo)) {
       });
     });
   </script>
-    <script>
-(function() {
-  const badgeSelector = '#orders-badge';
-  const linkSelector = '#admin-orders-link';
-  const fetchUrl = '/ajax/new_orders_count.php';
-  const markSeenUrl = '/ajax/mark_orders_seen.php';
+  <script>
+    (function () {
+      const badgeSelector = '#orders-badge';
+      const linkSelector = '#admin-orders-link';
+      const fetchUrl = '/ajax/new_orders_count.php';
+      const markSeenUrl = '/ajax/mark_orders_seen.php';
 
-  async function fetchNewCount() {
-    try {
-      const res = await fetch(fetchUrl, { credentials: 'same-origin' });
-      if (!res.ok) return;
-      const data = await res.json();
-      updateBadge(data.count || 0);
-    } catch (e) {
-      console.error('fetchNewCount error', e);
-    }
-  }
-
-  function updateBadge(count) {
-    const link = document.querySelector(linkSelector);
-    if (!link) return;
-    let badge = document.querySelector(badgeSelector);
-    if (count > 0) {
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.id = 'orders-badge';
-        badge.className = 'absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white';
-        link.appendChild(badge);
+      async function fetchNewCount() {
+        try {
+          const res = await fetch(fetchUrl, { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const data = await res.json();
+          updateBadge(data.count || 0);
+        } catch (e) {
+          console.error('fetchNewCount error', e);
+        }
       }
-      badge.textContent = count;
-      badge.style.display = '';
-    } else {
-      if (badge) badge.style.display = 'none';
-    }
-  }
 
-  // Периодический опрос (каждые 15 сек)
-  let pollInterval = 15000;
-  setInterval(() => {
-    if (!document.hidden) fetchNewCount();
-  }, pollInterval);
-
-  // Обновить при загрузке
-  document.addEventListener('DOMContentLoaded', fetchNewCount);
-
-  // При клике на ссылку пометим заказы как прочитанные.
-  document.addEventListener('click', function(e) {
-    const target = e.target.closest(linkSelector);
-    if (!target) return;
-
-    // Используем sendBeacon, чтобы запрос успел уйти даже при навигации
-    try {
-      const params = new URLSearchParams();
-      params.append('all', '1');
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(markSeenUrl, params);
-      } else {
-        // fallback: fire-and-forget fetch but non-blocking
-        fetch(markSeenUrl, {
-          method: 'POST',
-          credentials: 'same-origin',
-          body: params
-        }).catch(()=>{});
+      function updateBadge(count) {
+        const link = document.querySelector(linkSelector);
+        if (!link) return;
+        let badge = document.querySelector(badgeSelector);
+        if (count > 0) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.id = 'orders-badge';
+            badge.className = 'absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white';
+            link.appendChild(badge);
+          }
+          badge.textContent = count;
+          badge.style.display = '';
+        } else {
+          if (badge) badge.style.display = 'none';
+        }
       }
-    } catch (err) {
-      // ignore
-    }
-    // навигация дальше по ссылке произойдёт как обычно
-  });
 
-})();
-</script>
+      // Периодический опрос (каждые 15 сек)
+      let pollInterval = 15000;
+      setInterval(() => {
+        if (!document.hidden) fetchNewCount();
+      }, pollInterval);
+
+      // Обновить при загрузке
+      document.addEventListener('DOMContentLoaded', fetchNewCount);
+
+      // При клике на ссылку пометим заказы как прочитанные.
+      document.addEventListener('click', function (e) {
+        const target = e.target.closest(linkSelector);
+        if (!target) return;
+
+        // Используем sendBeacon, чтобы запрос успел уйти даже при навигации
+        try {
+          const params = new URLSearchParams();
+          params.append('all', '1');
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon(markSeenUrl, params);
+          } else {
+            // fallback: fire-and-forget fetch but non-blocking
+            fetch(markSeenUrl, {
+              method: 'POST',
+              credentials: 'same-origin',
+              body: params
+            }).catch(() => { });
+          }
+        } catch (err) {
+          // ignore
+        }
+        // навигация дальше по ссылке произойдёт как обычно
+      });
+
+    })();
+  </script>
 
 </body>
 
