@@ -4,6 +4,7 @@ if (session_status() == PHP_SESSION_NONE) {
   session_start();
 }
 include_once __DIR__ . '/db.php';
+$config = require __DIR__ . '/config.php';
 
 $current_page = basename($_SERVER['SCRIPT_NAME'], ".php"); // например "contacts"
 $stmt = $pdo->prepare("SELECT * FROM seo_settings WHERE page = ?");
@@ -41,29 +42,11 @@ include_once __DIR__ . '/session_check.php';
 
   
   <link rel="stylesheet" href="/assets/css/style.css">
-  <link rel="stylesheet" href="/assets/css/output.css">
+  <link rel="stylesheet" href="../assets/css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            emerald: '#118568',
-            litegreen: '#17B890',
-            dirtgreen: '#5E807F',
-            litedirtgreen: '#9DC5BB',
-            litegray: '#DEE5E5',
-          },
-          backgroundImage: {
-            'pattern': `url("image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2317b890' fill-opacity='0.1'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          },
-        }
-      }
-    }
-  </script>
+  
   <style>
     .notification {
       position: fixed;

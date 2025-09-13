@@ -5,7 +5,7 @@ $pageTitle = "Регистрация";
 include_once __DIR__ . '/includes/db.php';
 
 function verify_turnstile($token) {
-    $secret = "0x4AAAAAABzFgRfqlk2ZuC2mzrnXuuyroVI"; // ⚡ вставь свой ключ
+    $secret = $_ENV['CLOUDFLARE_TURNSTILE_SECRET_KEY']; // ⚡ вставь свой ключ
     $url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
     $data = [
