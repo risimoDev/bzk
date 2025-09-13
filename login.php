@@ -6,7 +6,7 @@ include_once __DIR__ . '/includes/db.php';
 
 
 
-/*
+
 function verify_turnstile($token) {
     $secret = $_ENV['CLOUDFLARE_TURNSTILE_SECRET_KEY']; // ⚡ вставь свой ключ
     $url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
@@ -29,7 +29,6 @@ function verify_turnstile($token) {
 
     return json_decode($result, true);
 }
-*/
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
@@ -42,14 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    /*
+    
     $token = $_POST['cf-turnstile-response'] ?? '';
     $captcha = verify_turnstile($token);
-    */
+    
 
-  //  if (!$captcha['success']) {
-  //      $error_message = "Проверка безопасности не пройдена!";
-  //  } else {    
+    if (!$captcha['success']) {
+        $error_message = "Проверка безопасности не пройдена!";
+    } else {    
         if ($user && password_verify($password, $user['password'])) {
         
             // 🔒 Проверка блокировки
@@ -103,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             exit();
         }
     }
-//} 
+} 
 ?>
 
   <!-- Шапка -->
@@ -236,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                 Забыли пароль?
               </a>
             </div>
-            <!--<div class="cf-turnstile" data-sitekey="0x4AAAAAABzFgQHD_KaZTnsZ"></div>-->
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAABzFgQHD_KaZTnsZ"></div>
 
             <button type="submit" name="login" 
                     class="w-full bg-gradient-to-r from-[#118568] to-[#0f755a] text-white py-4 rounded-lg hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">

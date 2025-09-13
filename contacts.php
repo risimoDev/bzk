@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
           </div>
 
           <div>
-            <label for="phone" class="block text-gray-700 font-medium mb-2 text-lg">Телефон</label>
+            <label for="phone" class="block text-gray-700 font-medium mb-2 text-lg">Телефон *</label>
             <input type="tel" id="phone" name="phone" placeholder="+7 (___) ___-__-__"  required 
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
           </div>
