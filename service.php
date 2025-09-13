@@ -77,7 +77,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
 <!-- Подключение Swiper CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
+<main class="min-h-screen bg-pattern from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -228,7 +228,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                               value="<?php echo $value['value_id']; ?>"
                               data-price-modifier="<?php echo $value['price_modifier']; ?>" class="peer hidden" required>
                             <div
-                              class="px-4 py-3 border-2 border-gray-200 rounded-lg text-center 
+                              class="px-2 py-3 text-sm lg:text-md border-2 border-gray-200 rounded-lg text-center 
                                         hover:border-[#17B890] peer-checked:border-[#118568] peer-checked:bg-[#118568] peer-checked:text-white">
                               <?php echo htmlspecialchars($value['value']); ?>
                             </div>
@@ -248,11 +248,11 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                         <div class="text-sm opacity-90">Скидка <?php echo $discount_value; ?>%</div>
                       <?php endif; ?>
                     </div>
-                    <div class="text-right">
-                      <div class="text-3xl font-bold">
+                    <div class="text-right w-full">
+                      <div class="text-xl lg:text-3xl font-bold">
                         <span
-                          id="total-price"><?php echo number_format($final_price * $min_quantity, 0, '', ' '); ?></span>
-                        руб.
+                          id="total-price"><?php echo number_format($final_price * $min_quantity, 0, '', ' '); ?></span> руб.
+                        
                       </div>
                     </div>
                   </div>

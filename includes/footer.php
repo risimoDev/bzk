@@ -8,7 +8,7 @@ if (isset($_SESSION['notifications'])) {
 }
 ?>
  <!-- Футер -->
-  <footer class="bg-pattern py-8 mt-8">
+  <footer class="bg-pattern py-8">
   <div class="px-4 pt-16 mx-auto sm:max-w-xl md:max-w-full lg:max-w-screen-xl md:px-24 lg:px-8">
   <div class="grid gap-10 row-gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
     <div class="sm:col-span-2">
@@ -43,15 +43,15 @@ viewBox="0 0 4000 3000" style type="text/css">
       <p class="text-base font-bold tracking-wide text-gray-900">Контакты</p>
       <div class="flex">
         <p class="mr-1 text-gray-800">Телефон:</p>
-        <a href="tel:850-123-5021" aria-label="Our phone" title="Our phone" class="transition-colors duration-300 text-deep-purple-accent-400 hover:text-deep-purple-800">+79223040465</a>
+        <a href="tel:89223040465" aria-label="Номер телефона" title="Номер телефона" class="transition-colors duration-300 text-deep-purple-accent-400 hover:text-deep-purple-800">+79223040465</a>
       </div>
       <div class="flex">
         <p class="mr-1 text-gray-800">Email:</p>
-        <a href="mailto:info@lorem.mail" aria-label="Our email" title="Our email" class="transition-colors duration-300 text-deep-purple-accent-400 hover:text-deep-purple-800">bzkprint@yandex.ru</a>
+        <a href="mailto:bzkprint@yandex.ru" aria-label="Почта" title="Почта" class="transition-colors duration-300 text-deep-purple-accent-400 hover:text-deep-purple-800">bzkprint@yandex.ru</a>
       </div>
       <div class="flex">
         <p class="mr-1 text-gray-800">Адрес:</p>
-        <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" aria-label="Our address" title="Our address" class="transition-colors duration-300 text-deep-purple-accent-400 hover:text-deep-purple-800">
+        <a href="https://yandex.ru/maps/50/perm/?ll=56.181004%2C58.007673&mode=whatshere&whatshere%5Bpoint%5D=56.180496%2C58.007562&whatshere%5Bzoom%5D=16&z=17.44" target="_blank" rel="noopener noreferrer" aria-label="Адрес" title="Адрес" class="transition-colors duration-300 text-deep-purple-accent-400 hover:text-deep-purple-800">
           г. Пермь, ул. Сухобруса 27 офис 101
         </a>
       </div>
@@ -90,13 +90,7 @@ viewBox="0 0 4000 3000" style type="text/css">
   </div>
 </div>
   </footer>
-  <script>
-    const swiper = new Swiper('.mySwiper', {
-      loop: true,
-      pagination: { el: '.swiper-pagination', clickable: true },
-      navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-    });
-  </script>
+
 
 
 </body>

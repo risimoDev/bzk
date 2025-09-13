@@ -123,7 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
           <div>
             <label for="phone" class="block text-gray-700 font-medium mb-2 text-lg">Телефон</label>
-            <input type="text" id="phone" name="phone" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+            <input type="tel" id="phone" name="phone" placeholder="+7 (___) ___-__-__"  required 
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
           </div>
 
           <div>
@@ -175,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-800">Телефон</h3>
-                <p class="text-gray-700 text-xl font-medium">+7 (922) 304-04-65</p>
+                <p class="text-gray-700 text-md lg:text-xl font-medium">+7 (922) 304-04-65</p>
               </div>
             </div>
 
@@ -189,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-800">Email</h3>
-                <p class="text-gray-700 text-xl font-medium">bzkprint@yandex.ru</p>
+                <p class="text-gray-700 text-md lg:text-xl font-medium">bzkprint@yandex.ru</p>
               </div>
             </div>
 
@@ -205,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-800">Адрес</h3>
-                <p class="text-gray-100 text-lg">г. Пермь, ул. Сухобруса, д. 27<br>Офис 101</p>
+                <p class="text-gray-100 text-md lg:text-lg">г. Пермь, ул. Сухобруса, д. 27<br>Офис 101</p>
               </div>
             </div>
           </div>
@@ -243,4 +244,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
     </div>
   </div>
 </main>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    Inputmask({
+        mask: "+7 (999) 999-99-99",
+        showMaskOnHover: false,
+        clearIncomplete: true // убирает недописанные номера при потере фокуса
+    }).mask("#phone");
+});
+</script>
 <?php include_once __DIR__ . '/includes/footer.php'; ?>

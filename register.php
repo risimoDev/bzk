@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
   <!-- Шапка -->
   <?php include_once __DIR__ . '/includes/header.php'; ?>
 
-  <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
+  <main class="min-h-screen from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-4xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
     <div class="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         
         <div class="space-y-6 mb-8">
           <div class="flex items-center">
-            <div class="w-12 h-12 bg-[#17B890] rounded-full flex items-center justify-center mr-4">
+            <div class="w-12 h-12 bg-[#17B890] rounded-full flex items-center justify-center mr-4 px-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
           </div>
           
           <div class="flex items-center">
-            <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-4">
+            <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-4 px-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
           </div>
           
           <div class="flex items-center">
-            <div class="w-12 h-12 bg-[#5E807F] rounded-full flex items-center justify-center mr-4">
+            <div class="w-12 h-12 bg-[#5E807F] rounded-full flex items-center justify-center mr-4 px-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -204,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
               <div class="relative">
                 <input type="tel" id="phone" name="phone" 
                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300 pl-12" 
-                       placeholder="+7 (___) ___-____">
+                       placeholder="+7 (___) ___-__-__" required>
                 <div class="absolute left-4 top-3.5 text-gray-400">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -235,8 +235,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
   </div>
 </main>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    Inputmask({
+        mask: "+7 (999) 999-99-99",
+        showMaskOnHover: false,
+        clearIncomplete: true // убирает недописанные номера при потере фокуса
+    }).mask("#phone");
+});
+</script>
+
   <!-- Футер -->
   <?php include_once __DIR__ . '/includes/footer.php'; ?>
-
-</body>
-</html>

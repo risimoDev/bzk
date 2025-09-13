@@ -4,7 +4,7 @@ if (session_status() == PHP_SESSION_NONE) {
   session_start();
 }
 include_once __DIR__ . '/db.php';
-$config = require __DIR__ . '/config.php';
+
 
 $current_page = basename($_SERVER['SCRIPT_NAME'], ".php"); // например "contacts"
 $stmt = $pdo->prepare("SELECT * FROM seo_settings WHERE page = ?");
@@ -44,7 +44,13 @@ include_once __DIR__ . '/session_check.php';
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="
+https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
+"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
+  <script src="
+https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
+"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   
   <style>
@@ -133,7 +139,7 @@ include_once __DIR__ . '/session_check.php';
 <!-- /Yandex.Metrika counter -->
 </head>
 
-<body class="font-sans bg-litegray">
+<body class="font-sans bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB]">
   <?php if (!empty($notifications)): ?>
     <?php foreach ($notifications as $notification): ?>
       <?php

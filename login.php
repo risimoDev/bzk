@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
   <!-- Шапка -->
   <?php include_once __DIR__ . '/includes/header.php'; ?>
 
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
+<main class="min-h-screen from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-4xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
 <div class="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         
         <div class="space-y-6 mb-8">
           <div class="flex items-center">
-            <div class="w-12 h-12 bg-[#17B890] rounded-full flex items-center justify-center mr-4">
+            <div class="w-[48px] h-[48px] bg-[#17B890] rounded-full flex items-center justify-center mr-4 px-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
           </div>
           
           <div class="flex items-center">
-            <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-4">
+            <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-4 px-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
           </div>
           
           <div class="flex items-center">
-            <div class="w-12 h-12 bg-[#5E807F] rounded-full flex items-center justify-center mr-4">
+            <div class="w-12 h-12 bg-[#5E807F] rounded-full flex items-center justify-center mr-4 px-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>

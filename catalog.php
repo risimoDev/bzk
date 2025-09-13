@@ -43,7 +43,7 @@ function getProductMainImage($pdo, $product_id) {
 }
 ?>
 <?php include_once __DIR__ . '/includes/header.php';?>
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
+<main class="min-h-screen from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
 <div class="container mx-auto px-4 py-4 flex justify-between items-center">

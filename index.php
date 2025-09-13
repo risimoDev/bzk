@@ -142,7 +142,7 @@ function getProductMainImage($pdo, $product_id) {
             <img src="/assets/images/about.jpg" alt="О компании" class="relative w-full h-96 object-cover rounded-2xl shadow-2xl">
             
             <!-- Статистика -->
-            <div class="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-xl p-6 w-64">
+            <div class="absolute -bottom-6 -right-4 bg-white rounded-2xl shadow-xl p-6 w-64">
               <div class="grid grid-cols-2 gap-4">
                 <div class="text-center">
                   <div class="text-2xl font-bold text-[#118568]">100+</div>
