@@ -36,8 +36,11 @@ function getProductMainImage($pdo, $product_id) {
     </div>
     <div class="container mx-auto px-4 py-24 md:py-32 relative z-10">
       <div class="max-w-4xl mx-auto text-center">
+        <h1 class="text-4xl md:text-6xl font-bold text-[#9DC5BB] mb-6 leading-tight">
+          Рекламно-производственная компания
+        </h1>
         <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-          <p class="text-[#9DC5BB]">Рекламно-производственная компания</p> <br><span">BZK PRINT</span>
+          BZK PRINT
         </h1>
         <p class="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed">
           Высокое качество печати и индивидуальный подход к каждому клиенту. 
