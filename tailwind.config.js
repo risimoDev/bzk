@@ -1,13 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./**/*.php",
-    "./assets/**/*.js",
-    "./includes/**/*.php",
-    "./admin/**/*.php",
-    "./client/**/*.php",
-    "./checkoutshopcart/**/*.php",
-    "./cart0/**/*.php"
+    "./*.{php,html,js}",            // файлы в корне
+    "./admin/**/*.{php,html,js}",   // всё внутри admin и подпапок
+    "./ajax/**/*.{php,html,js}",    // ajax
+    "./api/**/*.{php,html,js}",     // api
+    "./cart0/**/*.{php,html,js}",   // cart0
+    "./checkoutshopcart/**/*.{php,html,js}", // оформление заказов
+    "./client/**/*.{php,html,js}",  // личный кабинет
+    "./includes/**/*.{php,html,js}",// includes
+    "./myacon/**/*.{php,html,js}",  // myacon
+    "./PHPMailer/**/*.{php,html,js}",// PHPMailer (если юзаешь Tailwind в письмах)
+    "./text/**/*.{php,html,js}",    // текстовые страницы
+    "./uploads/**/*.{php,html,js}", // если вдруг там HTML
+    "./assets/js/**/*.{js,php,html}"// твои кастомные JS
   ],
   theme: {
     extend: {

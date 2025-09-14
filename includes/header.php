@@ -42,7 +42,7 @@ include_once __DIR__ . '/session_check.php';
 
   
   <link rel="stylesheet" href="/assets/css/style.css">
-  <link rel="stylesheet" href="../assets/css/output.css">
+  <link rel="stylesheet" href="/../assets/css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="
 https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
