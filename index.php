@@ -37,7 +37,7 @@ function getProductMainImage($pdo, $product_id) {
     <div class="container mx-auto px-4 py-24 md:py-32 relative z-10">
       <div class="max-w-4xl mx-auto text-center">
         <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-          Типография <span class="text-[#9DC5BB]">BZK PRINT</span>
+          <p class="text-[#9DC5BB]">Рекламно-производственная компания</p> <br><span">BZK PRINT</span>
         </h1>
         <p class="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed">
           Высокое качество печати и индивидуальный подход к каждому клиенту. 
@@ -63,7 +63,7 @@ function getProductMainImage($pdo, $product_id) {
     <div class="container mx-auto px-4 max-w-7xl">
       <div class="text-center mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Популярные товары</h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">Лучшие предложения от нашей типографии</p>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">Товары пользующиеся большим спросом</p>
         <div class="w-20 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
       </div>
       
@@ -164,7 +164,7 @@ function getProductMainImage($pdo, $product_id) {
           </div>
           
           <p class="text-lg text-gray-600 leading-relaxed mb-8">
-            Мы — молодая, быстро развивающаяся типография с более чем 4-летним опытом работы. 
+            Мы — молодая, быстро развивающаяся рекламно-производственная компания. 
             Наша цель — предоставить клиентам высококачественные печатные материалы и услуги, 
             которые соответствуют самым высоким стандартам.
           </p>
@@ -213,7 +213,7 @@ function getProductMainImage($pdo, $product_id) {
     <div class="container mx-auto px-4 max-w-7xl">
       <div class="text-center mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Почему выбирают нас?</h2>
-        <p class="text-xl text-gray-700 max-w-3xl mx-auto">Мы гордимся тем, что делаем свою работу на высшем уровне</p>
+        <p class="text-xl text-gray-700 max-w-3xl mx-auto">Мы гордимся тем, что делаем свою работу на довольно высоком уровне</p>
         <div class="w-20 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
       </div>
       
@@ -226,7 +226,7 @@ function getProductMainImage($pdo, $product_id) {
           </div>
           <h3 class="text-xl font-bold text-gray-800 mb-4">Высокое качество</h3>
           <p class="text-gray-600 leading-relaxed">
-            Мы используем только качественные материалы и современное оборудование для достижения безупречного результата.
+            Мы используем только качественные материалы для достижения безупречного результата.
           </p>
         </div>
         
@@ -250,7 +250,7 @@ function getProductMainImage($pdo, $product_id) {
           </div>
           <h3 class="text-xl font-bold text-gray-800 mb-4">Индивидуальный подход</h3>
           <p class="text-gray-600 leading-relaxed">
-            Каждый клиент получает персонализированное обслуживание и внимание к деталям.
+            Каждый клиент получает персонализированное обслуживание и внимание к деталям. Подстроимся под ваш бюджет.
           </p>
         </div>
       </div>
