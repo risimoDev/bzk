@@ -467,15 +467,6 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
   <script>
     // Автоматически скрываем уведомления через 5 секунд
     document.addEventListener('DOMContentLoaded', () => {
-      const notifications = document.querySelectorAll('.notification');
-      notifications.forEach(notification => {
-        setTimeout(() => {
-          notification.classList.remove('show');
-          setTimeout(() => {
-            notification.remove();
-          }, 300); // Задержка для завершения анимации
-        }, 5000);
-      });
       // Мобильное меню - новый подход
       const menuToggle = document.getElementById('menu-toggle');
       const mobileMenu = document.getElementById('mobile-menu');
@@ -495,22 +486,4 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
         });
       }
     });
-  </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!localStorage.getItem('cookiesAccepted')) {
-        showNotification('Этот сайт использует куки для улучшения работы.', 'info');
-        localStorage.setItem('cookiesAccepted', 'true'); // Сохраняем согласие пользователя
-      }
-    });
-    function showNotification(message, type = 'info') {
-      const notification = document.createElement('div');
-      notification.className = `notification ${type} show`;
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-      }, 5000);
-    }
   </script>
