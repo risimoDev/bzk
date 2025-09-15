@@ -467,6 +467,15 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
   <script>
     // Автоматически скрываем уведомления через 5 секунд
     document.addEventListener('DOMContentLoaded', () => {
+      const notifications = document.querySelectorAll('.notification');
+      notifications.forEach(notification => {
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            notification.remove();
+          }, 300); // Задержка для завершения анимации
+        }, 5000);
+      });
       // Мобильное меню - новый подход
       const menuToggle = document.getElementById('menu-toggle');
       const mobileMenu = document.getElementById('mobile-menu');
