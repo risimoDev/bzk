@@ -17,11 +17,33 @@ $meta_keywords = $seo['keywords'] ?? "";
 $og_title = $seo['og_title'] ?? $meta_title;
 $og_description = $seo['og_description'] ?? $meta_description;
 $og_image = $seo['og_image'] ?? "/assets/img/default-og.png";
-// Получение уведомлений из сессии
-$notifications = $_SESSION['notifications'] ?? [];
-unset($_SESSION['notifications']); // Очищаем уведомления после отображения
+// --- Подготовить уведомления для фронтенда ---
+$site_notifications = [];
+try {
+    // Если в проекте $pdo определён (includes/db.php подключён в header)
+    $stmt = $pdo->prepare("
+        SELECT id, title, message, type, persistent
+        FROM site_notifications
+        WHERE active = 1
+          AND (start_at IS NULL OR start_at <= NOW())
+          AND (end_at IS NULL OR end_at >= NOW())
+        ORDER BY created_at DESC
+    ");
+    $stmt->execute();
+    $site_notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // пропускаем, если нет таблицы/доступа
+    $site_notifications = [];
+}
+
+// Вытаскиваем сессионные уведомления и удаляем их, чтобы не показывать при следующем запросе
+$session_notifications = $_SESSION['notifications'] ?? [];
+if (isset($_SESSION['notifications'])) {
+    unset($_SESSION['notifications']);
+}
 $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'], 'quantity')) : 0;
 include_once __DIR__ . '/session_check.php';
+include_once __DIR__ . '/notifications.php';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -43,6 +65,11 @@ include_once __DIR__ . '/session_check.php';
   
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="/../assets/css/output.css">
+  <script>
+  // Переменные доступны для /assets/js/notifications.js
+  window.serverNotifications = <?php echo json_encode($session_notifications, JSON_UNESCAPED_UNICODE); ?>;
+  window.siteNotifications = <?php echo json_encode($site_notifications, JSON_UNESCAPED_UNICODE); ?>;
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="
 https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
@@ -52,7 +79,7 @@ https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
 https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
 "></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  
+  <script src="/../assets/js/notifications.js" defer></script>
   <style>
     .notification {
       position: fixed;
