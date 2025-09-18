@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?? 'unpaid';
 
     $products = $_POST['products'] ?? []; // [product_id => quantity]
+    $custom_items = $_POST['custom_items'] ?? []; // Custom positions
     $income = floatval($_POST['income']);
 
     if (!empty($client_name) && $income > 0) {
@@ -44,20 +45,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$client_name, $email, $phone, $address, $description, $status, $income]);
             $external_order_id = $pdo->lastInsertId();
 
-            // 2. Товары
+            // 2. Товары из каталога
             foreach ($products as $product_id => $quantity) {
                 if ($quantity > 0) {
                     $stmt = $pdo->prepare("SELECT base_price FROM products WHERE id = ?");
                     $stmt->execute([$product_id]);
                     $price = $stmt->fetchColumn() ?: 0;
 
-                    $stmt = $pdo->prepare("INSERT INTO external_order_items (external_order_id, product_id, quantity, price) 
-                                           VALUES (?, ?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO external_order_items (external_order_id, product_id, is_custom, quantity, price, expense_amount) 
+                                           VALUES (?, ?, 0, ?, ?, 0)");
                     $stmt->execute([$external_order_id, $product_id, $quantity, $price * $quantity]);
                 }
             }
 
-            // 3. Бухгалтерия
+            // 3. Пользовательские позиции
+            foreach ($custom_items as $index => $item) {
+                $name = trim($item['name'] ?? '');
+                $description = trim($item['description'] ?? '');
+                $quantity = intval($item['quantity'] ?? 0);
+                $unit_price = floatval($item['unit_price'] ?? 0);
+                $expense = floatval($item['expense'] ?? 0);
+                
+                if (!empty($name) && $quantity > 0 && $unit_price > 0) {
+                    $total_price = $quantity * $unit_price;
+                    $total_expense = $quantity * $expense;
+                    
+                    $stmt = $pdo->prepare("INSERT INTO external_order_items 
+                        (external_order_id, product_id, is_custom, item_name, item_description, quantity, price, expense_amount) 
+                        VALUES (?, NULL, 1, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$external_order_id, $name, $description, $quantity, $total_price, $total_expense]);
+                }
+            }
+
+            // 4. Бухгалтерия
             $stmt = $pdo->prepare("
                 INSERT INTO orders_accounting 
                 (source, external_order_id, client_name, income, total_expense, estimated_expense, status, tax_amount)
@@ -66,13 +86,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$external_order_id, $client_name, $income, $status]);
             $order_accounting_id = $pdo->lastInsertId();
 
-            // 4. Автоматический расчет расходов
+            // 5. Автоматический расчет расходов для товаров из каталога
             $estimated_expense = calculate_estimated_expense($pdo, $external_order_id, 'external');
+            
+            // Добавляем расходы от пользовательских позиций
+            $stmt = $pdo->prepare("SELECT SUM(expense_amount) FROM external_order_items WHERE external_order_id = ? AND is_custom = 1");
+            $stmt->execute([$external_order_id]);
+            $custom_expenses = floatval($stmt->fetchColumn());
+            $estimated_expense += $custom_expenses;
             $pdo->prepare("UPDATE orders_accounting SET estimated_expense = ? WHERE id = ?")
                 ->execute([$estimated_expense, $order_accounting_id]);
             create_automatic_expense_record($pdo, $order_accounting_id, $estimated_expense);
 
-            // 5. Налог
+            // 6. Налог
             calculate_and_save_tax($pdo, $order_accounting_id, $income);
 
             $pdo->commit();
@@ -185,7 +211,7 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
           </div>
         </section>
 
-        <!-- Товары -->
+        <!-- Товары из каталога -->
         <section>
           <h2 class="text-2xl font-bold text-gray-800 mb-6">Товары в заказе</h2>
           <?php if (empty($products_list)): ?>
@@ -212,6 +238,47 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <?php endforeach; ?>
             </div>
           <?php endif; ?>
+        </section>
+
+        <!-- Пользовательские позиции -->
+        <section>
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">Пользовательские позиции</h2>
+          <div id="custom-items-container">
+            <div class="custom-item bg-gray-50 rounded-2xl p-6 mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">Название</label>
+                  <input type="text" name="custom_items[0][name]" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">Описание</label>
+                  <input type="text" name="custom_items[0][description]" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">Количество</label>
+                  <input type="number" name="custom_items[0][quantity]" min="0" value="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg custom-quantity">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">Цена за ед. (₽)</label>
+                  <input type="number" step="0.01" name="custom_items[0][unit_price]" min="0" value="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg custom-price">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-medium mb-2">Расход за ед. (₽)</label>
+                  <input type="number" step="0.01" name="custom_items[0][expense]" min="0" value="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg custom-expense">
+                </div>
+              </div>
+              <div class="mt-4 flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                  Сумма: <span class="font-bold custom-total-price">0.00 ₽</span> | 
+                  Общий расход: <span class="font-bold custom-total-expense">0.00 ₽</span>
+                </div>
+                <button type="button" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 remove-custom-item" style="display: none;">Удалить</button>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="add-custom-item" class="w-full py-3 bg-[#118568] text-white rounded-xl hover:bg-[#0f755a] transition font-medium">
+            + Добавить позицию
+          </button>
         </section>
 
         <!-- Кнопки -->
@@ -252,9 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const statsQuantity = document.getElementById('stats-quantity');
   const statsSum = document.getElementById('stats-sum');
   const incomeInput = document.getElementById('income-input');
+  const customItemsContainer = document.getElementById('custom-items-container');
+  const addCustomItemBtn = document.getElementById('add-custom-item');
+  let customItemIndex = 1;
 
   function updateStats() {
     let products = 0, quantity = 0, sum = 0;
+    
+    // Каталожные товары
     inputs.forEach(inp => {
       let q = parseInt(inp.value) || 0;
       let price = parseFloat(inp.dataset.price) || 0;
@@ -264,15 +336,64 @@ document.addEventListener('DOMContentLoaded', () => {
         sum += q * price;
       }
     });
+    
+    // Пользовательские позиции
+    document.querySelectorAll('.custom-item').forEach(item => {
+      const quantity = parseFloat(item.querySelector('.custom-quantity').value) || 0;
+      const price = parseFloat(item.querySelector('.custom-price').value) || 0;
+      const name = item.querySelector('input[name*="[name]"]').value.trim();
+      
+      if (quantity > 0 && price > 0 && name) {
+        products++;
+        sum += quantity * price;
+      }
+    });
+    
     if (incomeInput && incomeInput.value) {
       let manual = parseFloat(incomeInput.value) || 0;
       if (manual > 0) sum = manual; // приоритет ручному вводу
     }
+    
     statsProducts.textContent = products;
     statsQuantity.textContent = quantity;
     statsSum.textContent = sum.toFixed(2) + ' ₽';
   }
 
+  function updateCustomItemTotals(item) {
+    const quantity = parseFloat(item.querySelector('.custom-quantity').value) || 0;
+    const price = parseFloat(item.querySelector('.custom-price').value) || 0;
+    const expense = parseFloat(item.querySelector('.custom-expense').value) || 0;
+    
+    const totalPrice = quantity * price;
+    const totalExpense = quantity * expense;
+    
+    item.querySelector('.custom-total-price').textContent = totalPrice.toFixed(2) + ' ₽';
+    item.querySelector('.custom-total-expense').textContent = totalExpense.toFixed(2) + ' ₽';
+    
+    updateStats();
+  }
+
+  function addCustomItemHandlers(item) {
+    const inputs = item.querySelectorAll('.custom-quantity, .custom-price, .custom-expense');
+    inputs.forEach(input => {
+      input.addEventListener('input', () => updateCustomItemTotals(item));
+    });
+    
+    const removeBtn = item.querySelector('.remove-custom-item');
+    removeBtn.addEventListener('click', () => {
+      item.remove();
+      updateStats();
+      
+      // Показываем кнопки удаления для остальных элементов
+      const remainingItems = document.querySelectorAll('.custom-item');
+      remainingItems.forEach((item, index) => {
+        const btn = item.querySelector('.remove-custom-item');
+        btn.style.display = remainingItems.length > 1 ? 'block' : 'none';
+      });
+    });
+  }
+
+  // Обработчики для каталожных товаров
   decBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.productId;
@@ -284,6 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+  
   incBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.productId;
@@ -295,8 +417,58 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+  
   inputs.forEach(inp => inp.addEventListener('input', updateStats));
   if (incomeInput) incomeInput.addEventListener('input', updateStats);
+
+  // Обработчик для первого пользовательского элемента
+  addCustomItemHandlers(document.querySelector('.custom-item'));
+
+  // Добавление новых пользовательских позиций
+  addCustomItemBtn.addEventListener('click', () => {
+    const newItem = document.createElement('div');
+    newItem.className = 'custom-item bg-gray-50 rounded-2xl p-6 mb-4';
+    newItem.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+          <label class="block text-gray-700 font-medium mb-2">Название</label>
+          <input type="text" name="custom_items[${customItemIndex}][name]" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-2">Описание</label>
+          <input type="text" name="custom_items[${customItemIndex}][description]" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-2">Количество</label>
+          <input type="number" name="custom_items[${customItemIndex}][quantity]" min="0" value="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg custom-quantity">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-2">Цена за ед. (₽)</label>
+          <input type="number" step="0.01" name="custom_items[${customItemIndex}][unit_price]" min="0" value="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg custom-price">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-2">Расход за ед. (₽)</label>
+          <input type="number" step="0.01" name="custom_items[${customItemIndex}][expense]" min="0" value="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg custom-expense">
+        </div>
+      </div>
+      <div class="mt-4 flex justify-between items-center">
+        <div class="text-sm text-gray-600">
+          Сумма: <span class="font-bold custom-total-price">0.00 ₽</span> | 
+          Общий расход: <span class="font-bold custom-total-expense">0.00 ₽</span>
+        </div>
+        <button type="button" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 remove-custom-item">Удалить</button>
+      </div>
+    `;
+    
+    customItemsContainer.appendChild(newItem);
+    addCustomItemHandlers(newItem);
+    customItemIndex++;
+    
+    // Показываем кнопки удаления
+    document.querySelectorAll('.remove-custom-item').forEach(btn => {
+      btn.style.display = 'block';
+    });
+  });
 
   updateStats();
 });
