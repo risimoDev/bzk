@@ -77,6 +77,9 @@ RewriteRule ^admin/tasks/add$ admin/tasks/add.php [L,QSA]
 RewriteRule ^admin/telegram_setup$ admin/telegram_setup.php [L,QSA]
 RewriteRule ^admin/messaging/create$ admin/messaging/create.php [L,QSA]
 RewriteRule ^admin/messaging/send$ admin/messaging/send.php [L,QSA]
+RewriteRule ^admin/messaging/send_messages$ admin/messaging/send_messages.php [L,QSA]
+RewriteRule ^admin/messaging/details$ admin/messaging/details.php [L,QSA]
+RewriteRule ^admin/messaging/edit$ admin/messaging/edit.php [L,QSA]
 
 # Личный кабинет
 RewriteRule ^client/dashboard$ client/dashboard.php [L,QSA]

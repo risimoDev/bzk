@@ -63,7 +63,7 @@ function handleStartCommand($chat_id, $first_name)
     $message .= "/connect [email] - быстрое подключение по email\n";
     $message .= "/help - помощь\n\n";
     $message .= "💡 После подключения вы будете получать уведомления о заказах, задачах и рассылках!";
-    
+
     sendTelegramMessage($chat_id, $message);
 }
 
@@ -73,7 +73,7 @@ function handleStartCommand($chat_id, $first_name)
 function handleConnectCommand($chat_id, $text, $first_name)
 {
     global $pdo;
-    
+
     // Извлечение email из команды
     $parts = explode(' ', $text, 2);
     if (count($parts) < 2) {
@@ -83,21 +83,21 @@ function handleConnectCommand($chat_id, $text, $first_name)
         sendTelegramMessage($chat_id, $message);
         return;
     }
-    
+
     $email = trim($parts[1]);
-    
+
     // Валидация email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         sendTelegramMessage($chat_id, "❌ Неверный формат email адреса!");
         return;
     }
-    
+
     try {
         // Поиск пользователя по email
         $stmt = $pdo->prepare("SELECT id, name, telegram_chat_id FROM users WHERE email = ? AND is_blocked = 0");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$user) {
             $message = "❌ Пользователь с email $email не найден!\n\n";
             $message .= "Убедитесь, что:\n";
@@ -107,7 +107,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
             sendTelegramMessage($chat_id, $message);
             return;
         }
-        
+
         // Обновление chat_id
         $stmt = $pdo->prepare("UPDATE users SET telegram_chat_id = ? WHERE id = ?");
         if ($stmt->execute([$chat_id, $user['id']])) {
@@ -119,16 +119,16 @@ function handleConnectCommand($chat_id, $text, $first_name)
             $message .= "📧 Массовые рассылки\n";
             $message .= "💬 Обновления статусов\n\n";
             $message .= "🔗 Chat ID: <code>$chat_id</code>";
-            
+
             sendTelegramMessage($chat_id, $message);
-            
+
             // Отправляем тестовое уведомление
             $test_message = "🎉 Тестовое уведомление!\n\nВаш Telegram успешно подключен к системе BZK Print.";
             sendTelegramMessage($chat_id, $test_message);
         } else {
             sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже.");
         }
-        
+
     } catch (Exception $e) {
         error_log("Telegram connect error: " . $e->getMessage());
         sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору.");
@@ -154,7 +154,7 @@ function handleHelpCommand($chat_id)
     $message .= "• Массовые рассылки\n";
     $message .= "• Обновления статусов\n\n";
     $message .= "❓ Нужна помощь? Обратитесь к администратору сайта.";
-    
+
     sendTelegramMessage($chat_id, $message);
 }
 
@@ -164,13 +164,13 @@ function handleHelpCommand($chat_id)
 function handleGeneralMessage($chat_id, $text, $first_name)
 {
     global $pdo;
-    
+
     // Проверяем, подключен ли уже этот chat_id
     try {
         $stmt = $pdo->prepare("SELECT name, email FROM users WHERE telegram_chat_id = ? AND is_blocked = 0");
         $stmt->execute([$chat_id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($user) {
             $message = "👋 Привет, {$user['name']}!\n\n";
             $message .= "Ваш аккаунт уже подключен к системе.\n";
@@ -182,9 +182,9 @@ function handleGeneralMessage($chat_id, $text, $first_name)
             $message .= "• Или введите Chat ID в настройках сайта: <code>$chat_id</code>\n\n";
             $message .= "Введите /help для получения дополнительной информации.";
         }
-        
+
         sendTelegramMessage($chat_id, $message);
-        
+
     } catch (Exception $e) {
         error_log("Telegram general message error: " . $e->getMessage());
         $message = "Используйте /start для начала работы с ботом.";
@@ -198,20 +198,20 @@ function handleGeneralMessage($chat_id, $text, $first_name)
 function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML')
 {
     $bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? '';
-    
+
     if (empty($bot_token)) {
         error_log('Telegram bot token not configured');
         return false;
     }
-    
+
     $url = "https://api.telegram.org/bot$bot_token/sendMessage";
-    
+
     $data = [
         'chat_id' => $chat_id,
         'text' => $text,
         'parse_mode' => $parse_mode
     ];
-    
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -219,23 +219,23 @@ function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML')
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
+
     $result = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
+
     if (curl_errno($ch)) {
         error_log('Telegram cURL error: ' . curl_error($ch));
         curl_close($ch);
         return false;
     }
-    
+
     curl_close($ch);
-    
+
     if ($http_code !== 200) {
         error_log('Telegram API error: ' . $result);
         return false;
     }
-    
+
     return true;
 }
 ?>

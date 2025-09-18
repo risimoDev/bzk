@@ -56,40 +56,40 @@ $response = json_decode($result, true);
 if ($http_code === 200 && $response['ok']) {
     echo "✅ Webhook успешно настроен!\n";
     echo "📋 Описание: " . ($response['description'] ?? 'N/A') . "\n\n";
-    
+
     // Получение информации о боте
     $bot_info_url = "https://api.telegram.org/bot$bot_token/getMe";
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $bot_info_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
+
     $bot_result = curl_exec($ch);
     curl_close($ch);
-    
+
     $bot_data = json_decode($bot_result, true);
     if ($bot_data['ok']) {
         $bot_username = $bot_data['result']['username'];
         echo "🤖 Бот: @$bot_username\n";
         echo "📱 Ссылка для пользователей: https://t.me/$bot_username\n\n";
     }
-    
+
     echo "📝 Инструкции для пользователей:\n";
     echo "1. Перейти в Telegram бот @$bot_username\n";
     echo "2. Нажать /start\n";
     echo "3. Использовать команду /connect [email] для автоматического подключения\n";
     echo "   Или скопировать Chat ID в настройки профиля на сайте\n\n";
-    
+
     echo "🔧 Дополнительные команды бота:\n";
     echo "/start - начало работы\n";
     echo "/connect [email] - подключение аккаунта\n";
     echo "/help - справка\n\n";
-    
+
 } else {
     echo "❌ Ошибка настройки webhook:\n";
     echo "HTTP код: $http_code\n";
     echo "Ответ: $result\n\n";
-    
+
     if ($response && isset($response['description'])) {
         echo "Описание ошибки: " . $response['description'] . "\n";
     }
