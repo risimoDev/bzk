@@ -80,6 +80,7 @@ RewriteRule ^admin/messaging/send$ admin/messaging/send.php [L,QSA]
 RewriteRule ^admin/messaging/send_messages$ admin/messaging/send_messages.php [L,QSA]
 RewriteRule ^admin/messaging/details$ admin/messaging/details.php [L,QSA]
 RewriteRule ^admin/messaging/edit$ admin/messaging/edit.php [L,QSA]
+RewriteRule ^admin/notifications$ admin/notifications.php [L,QSA]
 
 # Личный кабинет
 RewriteRule ^client/dashboard$ client/dashboard.php [L,QSA]

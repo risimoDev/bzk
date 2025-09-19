@@ -77,6 +77,49 @@ if (isset($pdo)) {
   .quick-link:hover {
     transform: scale(1.02);
   }
+
+  .management-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .management-category {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .management-category:last-child {
+    border-bottom: none;
+  }
+
+  .category-button {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+  }
+
+  .category-button:hover {
+    background: linear-gradient(135deg, #118568 0%, #17B890 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(17, 133, 104, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    border-color: #118568;
+  }
+
+  .category-button:hover .category-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.1);
+  }
+
+  .category-button:hover h4,
+  .category-button:hover p {
+    color: white !important;
+  }
+
+  .category-icon {
+    transition: all 0.3s ease;
+  }
 </style>
 </head>
 
@@ -87,8 +130,8 @@ if (isset($pdo)) {
 
   <!-- Главная страница админ-панели -->
   <main class="container mx-auto px-4 py-8 max-w-7xl">
-    <!-- Вставка breadcrumbs и кнопки "Назад" -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <!-- Breadcrumbs и навигация -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in">
       <div class="w-full md:w-auto">
         <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
       </div>
@@ -97,13 +140,14 @@ if (isset($pdo)) {
           <?php echo backButton(); ?>
           <a href="/logout"
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300 text-sm">
-            Выйти
+            <i class="fas fa-sign-out-alt mr-2"></i>Выйти
           </a>
         </div>
       </div>
     </div>
 
-    <div class="text-center mb-12">
+    <!-- Заголовок -->
+    <div class="text-center mb-12 animate-fade-in">
       <h1 class="text-4xl font-bold text-gray-800 mb-4">Админ-панель</h1>
       <p class="text-xl text-gray-700">Добро пожаловать,
         <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Администратор'); ?>!
@@ -111,16 +155,13 @@ if (isset($pdo)) {
       <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
     </div>
 
-    <!-- Сводка -->
+    <!-- Статистика -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card">
+      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card border-l-4 border-[#118568] animate-slide-in"
+        style="animation-delay: 0.1s">
         <div class="flex items-center">
           <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
+            <i class="fas fa-shopping-cart text-white text-xl"></i>
           </div>
           <div>
             <p class="text-2xl font-bold text-gray-800"><?php echo number_format($total_orders, 0, '', ' '); ?></p>
@@ -129,14 +170,11 @@ if (isset($pdo)) {
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card">
+      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card border-l-4 border-[#17B890] animate-slide-in"
+        style="animation-delay: 0.2s">
         <div class="flex items-center">
           <div class="w-12 h-12 bg-[#17B890] rounded-full flex items-center justify-center mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <i class="fas fa-clock text-white text-xl"></i>
           </div>
           <div>
             <p class="text-2xl font-bold text-gray-800"><?php echo number_format($pending_orders, 0, '', ' '); ?></p>
@@ -145,14 +183,11 @@ if (isset($pdo)) {
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card">
+      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card border-l-4 border-[#5E807F] animate-slide-in"
+        style="animation-delay: 0.3s">
         <div class="flex items-center">
           <div class="w-12 h-12 bg-[#5E807F] rounded-full flex items-center justify-center mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <i class="fas fa-check-circle text-white text-xl"></i>
           </div>
           <div>
             <p class="text-2xl font-bold text-gray-800"><?php echo number_format($completed_orders, 0, '', ' '); ?></p>
@@ -161,14 +196,11 @@ if (isset($pdo)) {
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card">
+      <div class="bg-white rounded-2xl shadow-xl p-6 stat-card border-l-4 border-[#9DC5BB] animate-slide-in"
+        style="animation-delay: 0.4s">
         <div class="flex items-center">
           <div class="w-12 h-12 bg-[#9DC5BB] rounded-full flex items-center justify-center mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <i class="fas fa-ruble-sign text-white text-xl"></i>
           </div>
           <div>
             <p class="text-2xl font-bold text-gray-800"><?php echo number_format($total_revenue, 0, '', ' '); ?> ₽</p>
@@ -181,7 +213,7 @@ if (isset($pdo)) {
     <!-- График и последние заказы -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
       <!-- График заказов -->
-      <div class="bg-white rounded-2xl shadow-xl p-6">
+      <div class="bg-white rounded-2xl shadow-xl p-6 hover-lift animate-slide-in" style="animation-delay: 0.5s">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Статистика заказов</h2>
         <div class="h-64">
           <canvas id="ordersChart"></canvas>
@@ -189,7 +221,7 @@ if (isset($pdo)) {
       </div>
 
       <!-- Последние заказы -->
-      <div class="bg-white rounded-2xl shadow-xl p-6">
+      <div class="bg-white rounded-2xl shadow-xl p-6 hover-lift animate-slide-in" style="animation-delay: 0.6s">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-gray-800">Последние заказы</h2>
           <a href="/admin/orders" class="text-[#118568] hover:text-[#0f755a] font-medium text-sm">Все заказы →</a>
@@ -262,393 +294,260 @@ if (isset($pdo)) {
       </div>
     </div>
 
-    <!-- Популярные товары и дополнительная статистика -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-      <!-- Популярные товары -->
-      <div class="bg-white rounded-2xl shadow-xl p-6 lg:col-span-2">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Популярные товары</h2>
-        <div class="space-y-4">
-          <?php foreach ($popular_products as $product): ?>
-            <div class="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-300">
-              <div class="w-12 h-12 bg-[#17B890] rounded-lg flex items-center justify-center mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                </svg>
-              </div>
-              <div class="flex-grow">
-                <h3 class="font-medium text-gray-800"><?php echo htmlspecialchars($product['name']); ?></h3>
-                <p class="text-sm text-gray-600">Заказан <?php echo $product['order_count']; ?> раз</p>
-              </div>
-              <div class="w-24 bg-gray-200 rounded-full h-2">
-                <div class="bg-[#118568] h-2 rounded-full"
-                  style="width: <?php echo min(100, $product['order_count'] * 10); ?>%"></div>
-              </div>
+    <!-- Популярные товары с улучшенным дизайном -->
+    <div class="glass-effect rounded-2xl shadow-xl p-6 lg:col-span-2 animate-slide-in" style="animation-delay: 0.7s">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Популярные товары</h2>
+      <div class="space-y-4">
+        <?php foreach ($popular_products as $product): ?>
+          <div class="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-300">
+            <div class="w-12 h-12 bg-[#17B890] rounded-lg flex items-center justify-center mr-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h6a2 2 0 002-2V8m-9 4h4" />
+              </svg>
             </div>
-          <?php endforeach; ?>
+            <div class="flex-grow">
+              <h3 class="font-medium text-gray-800"><?php echo htmlspecialchars($product['name']); ?></h3>
+              <p class="text-sm text-gray-600">Заказан <?php echo $product['order_count']; ?> раз</p>
+            </div>
+            <div class="w-24 bg-gray-200 rounded-full h-2">
+              <div class="bg-[#118568] h-2 rounded-full"
+                style="width: <?php echo min(100, $product['order_count'] * 10); ?>%"></div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <!-- Управление системой - Организованные категории -->
+    <div class="management-section p-8 mb-8 animate-slide-in" style="animation-delay: 0.7s">
+      <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center">Управление системой</h2>
+
+      <!-- Основные операции -->
+      <div class="management-category p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-star text-[#118568] mr-2"></i>
+          Основные операции
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="/admin/orders" class="category-button relative p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#118568] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-clipboard-list text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Заказы</h4>
+            <p class="text-sm text-gray-600">Управление заказами</p>
+            <?php if ($new_orders_count > 0): ?>
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                <?php echo $new_orders_count; ?>
+              </span>
+            <?php endif; ?>
+          </a>
+
+          <a href="/admin/products" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#17B890] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-boxes text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Товары</h4>
+            <p class="text-sm text-gray-600">Каталог продукции</p>
+          </a>
+
+          <a href="/admin/users" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#5E807F] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-users text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Клиенты</h4>
+            <p class="text-sm text-gray-600">База клиентов</p>
+          </a>
+
+          <a href="/admin/buhgalt/index" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#9DC5BB] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-calculator text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Бухгалтерия</h4>
+            <p class="text-sm text-gray-600">Финансовые отчеты</p>
+          </a>
         </div>
       </div>
 
-      <!-- Дополнительная статистика -->
-      <div class="space-y-8">
-        <div class="bg-white rounded-2xl shadow-xl p-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-6">Общая статистика</h2>
-          <div class="space-y-4">
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span class="text-gray-600">Пользователей</span>
-              <span class="font-bold text-[#118568]"><?php echo number_format($total_users, 0, '', ' '); ?></span>
+      <!-- Заказы и производство -->
+      <div class="management-category p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-cogs text-[#17B890] mr-2"></i>
+          Заказы и производство
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <a href="/admin/order/add_external" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#118568] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-plus-circle text-white text-xl"></i>
             </div>
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span class="text-gray-600">Товаров</span>
-              <span class="font-bold text-[#17B890]"><?php echo number_format($total_products, 0, '', ' '); ?></span>
-            </div>
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span class="text-gray-600">Отменено</span>
-              <span class="font-bold text-red-500"><?php echo number_format($canceled_orders, 0, '', ' '); ?></span>
-            </div>
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span class="text-gray-600">Отправлено</span>
-              <span class="font-bold text-purple-500"><?php echo number_format($shipped_orders, 0, '', ' '); ?></span>
-            </div>
-          </div>
-        </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Новый заказ</h4>
+            <p class="text-sm text-gray-600">Добавить заказ вручную</p>
+          </a>
 
-        <!-- Быстрые действия -->
-        <div class="bg-white rounded-2xl shadow-xl p-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-6">Быстрые действия</h2>
-          <div class="grid grid-cols-2 gap-3">
-            <a href="/admin/orders?status=pending"
-              class="p-3 bg-yellow-50 text-yellow-700 rounded-lg text-center hover:bg-yellow-100 transition-colors duration-300 text-sm">
-              Новые заказы
-            </a>
-            <a href="/admin/products"
-              class="p-3 bg-green-50 text-green-700 rounded-lg text-center hover:bg-green-100 transition-colors duration-300 text-sm">
-              + Товар
-            </a>
-            <a href="/admin/users"
-              class="p-3 bg-blue-50 text-blue-700 rounded-lg text-center hover:bg-blue-100 transition-colors duration-300 text-sm">
-              Пользователи
-            </a>
-            <a href="/admin/reports"
-              class="p-3 bg-purple-50 text-purple-700 rounded-lg text-center hover:bg-purple-100 transition-colors duration-300 text-sm">
-              Отчеты
-            </a>
-          </div>
+          <a href="/admin/order/external_orders" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#17B890] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-external-link-alt text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Внешние заказы</h4>
+            <p class="text-sm text-gray-600">Управление заказами</p>
+          </a>
+
+          <a href="/admin/materials" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#5E807F] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-toolbox text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Материалы</h4>
+            <p class="text-sm text-gray-600">Расходники и материалы</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- Коммуникации -->
+      <div class="management-category p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-comments text-[#5E807F] mr-2"></i>
+          Коммуникации
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="/admin/messaging" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#9DC5BB] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-mail-bulk text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Рассылки</h4>
+            <p class="text-sm text-gray-600">Массовые рассылки</p>
+          </a>
+
+          <a href="/admin/messaging/create" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#118568] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-pen-fancy text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Новая рассылка</h4>
+            <p class="text-sm text-gray-600">Создать рассылку</p>
+          </a>
+
+          <a href="/admin/contacts/messages" class="category-button relative p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#17B890] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-envelope-open text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Сообщения</h4>
+            <p class="text-sm text-gray-600">Обратная связь</p>
+            <?php if ($new_messages > 0): ?>
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                <?php echo $new_messages; ?>
+              </span>
+            <?php endif; ?>
+          </a>
+
+          <a href="/admin/notifications" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#9DC5BB] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-bell text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Уведомления</h4>
+            <p class="text-sm text-gray-600">Системные уведомления</p>
+          </a>
+
+          <a href="/admin/telegram_setup" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#5E807F] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fab fa-telegram-plane text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Telegram</h4>
+            <p class="text-sm text-gray-600">Настройки уведомлений</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- Дополнительные инструменты -->
+      <div class="management-category p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-tools text-[#9DC5BB] mr-2"></i>
+          Дополнительные инструменты
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <a href="/admin/tasks" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#17B890] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-tasks text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Задачи</h4>
+            <p class="text-sm text-gray-600">Управление задачами</p>
+          </a>
+
+          <a href="/admin/discounts" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#9DC5BB] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-tags text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Скидки</h4>
+            <p class="text-sm text-gray-600">Система скидок</p>
+          </a>
+
+          <a href="/admin/partners" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#118568] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-handshake text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Партнеры</h4>
+            <p class="text-sm text-gray-600">Логотипы партнеров</p>
+          </a>
+
+          <a href="/admin/statistic" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#5E807F] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-chart-line text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Статистика</h4>
+            <p class="text-sm text-gray-600">Аналитика и отчеты</p>
+          </a>
+
+          <a href="/admin/seo/home" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#17B890] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-search-plus text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">SEO</h4>
+            <p class="text-sm text-gray-600">SEO-настройки</p>
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Быстрые ссылки -->
-    <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-      <h2 class="text-2xl font-bold text-gray-800 mb-6">Управление системой</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-        <a href="/admin/orders"
-          class="relative block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Заказы</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Управление заказами и статусами</p>
-          <!-- бейдж -->
-          <span id="orders-badge"
-            class="absolute top-3 right-3 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full bg-red-500 text-white"
-            style="<?php echo $new_orders_count > 0 ? '' : 'display:none;'; ?>">
-            <?php echo $new_orders_count > 0 ? $new_orders_count : ''; ?>
-          </span>
-        </a>
-
-        <a href="/admin/products"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Товары</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Добавление и редактирование товаров</p>
-        </a>
-
-        <a href="/admin/users"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#5E807F] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Пользователи</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Управление пользователями и ролями</p>
-        </a>
-
-        <a href="/admin/discounts"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#9DC5BB] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Скидки</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Настройка скидочных систем</p>
-        </a>
-
-        <a href="/admin/partners"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Партнеры</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Управление логотипами партнеров на главном экране</p>
-        </a>
-
-        <a href="/admin/buhgalt/index"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Бухгалтерия</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Финансовые отчеты и учет</p>
-        </a>
-
-        <a href="/admin/tax_settings"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Налоги</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Настройка налога</p>
-        </a>
-
-        <a href="/admin/materials"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Материалы</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Добавление и редактирование расходников</p>
-        </a>
-
-        <a href="/admin/order/add_external"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Новый заказ</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Добавление стороннего заказа вручную</p>
-        </a>
-
-        <a href="/admin/order/external_orders"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Внешние заказы</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Управление заказами созданными вручную</p>
-        </a>
-
-        <a href="/admin/contacts/messages"
-          class="relative block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M7 8h10M7 12h4m1 8a9 9 0 100-18 9 9 0 000 18z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Сообщения</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Обратная связь с сайта</p>
-
-          <?php if ($new_messages > 0): ?>
-            <span class="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
-              <?php echo $new_messages; ?>
-            </span>
-          <?php endif; ?>
-        </a>
-
-        <a href="/admin/statistic"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M11 11V3H5a2 2 0 00-2 2v6h8zM13 13h8v6a2 2 0 01-2 2h-6v-8zM3 13h8v8H5a2 2 0 01-2-2v-6zM13 3h6a2 2 0 012 2v6h-8V3z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Статистика</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Графики, заказы, пользователи и Метрика</p>
-        </a>
-
-        <a href="/admin/seo/home"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#9DC5BB] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8c-2.21 0-4 .895-4 2s1.79 2 4 2 4 .895 4 2-1.79 2-4 2M12 4v2m0 12v2m8-10h2m-2 4h2m-18-4h2m-2 4h2" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">SEO-настройки</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Заголовки и мета-описания страниц</p>
-        </a>
-
-        <a href="/admin/tasks"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#17B890] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Задачи</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Управление задачами и назначениями</p>
-        </a>
-
-        <a href="/admin/tasks/add"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Новая задача</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Создать задачу с Telegram уведомлениями</p>
-        </a>
-
-        <a href="/admin/messaging"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#9DC5BB] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Массовые рассылки</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Управление email и Telegram рассылками</p>
-        </a>
-
-        <a href="/admin/messaging/create"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#5E807F] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Новая рассылка</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Создать новую массовую рассылку</p>
-        </a>
-
-        <a href="/admin/telegram_setup"
-          class="block p-5 bg-gray-50 rounded-xl hover:bg-[#DEE5E5] transition-colors duration-300 quick-link">
-          <div class="flex items-center mb-3">
-            <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">Telegram настройки</h3>
-          </div>
-          <p class="text-gray-600 text-sm">Настройка уведомлений в Telegram</p>
-        </a>
-
-      </div>
-    </div>
-
-    <!-- Системная информация -->
-    <div class="bg-white rounded-2xl shadow-xl p-6">
+    <!-- Системная информация с улучшенным дизайном -->
+    <div class="glass-effect rounded-2xl shadow-xl p-8 animate-slide-in" style="animation-delay: 0.8s">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Системная информация</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="p-4 bg-gray-50 rounded-lg">
-          <div class="text-sm text-gray-600 mb-1">Роль пользователя</div>
-          <div class="font-bold text-gray-800">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+          class="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300">
+          <div class="flex items-center mb-3">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-[#118568] to-[#17B890] rounded-lg flex items-center justify-center mr-3">
+              <i class="fas fa-user-shield text-white text-sm"></i>
+            </div>
+            <div class="text-sm text-gray-600">Роль пользователя</div>
+          </div>
+          <div class="font-bold text-gray-800 text-lg">
             <?php
             $roles = ['admin' => 'Администратор', 'manager' => 'Менеджер'];
             echo $roles[$_SESSION['role']] ?? $_SESSION['role'];
             ?>
           </div>
         </div>
-        <div class="p-4 bg-gray-50 rounded-lg">
-          <div class="text-sm text-gray-600 mb-1">Время на сервере</div>
-          <div class="font-bold text-gray-800"><?php echo date('d.m.Y H:i:s'); ?></div>
+        <div
+          class="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300">
+          <div class="flex items-center mb-3">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-[#17B890] to-[#9DC5BB] rounded-lg flex items-center justify-center mr-3">
+              <i class="fas fa-clock text-white text-sm"></i>
+            </div>
+            <div class="text-sm text-gray-600">Время на сервере</div>
+          </div>
+          <div class="font-bold text-gray-800 text-lg"><?php echo date('d.m.Y H:i:s'); ?></div>
         </div>
-        <div class="p-4 bg-gray-50 rounded-lg">
-          <div class="text-sm text-gray-600 mb-1">Версия системы</div>
-          <div class="font-bold text-gray-800">v1.7.0</div>
+        <div
+          class="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300">
+          <div class="flex items-center mb-3">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-[#5E807F] to-[#118568] rounded-lg flex items-center justify-center mr-3">
+              <i class="fas fa-code-branch text-white text-sm"></i>
+            </div>
+            <div class="text-sm text-gray-600">Версия системы</div>
+          </div>
+          <div class="font-bold text-gray-800 text-lg">v1.7.0</div>
         </div>
       </div>
     </div>
@@ -656,7 +555,6 @@ if (isset($pdo)) {
 
   <!-- Футер -->
   <?php include_once('../includes/footer.php'); ?>
-
   <script>
     // Инициализация графика
     document.addEventListener('DOMContentLoaded', function () {

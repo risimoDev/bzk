@@ -78,6 +78,7 @@ https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
   <script src="
 https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
 "></script>
+<script src="https://kit.fontawesome.com/9e7604a404.js" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="/../assets/js/notifications.js" defer></script>
   <style>
