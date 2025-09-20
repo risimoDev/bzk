@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/includes/session.php';;
+require_once __DIR__ . '/includes/session.php';
+;
 $pageTitle = "Товар";
 
 
@@ -74,10 +75,8 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
 
 ?>
 <?php include_once __DIR__ . '/includes/header.php'; ?>
-<!-- Подключение Swiper CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
-<main class="min-h-screen bg-pattern from-[#DEE5E5] to-[#9DC5BB] py-8">
+<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -100,39 +99,54 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
         <!-- Галерея изображений -->
         <div class="bg-gradient-to-br from-[#5E807F] to-[#118568] p-8 flex items-center justify-center">
           <div class="w-full max-w-lg">
-            <!-- Основной слайдер -->
-            <div class="swiper productSwiper rounded-2xl overflow-hidden shadow-2xl">
-              <div class="swiper-wrapper">
-                <?php if (!empty($images)): ?>
-                  <?php foreach ($images as $image): ?>
-                    <div class="swiper-slide">
-                      <img src="<?php echo htmlspecialchars($image); ?>"
-                        alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-96 object-cover">
+            <!-- Основное изображение -->
+            <div class="rounded-2xl overflow-hidden shadow-2xl bg-white">
+              <div id="main-image-container" class="relative">
+                <img id="main-image"
+                  src="<?php echo !empty($images) ? htmlspecialchars($images[0]) : '/assets/images/no-image.webp'; ?>"
+                  alt="<?php echo htmlspecialchars($product['name']); ?>"
+                  class="w-full h-96 object-cover cursor-pointer transition-transform duration-300 hover:scale-105">
+
+                <?php if (count($images) > 1): ?>
+                  <!-- Стрелки навигации -->
+                  <button id="prev-btn"
+                    class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                  </button>
+                  <button id="next-btn"
+                    class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+
+                  <!-- Индикатор изображений -->
+                  <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                    <div id="image-indicators" class="flex space-x-2">
+                      <?php foreach ($images as $index => $image): ?>
+                        <button
+                          class="image-indicator w-2 h-2 rounded-full transition-all duration-300 <?php echo $index === 0 ? 'bg-white' : 'bg-white/50'; ?>"
+                          data-index="<?php echo $index; ?>"></button>
+                      <?php endforeach; ?>
                     </div>
-                  <?php endforeach; ?>
-                <?php else: ?>
-                  <div class="swiper-slide">
-                    <img src="/assets/images/no-image.webp" alt="Нет изображения" class="w-full h-96 object-cover">
                   </div>
                 <?php endif; ?>
               </div>
-
-              <!-- Навигация -->
-              <div class="swiper-button-next text-white"></div>
-              <div class="swiper-button-prev text-white"></div>
-              <div class="swiper-pagination"></div>
             </div>
 
             <!-- Миниатюры -->
             <?php if (count($images) > 1): ?>
-              <div class="swiper thumbnailSwiper mt-4">
-                <div class="swiper-wrapper">
+              <div class="mt-4">
+                <div id="thumbnails" class="flex space-x-2 justify-center overflow-x-auto pb-2">
                   <?php foreach ($images as $index => $image): ?>
-                    <div class="swiper-slide cursor-pointer opacity-50 hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      class="thumbnail flex-shrink-0 <?php echo $index === 0 ? 'ring-2 ring-white' : 'opacity-60 hover:opacity-100'; ?> transition-all duration-300 rounded-lg overflow-hidden"
+                      data-index="<?php echo $index; ?>">
                       <img src="<?php echo htmlspecialchars($image); ?>"
-                        alt="<?php echo htmlspecialchars($product['name']); ?>"
-                        class="w-20 h-20 object-cover rounded-lg border-2 border-white">
-                    </div>
+                        alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-16 h-16 object-cover">
+                    </button>
                   <?php endforeach; ?>
                 </div>
               </div>
@@ -248,11 +262,11 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                         <div class="text-sm opacity-90">Скидка <?php echo $discount_value; ?>%</div>
                       <?php endif; ?>
                     </div>
-                    <div class="text-right w-full">
+                    <div class="text-right">
                       <div class="text-xl lg:text-3xl font-bold">
                         <span
-                          id="total-price"><?php echo number_format($final_price * $min_quantity, 0, '', ' '); ?></span> руб.
-                        
+                          id="total-price"><?php echo number_format($final_price * $min_quantity, 0, '', ' '); ?></span>
+                        ₽
                       </div>
                     </div>
                   </div>
@@ -312,11 +326,91 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
   </div>
 </main>
 
-<!-- Подключение Swiper JS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
+<!-- Подключение JavaScript -->
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Галерея изображений
+    const images = <?php echo json_encode($images); ?>;
+    let currentImageIndex = 0;
+
+    const mainImage = document.getElementById('main-image');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    const indicators = document.querySelectorAll('.image-indicator');
+
+    function updateImage(index) {
+      if (images.length === 0) return;
+
+      currentImageIndex = index;
+      if (mainImage) {
+        mainImage.src = images[index];
+      }
+
+      // Обновляем миниатюры
+      thumbnails.forEach((thumb, i) => {
+        if (i === index) {
+          thumb.classList.add('ring-2', 'ring-white');
+          thumb.classList.remove('opacity-60');
+        } else {
+          thumb.classList.remove('ring-2', 'ring-white');
+          thumb.classList.add('opacity-60');
+        }
+      });
+
+      // Обновляем индикаторы
+      indicators.forEach((indicator, i) => {
+        if (i === index) {
+          indicator.classList.add('bg-white');
+          indicator.classList.remove('bg-white/50');
+        } else {
+          indicator.classList.remove('bg-white');
+          indicator.classList.add('bg-white/50');
+        }
+      });
+    }
+
+    // Обработчики событий
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1;
+        updateImage(newIndex);
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        const newIndex = currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0;
+        updateImage(newIndex);
+      });
+    }
+
+    // Клики по миниатюрам
+    thumbnails.forEach((thumb, index) => {
+      thumb.addEventListener('click', () => {
+        updateImage(index);
+      });
+    });
+
+    // Клики по индикаторам
+    indicators.forEach((indicator, index) => {
+      indicator.addEventListener('click', () => {
+        updateImage(index);
+      });
+    });
+
+    // Клавиатурная навигация
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' && images.length > 1) {
+        const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1;
+        updateImage(newIndex);
+      } else if (e.key === 'ArrowRight' && images.length > 1) {
+        const newIndex = currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0;
+        updateImage(newIndex);
+      }
+    });
+
+    // Расчет цены
     const quantityInput = document.getElementById('quantity');
     const totalPriceEl = document.getElementById('total-price');
     const attributeInputs = document.querySelectorAll('input[name^="attributes"]');
@@ -355,7 +449,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
       totalPriceEl.textContent = total.toLocaleString('ru-RU');
     }
 
-    // --- Обработчики ---
+    // Обработчики изменения цены
     if (quantityInput) {
       quantityInput.addEventListener('input', updateTotalPrice);
     }
@@ -385,142 +479,115 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
 
     updateTotalPrice(); // Первый вызов
   });
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var swiper = new Swiper(".productSwiper", {
-      pagination: {
-        el: ".swiper-pagination",
-        clickable: true,
-      },
-      navigation: {
-        nextEl: ".swiper-button-next",
-        prevEl: ".swiper-button-prev",
-      },
-      loop: true,
-    });
-
-    var thumbnailSwiper = new Swiper(".thumbnailSwiper", {
-      slidesPerView: 4,
-      spaceBetween: 10,
-      freeMode: true,
-      watchSlidesProgress: true,
-    });
-
-    // Связываем основной слайдер с миниатюрами
-    if (swiper && thumbnailSwiper) {
-      swiper.thumbs = { swiper: thumbnailSwiper };
-      swiper.thumbs.init();
-    }
-  });
 </script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.getElementById('add-to-cart-form');
-  if (!form) return;
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('add-to-cart-form');
+    if (!form) return;
 
-  // Отключаем автоматическую HTML-валидацию, чтобы контролировать процесс самим,
-  // но будем вызывать checkValidity/reportValidity для остальных полей.
-  form.noValidate = true;
+    // Отключаем автоматическую HTML-валидацию, чтобы контролировать процесс самим,
+    // но будем вызывать checkValidity/reportValidity для остальных полей.
+    form.noValidate = true;
 
-  const warningEl = document.getElementById('cart-warning');
-  if (warningEl) {
-    // аккуратно сбрасываем стиль при старте
-    warningEl.classList.add('hidden');
-    warningEl.setAttribute('role', 'alert');
-  }
-
-  form.addEventListener('submit', function(e) {
-    e.preventDefault(); // всегда предотвращаем дефолт — далее решаем вручную
-
-    // Снимаем предыдущие подсветки / сообщения
-    clearHighlights();
+    const warningEl = document.getElementById('cart-warning');
     if (warningEl) {
+      // аккуратно сбрасываем стиль при старте
       warningEl.classList.add('hidden');
-      warningEl.textContent = '';
+      warningEl.setAttribute('role', 'alert');
     }
 
-    // Собираем группы атрибутов: имя полностью (например "attributes[12]")
-    const inputs = Array.from(form.querySelectorAll('input[name^="attributes"]'));
-    const groups = {}; // { 'attributes[12]': [input, input, ...], ... }
-    inputs.forEach(inp => {
-      const name = inp.getAttribute('name');
-      groups[name] = groups[name] || [];
-      groups[name].push(inp);
-    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); // всегда предотвращаем дефолт — далее решаем вручную
 
-    // Проверяем, для каждой группы есть ли выбранный input
-    const missingGroups = [];
-    Object.keys(groups).forEach(groupName => {
-      const checked = form.querySelector(`input[name="${groupName}"]:checked`);
-      if (!checked) {
-        // Попали в ошибку для этой группы
-        // Попробуем найти блок с заголовком h4 (где отображено имя характеристики)
-        const firstInput = groups[groupName][0];
-        const wrapper = findWrapperWithH4(firstInput);
-        let title = groupName;
-        if (wrapper) {
-          // подсветка контейнера
-          wrapper.classList.add('ring-2', 'ring-red-400', 'border-red-400');
-          const h4 = wrapper.querySelector('h4');
-          if (h4) title = h4.textContent.trim().replace(/:$/, '');
-        }
-        missingGroups.push(title);
-      }
-    });
-
-    if (missingGroups.length > 0) {
-      // Показываем сообщение и выходим — не отправляем форму
+      // Снимаем предыдущие подсветки / сообщения
+      clearHighlights();
       if (warningEl) {
-        warningEl.classList.remove('hidden');
-        warningEl.textContent = '⚠️ Выберите характеристики: ' + missingGroups.join(', ');
-        warningEl.scrollIntoView({behavior: 'smooth', block: 'center'});
-      } else {
-        alert('Пожалуйста, выберите характеристики: ' + missingGroups.join(', '));
+        warningEl.classList.add('hidden');
+        warningEl.textContent = '';
       }
 
-      // Убираем подсветку через 4.5 секунды
-      setTimeout(clearHighlights, 4500);
-      return;
-    }
+      // Собираем группы атрибутов: имя полностью (например "attributes[12]")
+      const inputs = Array.from(form.querySelectorAll('input[name^="attributes"]'));
+      const groups = {}; // { 'attributes[12]': [input, input, ...], ... }
+      inputs.forEach(inp => {
+        const name = inp.getAttribute('name');
+        groups[name] = groups[name] || [];
+        groups[name].push(inp);
+      });
 
-    // Если все атрибуты выбраны — проверяем остальные нативные правила
-    if (!form.checkValidity()) {
-      // Покажем браузерные подсказки (для полей, у которых есть constraints)
-      form.reportValidity();
-      return;
-    }
-
-    // Всё ок — отправляем форму программно
-    // (предварительно удаляем временный novalidate, чтобы при submit всё как обычно)
-    form.noValidate = false;
-    form.submit();
-  });
-
-  // ----------------- вспомогательные функции -----------------
-  function findWrapperWithH4(startEl) {
-    let node = startEl;
-    while (node && node !== form) {
-      try {
-        // если внутри node есть h4 — считаем его контейнером группы
-        if (node.querySelector && node.querySelector('h4')) {
-          return node;
+      // Проверяем, для каждой группы есть ли выбранный input
+      const missingGroups = [];
+      Object.keys(groups).forEach(groupName => {
+        const checked = form.querySelector(`input[name="${groupName}"]:checked`);
+        if (!checked) {
+          // Попали в ошибку для этой группы
+          // Попробуем найти блок с заголовком h4 (где отображено имя характеристики)
+          const firstInput = groups[groupName][0];
+          const wrapper = findWrapperWithH4(firstInput);
+          let title = groupName;
+          if (wrapper) {
+            // подсветка контейнера
+            wrapper.classList.add('ring-2', 'ring-red-400', 'border-red-400');
+            const h4 = wrapper.querySelector('h4');
+            if (h4) title = h4.textContent.trim().replace(/:$/, '');
+          }
+          missingGroups.push(title);
         }
-      } catch (err) {
-        // на всякий случай
-      }
-      node = node.parentElement;
-    }
-    return null;
-  }
+      });
 
-  function clearHighlights() {
-    // убираем классы подсветки, которые добавляли
-    const highlighted = form.querySelectorAll('.ring-2.ring-red-400, .border-red-400');
-    highlighted.forEach(el => {
-      el.classList.remove('ring-2', 'ring-red-400', 'border-red-400');
+      if (missingGroups.length > 0) {
+        // Показываем сообщение и выходим — не отправляем форму
+        if (warningEl) {
+          warningEl.classList.remove('hidden');
+          warningEl.textContent = '⚠️ Выберите характеристики: ' + missingGroups.join(', ');
+          warningEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          alert('Пожалуйста, выберите характеристики: ' + missingGroups.join(', '));
+        }
+
+        // Убираем подсветку через 4.5 секунды
+        setTimeout(clearHighlights, 4500);
+        return;
+      }
+
+      // Если все атрибуты выбраны — проверяем остальные нативные правила
+      if (!form.checkValidity()) {
+        // Покажем браузерные подсказки (для полей, у которых есть constraints)
+        form.reportValidity();
+        return;
+      }
+
+      // Всё ок — отправляем форму программно
+      // (предварительно удаляем временный novalidate, чтобы при submit всё как обычно)
+      form.noValidate = false;
+      form.submit();
     });
-  }
-});
+
+    // ----------------- вспомогательные функции -----------------
+    function findWrapperWithH4(startEl) {
+      let node = startEl;
+      while (node && node !== form) {
+        try {
+          // если внутри node есть h4 — считаем его контейнером группы
+          if (node.querySelector && node.querySelector('h4')) {
+            return node;
+          }
+        } catch (err) {
+          // на всякий случай
+        }
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function clearHighlights() {
+      // убираем классы подсветки, которые добавляли
+      const highlighted = form.querySelectorAll('.ring-2.ring-red-400, .border-red-400');
+      highlighted.forEach(el => {
+        el.classList.remove('ring-2', 'ring-red-400', 'border-red-400');
+      });
+    }
+  });
 </script>
 
 <?php include_once __DIR__ . '/includes/footer.php'; ?>
