@@ -8,3 +8,5 @@ sql
 TELEGRAM_SETUP_GUIDE.md
 TASK_SYSTEM_SETUP.md
 db.sql
+MAIL_SERVER_SETUP_GUIDE.md
+setup_mail_server.sh

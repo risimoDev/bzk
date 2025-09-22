@@ -13,6 +13,73 @@ require __DIR__ . '/PHPMailer/src/Exception.php';
 require __DIR__ . '/PHPMailer/src/PHPMailer.php';
 require __DIR__ . '/PHPMailer/src/SMTP.php';
 
+/**
+ * Отправка уведомления о сбросе пароля через Telegram
+ */
+function sendPasswordResetTelegram($chat_id, $user_name, $reset_link)
+{
+  // Загружаем переменные окружения если не загружены
+  if (!isset($_ENV['TELEGRAM_BOT_TOKEN'])) {
+    require_once 'vendor/autoload.php';
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+  }
+
+  $bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? '';
+
+  if (empty($bot_token) || empty($chat_id)) {
+    error_log('Telegram bot token or chat_id is missing for password reset');
+    return false;
+  }
+
+  $message = "🔐 <b>Восстановление пароля BZK Print</b>\n\n";
+  $message .= "Здравствуйте, <b>{$user_name}</b>!\n\n";
+  $message .= "Мы получили запрос на восстановление пароля для вашей учетной записи.\n\n";
+  $message .= "🔗 <b>Для восстановления пароля перейдите по ссылке:</b>\n";
+  $message .= "<a href='{$reset_link}'>Восстановить пароль</a>\n\n";
+  $message .= "⚠️ <b>Важно:</b>\n";
+  $message .= "• Ссылка действительна в течение 2 часов\n";
+  $message .= "• Если вы не запрашивали восстановление пароля, проигнорируйте это сообщение\n";
+  $message .= "• Для безопасности никому не передавайте эту ссылку\n\n";
+  $message .= "💼 С уважением, команда BZK Print";
+
+  $url = "https://api.telegram.org/bot{$bot_token}/sendMessage";
+
+  $data = [
+    'chat_id' => $chat_id,
+    'text' => $message,
+    'parse_mode' => 'HTML',
+    'disable_web_page_preview' => false
+  ];
+
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_POST, true);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+  $result = curl_exec($ch);
+  $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+  if (curl_errno($ch)) {
+    error_log('Telegram cURL error for password reset: ' . curl_error($ch));
+    curl_close($ch);
+    return false;
+  }
+
+  curl_close($ch);
+
+  if ($http_code !== 200) {
+    error_log('Telegram API error for password reset: ' . $result);
+    return false;
+  }
+
+  $response = json_decode($result, true);
+  return isset($response['ok']) && $response['ok'] === true;
+}
+
 // Проверка на спам (лимит попыток)
 $ip_address = $_SERVER['REMOTE_ADDR'];
 $rate_limit_key = "password_reset_attempts_" . $ip_address;
@@ -82,77 +149,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $host = $_SERVER['HTTP_HOST'];
         $reset_link = "{$protocol}://{$host}/reset-password?token={$token}";
 
-        // Отправка письма через PHPMailer
-        $mail = new PHPMailer(true);
+        // Проверяем, подключен ли Telegram у пользователя
+        $telegram_sent = false;
+        if (!empty($user['telegram_chat_id'])) {
+          // Отправка через Telegram
+          $telegram_sent = sendPasswordResetTelegram($user['telegram_chat_id'], $user['name'], $reset_link);
+        }
 
-        try {
-          // Настройки SMTP
-          $mail->isSMTP();
-          $mail->Host = 'mail.bzkprint.ru';
-          $mail->SMTPAuth = true;
-          $mail->Username = 'mailuser';
-          $mail->Password = 'risimo1517';
-          $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-          $mail->Port = 587;
-          $mail->CharSet = 'UTF-8';
+        // Если Telegram не подключен или отправка не удалась, отправляем email
+        if (!$telegram_sent) {
+          $mail = new PHPMailer(true);
 
-          // Отправитель и получатель
-          $mail->setFrom('info@bzkprint.ru', 'Типография BZK Print');
-          $mail->addAddress($email, $user['name']);
+          try {
+            // Настройки SMTP
+            $mail->isSMTP();
+            $mail->Host = 'mail.bzkprint.ru';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'mailuser';
+            $mail->Password = 'risimo1517';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+            $mail->CharSet = 'UTF-8';
 
-          // Содержимое письма
-          $mail->isHTML(true);
-          $mail->Subject = 'Восстановление пароля - BZK Print';
-          $mail->Body = "
-                        <html>
-                        <head>
-                            <meta charset='UTF-8'>
-                            <title>Восстановление пароля</title>
-                        </head>
-                        <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                            <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                                <div style='text-align: center; margin-bottom: 30px;'>
-                                    <h1 style='color: #118568;'>BZK Print</h1>
-                                    <h2 style='color: #666;'>Восстановление пароля</h2>
+            // Отправитель и получатель
+            $mail->setFrom('info@bzkprint.ru', 'Типография BZK Print');
+            $mail->addAddress($email, $user['name']);
+
+            // Содержимое письма
+            $mail->isHTML(true);
+            $mail->Subject = 'Восстановление пароля - BZK Print';
+            $mail->Body = "
+                            <html>
+                            <head>
+                                <meta charset='UTF-8'>
+                                <title>Восстановление пароля</title>
+                            </head>
+                            <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+                                <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                    <div style='text-align: center; margin-bottom: 30px;'>
+                                        <h1 style='color: #118568;'>BZK Print</h1>
+                                        <h2 style='color: #666;'>Восстановление пароля</h2>
+                                    </div>
+                                    
+                                    <p>Здравствуйте, <strong>{$user['name']}</strong>!</p>
+                                    
+                                    <p>Мы получили запрос на восстановление пароля для вашей учетной записи.</p>
+                                    
+                                    <div style='text-align: center; margin: 30px 0;'>
+                                        <a href='{$reset_link}' 
+                                           style='display: inline-block; padding: 15px 30px; background-color: #118568; 
+                                                  color: white; text-decoration: none; border-radius: 8px; 
+                                                  font-weight: bold;'>Восстановить пароль</a>
+                                    </div>
+                                    
+                                    <p><strong>Важно:</strong></p>
+                                    <ul>
+                                        <li>Ссылка действительна в течение 2 часов</li>
+                                        <li>Если вы не запрашивали восстановление пароля, проигнорируйте это письмо</li>
+                                        <li>Для безопасности никому не передавайте эту ссылку</li>
+                                    </ul>
+                                    
+                                    <p style='margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;'>
+                                        Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:<br>
+                                        <a href='{$reset_link}' style='color: #118568;'>{$reset_link}</a>
+                                    </p>
+                                    
+                                    <div style='text-align: center; margin-top: 30px; color: #999; font-size: 12px;'>
+                                        © 2024 BZK Print. Все права защищены.
+                                    </div>
                                 </div>
-                                
-                                <p>Здравствуйте, <strong>{$user['name']}</strong>!</p>
-                                
-                                <p>Мы получили запрос на восстановление пароля для вашей учетной записи.</p>
-                                
-                                <div style='text-align: center; margin: 30px 0;'>
-                                    <a href='{$reset_link}' 
-                                       style='display: inline-block; padding: 15px 30px; background-color: #118568; 
-                                              color: white; text-decoration: none; border-radius: 8px; 
-                                              font-weight: bold;'>Восстановить пароль</a>
-                                </div>
-                                
-                                <p><strong>Важно:</strong></p>
-                                <ul>
-                                    <li>Ссылка действительна в течение 2 часов</li>
-                                    <li>Если вы не запрашивали восстановление пароля, проигнорируйте это письмо</li>
-                                    <li>Для безопасности никому не передавайте эту ссылку</li>
-                                </ul>
-                                
-                                <p style='margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;'>
-                                    Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:<br>
-                                    <a href='{$reset_link}' style='color: #118568;'>{$reset_link}</a>
-                                </p>
-                                
-                                <div style='text-align: center; margin-top: 30px; color: #999; font-size: 12px;'>
-                                    © 2024 BZK Print. Все права защищены.
-                                </div>
-                            </div>
-                        </body>
-                        </html>
-                    ";
+                            </body>
+                            </html>
+                        ";
 
-          $mail->send();
-          $success_message = 'Инструкции по сбросу пароля отправлены на ваш email. Проверьте почту.';
+            $mail->send();
+            $success_message = 'Инструкции по сбросу пароля отправлены на ваш email. Проверьте почту.';
 
-        } catch (Exception $e) {
-          error_log('Password reset email error: ' . $mail->ErrorInfo);
-          $error_message = 'Ошибка при отправке письма. Попробуйте позже или обратитесь к администратору.';
+          } catch (Exception $e) {
+            error_log('Password reset email error: ' . $mail->ErrorInfo);
+            $error_message = 'Ошибка при отправке письма. Попробуйте позже или обратитесь к администратору.';
+          }
+        } else {
+          // Успешная отправка через Telegram
+          $success_message = 'Инструкции по сбросу пароля отправлены в ваш Telegram. Проверьте сообщения.';
         }
       }
     } else {
@@ -214,15 +293,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <h3 class="text-lg font-bold text-blue-800 mb-3">Как это работает?</h3>
       <ul class="text-blue-700 space-y-2">
         <li class="flex items-start">
-          <span class="text-blue-500 mr-2">•</span>
-          Мы отправим ссылку для сброса пароля на ваш email
+          <span class="text-blue-500 mr-2">📱</span>
+          Если у вас подключен Telegram, ссылка будет отправлена туда
         </li>
         <li class="flex items-start">
-          <span class="text-blue-500 mr-2">•</span>
-          Перейдите по ссылке в письме
+          <span class="text-blue-500 mr-2">📧</span>
+          Если Telegram не подключен, мы отправим ссылку на ваш email
         </li>
         <li class="flex items-start">
-          <span class="text-blue-500 mr-2">•</span>
+          <span class="text-blue-500 mr-2">🔗</span>
+          Перейдите по ссылке в сообщении
+        </li>
+        <li class="flex items-start">
+          <span class="text-blue-500 mr-2">🔒</span>
           Установите новый пароль
         </li>
       </ul>
