@@ -22,6 +22,7 @@ if (isset($_SESSION['notifications'])) {
 // Получение фильтров
 $start_date = $_GET['start_date'] ?? null;
 $end_date = $_GET['end_date'] ?? null;
+$view_mode = $_GET['view'] ?? 'table'; // table или cards
 
 // Если даты не заданы, показываем за текущий месяц
 if (!$start_date) {
@@ -80,7 +81,7 @@ $total_pages = ceil($total_orders_count / $limit);
 $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
 ?>
 
-<?php include_once('../../includes/header.php');?>
+<?php include_once('../../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
@@ -114,8 +115,37 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
 
     <!-- Фильтры -->
     <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Фильтры</h2>
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Фильтры</h2>
+
+        <!-- Переключатель вида -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-gray-700">Отображение:</span>
+          <div class="flex bg-gray-100 rounded-lg p-1">
+            <a href="?<?php echo http_build_query(array_merge($_GET, ['view' => 'table'])); ?>"
+              class="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 <?php echo $view_mode === 'table' ? 'bg-white text-[#118568] shadow-sm' : 'text-gray-600 hover:text-gray-900'; ?>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
+              </svg>
+              Таблица
+            </a>
+            <a href="?<?php echo http_build_query(array_merge($_GET, ['view' => 'cards'])); ?>"
+              class="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 <?php echo $view_mode === 'cards' ? 'bg-white text-[#118568] shadow-sm' : 'text-gray-600 hover:text-gray-900'; ?>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              Карточки
+            </a>
+          </div>
+        </div>
+      </div>
+
       <form method="GET" class="flex flex-col md:flex-row gap-4">
+        <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
         <div>
           <label for="start_date" class="block text-sm font-medium text-gray-700">Дата от</label>
           <input type="date" id="start_date" name="start_date" value="<?php echo htmlspecialchars($start_date); ?>"
@@ -272,75 +302,46 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
       <?php endif; ?>
     </div>
 
-    <!-- Таблица заказов -->
-    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-      <div class="p-6 border-b border-[#DEE5E5] flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h2 class="text-2xl font-bold text-gray-800">Заказы и Финансы</h2>
-        <div class="text-gray-600 text-sm">
-          Найдено: <?php echo $total_orders_count; ?> записей
+    <!-- Таблица/Карточки заказов -->
+    <?php if ($view_mode === 'cards'): ?>
+      <!-- Карточки заказов -->
+      <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Заказы и Финансы</h2>
+          <div class="text-gray-600 text-sm">
+            Найдено: <?php echo $total_orders_count; ?> записей
+          </div>
         </div>
-      </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-[#118568] text-white">
-            <tr>
-              <th class="py-4 px-6 text-left">ID</th>
-              <th class="py-4 px-6 text-left">Источник</th>
-              <th class="py-4 px-6 text-left">Клиент</th>
-              <th class="py-4 px-6 text-left">Дата</th>
-              <th class="py-4 px-6 text-left">Доход</th>
-              <th class="py-4 px-6 text-left">Расход</th>
-              <th class="py-4 px-6 text-left">Налог</th>
-              <th class="py-4 px-6 text-left">Прибыль</th>
-              <th class="py-4 px-6 text-left">Статус</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-[#DEE5E5]">
-            <?php if (empty($orders)): ?>
-              <tr>
-                <td colspan="10" class="py-8 px-6 text-center text-gray-500">
-                  Нет записей по выбранным критериям.
-                </td>
-              </tr>
-            <?php else: ?>
-              <?php foreach ($orders as $order): ?>
-                <tr class="hover:bg-[#f8fafa] transition-colors duration-300">
-                  <td class="py-4 px-6 font-medium">#<?php echo htmlspecialchars($order['id']); ?></td>
-                  <td class="py-4 px-6">
-                    <span
-                      class="px-2 py-1 text-xs rounded-full <?php echo $order['source'] === 'site' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'; ?>">
-                      <?php echo $order['source'] === 'site' ? 'Сайт' : 'Внешний'; ?>
-                    </span>
-                    <?php if ($order['source'] === 'site' && $order['order_id']): ?>
-                      <div class="text-xs text-gray-500">Заказ #<?php echo $order['order_id']; ?></div>
-                    <?php endif; ?>
-                  </td>
-                  <td class="py-4 px-6">
-                    <?php if ($order['source'] === 'site' && $order['client_name_from_order']): ?>
-                      <?php echo htmlspecialchars($order['client_name_from_order']); ?>
-                    <?php elseif ($order['client_name']): ?>
-                      <?php echo htmlspecialchars($order['client_name']); ?>
-                    <?php else: ?>
-                      <span class="text-gray-500">Не указан</span>
-                    <?php endif; ?>
-                  </td>
-                  <td class="py-4 px-6 text-gray-600 text-sm">
-                    <?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?>
-                  </td>
-                  <td class="py-4 px-6 font-bold text-[#118568]"><?php echo number_format($order['income'], 2, '.', ' '); ?>
-                    ₽</td>
-                  <td class="py-4 px-6 font-medium text-red-500">
-                    <?php echo number_format($order['total_expense'], 2, '.', ' '); ?> ₽
-                  </td>
-                  <td class="py-4 px-6 font-bold"><?php echo number_format($order['tax_amount'], 2, '.', ' '); ?> ₽</td>
-                  <td
-                    class="py-4 px-6 font-bold <?php echo (calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']) >= 0) ? 'text-[#17B890]' : 'text-red-500'; ?>">
-                    <?php echo number_format(calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']), 2, '.', ' '); ?>
-                    ₽
-                  </td>
-                  <td class="py-4 px-6">
-                    <span class="px-2 py-1 text-xs rounded-full 
+        <?php if (empty($orders)): ?>
+          <div class="bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-600">Нет записей</h3>
+            <p class="text-gray-500 mt-2">Нет заказов по выбранным критериям</p>
+          </div>
+        <?php else: ?>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <?php foreach ($orders as $order): ?>
+              <div
+                class="bg-white rounded-2xl shadow-xl p-6 hover:shadow-2xl transition-shadow duration-300 border border-gray-100">
+                <!-- Заголовок карточки -->
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center">
+                    <div class="w-10 h-10 bg-[#118568] rounded-full flex items-center justify-center mr-3">
+                      <span class="text-white font-bold text-sm">#</span>
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-gray-800 text-lg">#<?php echo htmlspecialchars($order['id']); ?></h3>
+                      <p class="text-sm text-gray-500"><?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?></p>
+                    </div>
+                  </div>
+                  <span class="px-3 py-1 text-xs rounded-full font-medium
                     <?php
                     switch ($order['status']) {
                       case 'paid':
@@ -356,23 +357,175 @@ $orders = get_orders_with_finances($pdo, $start_date, $end_date, $page, $limit);
                         echo 'bg-gray-100 text-gray-800';
                     }
                     ?>">
-                      <?php
-                      $status_names = [
-                        'unpaid' => 'Не оплачен',
-                        'partial' => 'Частично',
-                        'paid' => 'Оплачен'
-                      ];
-                      echo $status_names[$order['status']] ?? $order['status'];
-                      ?>
+                    <?php
+                    $status_names = [
+                      'unpaid' => 'Не оплачен',
+                      'partial' => 'Частично',
+                      'paid' => 'Оплачен'
+                    ];
+                    echo $status_names[$order['status']] ?? $order['status'];
+                    ?>
+                  </span>
+                </div>
+
+                <!-- Информация о заказе -->
+                <div class="space-y-3 mb-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Источник:</span>
+                    <span
+                      class="px-2 py-1 text-xs rounded-full <?php echo $order['source'] === 'site' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'; ?>">
+                      <?php echo $order['source'] === 'site' ? 'Сайт' : 'Внешний'; ?>
                     </span>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Клиент:</span>
+                    <span class="text-sm font-medium text-gray-800 text-right max-w-[150px] truncate">
+                      <?php if ($order['source'] === 'site' && $order['client_name_from_order']): ?>
+                        <?php echo htmlspecialchars($order['client_name_from_order']); ?>
+                      <?php elseif ($order['client_name']): ?>
+                        <?php echo htmlspecialchars($order['client_name']); ?>
+                      <?php else: ?>
+                        <span class="text-gray-500">Не указан</span>
+                      <?php endif; ?>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Финансовая информация -->
+                <div class="bg-gray-50 rounded-xl p-4 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Доход:</span>
+                    <span class="font-bold text-[#118568]"><?php echo number_format($order['income'], 2, '.', ' '); ?>
+                      ₽</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Расход:</span>
+                    <span class="font-medium text-red-500"><?php echo number_format($order['total_expense'], 2, '.', ' '); ?>
+                      ₽</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Налог:</span>
+                    <span class="font-bold text-yellow-600"><?php echo number_format($order['tax_amount'], 2, '.', ' '); ?>
+                      ₽</span>
+                  </div>
+                  <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Прибыль:</span>
+                    <span
+                      class="font-bold text-lg <?php echo (calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']) >= 0) ? 'text-[#17B890]' : 'text-red-500'; ?>">
+                      <?php echo number_format(calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']), 2, '.', ' '); ?>
+                      ₽
+                    </span>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php else: ?>
+      <!-- Таблица заказов -->
+      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-[#DEE5E5] flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <h2 class="text-2xl font-bold text-gray-800">Заказы и Финансы</h2>
+          <div class="text-gray-600 text-sm">
+            Найдено: <?php echo $total_orders_count; ?> записей
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-[#118568] text-white">
+              <tr>
+                <th class="py-4 px-6 text-left">ID</th>
+                <th class="py-4 px-6 text-left">Источник</th>
+                <th class="py-4 px-6 text-left">Клиент</th>
+                <th class="py-4 px-6 text-left">Дата</th>
+                <th class="py-4 px-6 text-left">Доход</th>
+                <th class="py-4 px-6 text-left">Расход</th>
+                <th class="py-4 px-6 text-left">Налог</th>
+                <th class="py-4 px-6 text-left">Прибыль</th>
+                <th class="py-4 px-6 text-left">Статус</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#DEE5E5]">
+              <?php if (empty($orders)): ?>
+                <tr>
+                  <td colspan="10" class="py-8 px-6 text-center text-gray-500">
+                    Нет записей по выбранным критериям.
                   </td>
                 </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </tbody>
-        </table>
+              <?php else: ?>
+                <?php foreach ($orders as $order): ?>
+                  <tr class="hover:bg-[#f8fafa] transition-colors duration-300">
+                    <td class="py-4 px-6 font-medium">#<?php echo htmlspecialchars($order['id']); ?></td>
+                    <td class="py-4 px-6">
+                      <span
+                        class="px-2 py-1 text-xs rounded-full <?php echo $order['source'] === 'site' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'; ?>">
+                        <?php echo $order['source'] === 'site' ? 'Сайт' : 'Внешний'; ?>
+                      </span>
+                      <?php if ($order['source'] === 'site' && $order['order_id']): ?>
+                        <div class="text-xs text-gray-500">Заказ #<?php echo $order['order_id']; ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td class="py-4 px-6">
+                      <?php if ($order['source'] === 'site' && $order['client_name_from_order']): ?>
+                        <?php echo htmlspecialchars($order['client_name_from_order']); ?>
+                      <?php elseif ($order['client_name']): ?>
+                        <?php echo htmlspecialchars($order['client_name']); ?>
+                      <?php else: ?>
+                        <span class="text-gray-500">Не указан</span>
+                      <?php endif; ?>
+                    </td>
+                    <td class="py-4 px-6 text-gray-600 text-sm">
+                      <?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?>
+                    </td>
+                    <td class="py-4 px-6 font-bold text-[#118568]"><?php echo number_format($order['income'], 2, '.', ' '); ?>
+                      ₽</td>
+                    <td class="py-4 px-6 font-medium text-red-500">
+                      <?php echo number_format($order['total_expense'], 2, '.', ' '); ?> ₽
+                    </td>
+                    <td class="py-4 px-6 font-bold"><?php echo number_format($order['tax_amount'], 2, '.', ' '); ?> ₽</td>
+                    <td
+                      class="py-4 px-6 font-bold <?php echo (calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']) >= 0) ? 'text-[#17B890]' : 'text-red-500'; ?>">
+                      <?php echo number_format(calculate_profit($order['income'], $order['total_expense'], $order['tax_amount']), 2, '.', ' '); ?>
+                      ₽
+                    </td>
+                    <td class="py-4 px-6">
+                      <span class="px-2 py-1 text-xs rounded-full 
+                      <?php
+                      switch ($order['status']) {
+                        case 'paid':
+                          echo 'bg-green-100 text-green-800';
+                          break;
+                        case 'partial':
+                          echo 'bg-yellow-100 text-yellow-800';
+                          break;
+                        case 'unpaid':
+                          echo 'bg-red-100 text-red-800';
+                          break;
+                        default:
+                          echo 'bg-gray-100 text-gray-800';
+                      }
+                      ?>">
+                        <?php
+                        $status_names = [
+                          'unpaid' => 'Не оплачен',
+                          'partial' => 'Частично',
+                          'paid' => 'Оплачен'
+                        ];
+                        echo $status_names[$order['status']] ?? $order['status'];
+                        ?>
+                      </span>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    <?php endif; ?>
 
     <!-- Пагинация -->
     <?php if ($total_pages > 1): ?>

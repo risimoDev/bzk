@@ -113,12 +113,14 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
             <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
                 <h3 class="text-sm font-medium text-gray-600">Email отправлено</h3>
                 <p class="text-3xl font-bold text-[#118568] mt-2">
-                    <?php echo number_format($stats['total_emails_sent']); ?></p>
+                    <?php echo number_format($stats['total_emails_sent']); ?>
+                </p>
             </div>
             <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
                 <h3 class="text-sm font-medium text-gray-600">Telegram отправлено</h3>
                 <p class="text-3xl font-bold text-[#17B890] mt-2">
-                    <?php echo number_format($stats['total_telegrams_sent']); ?></p>
+                    <?php echo number_format($stats['total_telegrams_sent']); ?>
+                </p>
             </div>
         </div>
 
@@ -135,102 +137,125 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
             </div>
         <?php else: ?>
-            <div class="bg-white rounded-3xl shadow-xl p-8 mb-8">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b-2 border-gray-200">
-                                <th class="text-left py-4 px-4 font-medium text-gray-600">Заголовок</th>
-                                <th class="text-center py-4 px-4 font-medium text-gray-600">Тип</th>
-                                <th class="text-center py-4 px-4 font-medium text-gray-600">Аудитория</th>
-                                <th class="text-center py-4 px-4 font-medium text-gray-600">Получатели</th>
-                                <th class="text-center py-4 px-4 font-medium text-gray-600">Статус</th>
-                                <th class="text-center py-4 px-4 font-medium text-gray-600">Дата создания</th>
-                                <th class="text-center py-4 px-4 font-medium text-gray-600">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($messages as $message): ?>
-                                <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                    <td class="py-4 px-4">
-                                        <div>
-                                            <p class="font-semibold text-gray-800">
-                                                <?php echo htmlspecialchars($message['title']); ?></p>
-                                            <p class="text-sm text-gray-600">
-                                                <?php echo htmlspecialchars($message['created_by_name']); ?></p>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 px-4 text-center">
-                                        <?php
-                                        $type_badges = [
-                                            'email' => '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Email</span>',
-                                            'telegram' => '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Telegram</span>',
-                                            'both' => '<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Email + Telegram</span>'
-                                        ];
-                                        echo $type_badges[$message['message_type']];
-                                        ?>
-                                    </td>
-                                    <td class="py-4 px-4 text-center">
-                                        <?php
-                                        $audience_labels = [
-                                            'all' => 'Все пользователи',
-                                            'customers' => 'Клиенты',
-                                            'admins' => 'Администраторы',
-                                            'managers' => 'Менеджеры',
-                                            'specific' => 'Выборочно'
-                                        ];
-                                        echo $audience_labels[$message['target_audience']];
-                                        ?>
-                                    </td>
-                                    <td class="py-4 px-4 text-center font-medium"><?php echo $message['total_recipients']; ?>
-                                    </td>
-                                    <td class="py-4 px-4 text-center">
-                                        <?php
-                                        $status_badges = [
-                                            'draft' => '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Черновик</span>',
-                                            'scheduled' => '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Запланировано</span>',
-                                            'sending' => '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Отправляется</span>',
-                                            'sent' => '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Отправлено</span>',
-                                            'failed' => '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Ошибка</span>'
-                                        ];
-                                        echo $status_badges[$message['status']];
-                                        ?>
-                                    </td>
-                                    <td class="py-4 px-4 text-center text-gray-600">
-                                        <?php echo date('d.m.Y H:i', strtotime($message['created_at'])); ?>
-                                    </td>
-                                    <td class="py-4 px-4 text-center">
-                                        <div class="flex justify-center gap-2">
-                                            <a href="/admin/messaging/details.php?id=<?php echo $message['id']; ?>"
-                                                class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition"
-                                                title="Посмотреть детали">
-                                                📊 Детали
-                                            </a>
-                                            <?php if ($message['status'] === 'draft'): ?>
-                                                <a href="/admin/messaging/edit.php?id=<?php echo $message['id']; ?>"
-                                                    class="px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition"
-                                                    title="Редактировать">
-                                                    ✏️ Редактировать
-                                                </a>
-                                                <a href="/admin/messaging/send.php?id=<?php echo $message['id']; ?>"
-                                                    class="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition"
-                                                    title="Отправить">
-                                                    🚀 Отправить
-                                                </a>
-                                            <?php elseif ($message['status'] === 'sending'): ?>
-                                                <a href="/admin/messaging/send.php?id=<?php echo $message['id']; ?>"
-                                                    class="px-3 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition"
-                                                    title="Мониторинг">
-                                                    📈 Мониторинг
-                                                </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <?php foreach ($messages as $message): ?>
+                    <div
+                        class="bg-white rounded-3xl shadow-xl p-6 hover:shadow-2xl transition-shadow duration-300 border border-gray-100">
+                        <!-- Заголовок карточки -->
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center flex-1 min-w-0">
+                                <div
+                                    class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                    <?php if ($message['message_type'] === 'email'): ?>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                    <?php elseif ($message['message_type'] === 'telegram'): ?>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path
+                                                d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.568 8.16c-.169 1.858-.896 6.728-.896 6.728-.378 1.586-.842 1.819-1.369 1.819-.6 0-.894-.562-.894-1.167 0-.303.03-.573.069-.806l.259-1.725c.133-.884.199-1.341.199-1.37l-.013-.03-.039-.009-.077.069c-.585.52-1.153 1.035-1.738 1.546l-.889.777c-.373.326-.765.63-1.173.897-.316.207-.628.376-.935.506l-.451.191c-.31.13-.615.226-.914.287-.327.067-.646.1-.957.1-.855 0-1.55-.289-2.085-.868-.535-.578-.803-1.337-.803-2.277 0-.636.128-1.277.384-1.923.307-.774.765-1.529 1.373-2.267C8.264 7.538 9.016 6.985 9.94 6.568c.923-.417 1.942-.625 3.057-.625.702 0 1.334.105 1.896.314.562.21 1.042.497 1.44.863.397.365.695.784.893 1.256.198.472.297.969.297 1.491 0 .344-.037.674-.111.99z" />
+                                        </svg>
+                                    <?php else: ?>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-gray-800 text-lg truncate">
+                                        <?php echo htmlspecialchars($message['title']); ?></h3>
+                                    <p class="text-sm text-gray-500">
+                                        <?php echo htmlspecialchars($message['created_by_name']); ?></p>
+                                </div>
+                            </div>
+                            <?php
+                            $status_badges = [
+                                'draft' => '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">Черновик</span>',
+                                'scheduled' => '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">Запланировано</span>',
+                                'sending' => '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">Отправляется</span>',
+                                'sent' => '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">Отправлено</span>',
+                                'failed' => '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">Ошибка</span>'
+                            ];
+                            echo $status_badges[$message['status']];
+                            ?>
+                        </div>
+
+                        <!-- Информация о рассылке -->
+                        <div class="space-y-3 mb-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Тип:</span>
+                                <?php
+                                $type_badges = [
+                                    'email' => '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Email</span>',
+                                    'telegram' => '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Telegram</span>',
+                                    'both' => '<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Email + Telegram</span>'
+                                ];
+                                echo $type_badges[$message['message_type']];
+                                ?>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Аудитория:</span>
+                                <span class="text-sm font-medium text-gray-800">
+                                    <?php
+                                    $audience_labels = [
+                                        'all' => 'Все пользователи',
+                                        'customers' => 'Клиенты',
+                                        'admins' => 'Администраторы',
+                                        'managers' => 'Менеджеры',
+                                        'specific' => 'Выборочно'
+                                    ];
+                                    echo $audience_labels[$message['target_audience']];
+                                    ?>
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Получатели:</span>
+                                <span
+                                    class="text-lg font-bold text-[#118568]"><?php echo $message['total_recipients']; ?></span>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Дата создания:</span>
+                                <span
+                                    class="text-sm text-gray-700"><?php echo date('d.m.Y H:i', strtotime($message['created_at'])); ?></span>
+                            </div>
+                        </div>
+
+                        <!-- Действия -->
+                        <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+                            <a href="/admin/messaging/details.php?id=<?php echo $message['id']; ?>"
+                                class="flex-1 min-w-0 text-center px-3 py-2 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition font-medium"
+                                title="Посмотреть детали">
+                                📊 Детали
+                            </a>
+                            <?php if ($message['status'] === 'draft'): ?>
+                                <a href="/admin/messaging/edit.php?id=<?php echo $message['id']; ?>"
+                                    class="flex-1 min-w-0 text-center px-3 py-2 bg-yellow-500 text-white text-xs rounded-lg hover:bg-yellow-600 transition font-medium"
+                                    title="Редактировать">
+                                    ✏️ Редактировать
+                                </a>
+                                <a href="/admin/messaging/send.php?id=<?php echo $message['id']; ?>"
+                                    class="flex-1 min-w-0 text-center px-3 py-2 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition font-medium"
+                                    title="Отправить">
+                                    🚀 Отправить
+                                </a>
+                            <?php elseif ($message['status'] === 'sending'): ?>
+                                <a href="/admin/messaging/send.php?id=<?php echo $message['id']; ?>"
+                                    class="flex-1 min-w-0 text-center px-3 py-2 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 transition font-medium"
+                                    title="Мониторинг">
+                                    📈 Мониторинг
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
 
             <!-- Пагинация -->
