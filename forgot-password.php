@@ -294,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <ul class="text-blue-700 space-y-2">
         <li class="flex items-start">
           <span class="text-blue-500 mr-2">📱</span>
-          Если у вас подключен Telegram, ссылка будет отправлена туда
+          Cсылка будет отправлена в Telegram
         </li>
         <li class="flex items-start">
           <span class="text-blue-500 mr-2">📧</span>

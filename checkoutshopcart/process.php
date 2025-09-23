@@ -21,7 +21,7 @@ $phone = trim($_POST['phone'] ?? '');
 $shipping_address = trim($_POST['shipping_address'] ?? '');
 $comment = trim($_POST['comment'] ?? '');
 
-if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^[0-9\-\+\s]{6,20}$/', $phone) || !$shipping_address) {
+if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/', $phone) || !$shipping_address) {
     header("Location: /checkout?error=invalid_fields");
     exit();
 }
