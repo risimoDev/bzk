@@ -139,13 +139,13 @@ function sendWelcomeTelegram($userName) {
 }
 
 // Обработка регистрации
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Debug: Log form submission
     error_log('Registration form submitted');
     
     $name = trim(htmlspecialchars($_POST['name'] ?? ''));
     $email = trim(strtolower(htmlspecialchars($_POST['email'] ?? '')));
-    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+    $password = $_POST['password'] ?? '';
     $phone = trim(htmlspecialchars($_POST['phone'] ?? ''));
 
     $token = $_POST['cf-turnstile-response'] ?? '';
@@ -334,21 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             <div class="w-12 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
           </div>
 
-          <?php 
-          // Debug: Show detailed form processing info
-          if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-              echo "<div class='mb-4 p-2 bg-blue-100 text-blue-800 rounded text-sm'>";
-              echo "DEBUG: Form submitted<br>";
-              echo "Name: " . ($_POST['name'] ?? 'missing') . "<br>";
-              echo "Email: " . ($_POST['email'] ?? 'missing') . "<br>";
-              echo "Phone: " . ($_POST['phone'] ?? 'missing') . "<br>";
-              echo "Password length: " . strlen($_POST['password'] ?? '') . "<br>";
-              echo "Register button: " . (isset($_POST['register']) ? 'yes' : 'no') . "<br>";
-              echo "Captcha token: " . (empty($_POST['cf-turnstile-response']) ? 'missing' : 'present');
-              echo "</div>";
-          }
-          
-          if (isset($error_message)): ?>
+          <?php if (isset($error_message)): ?>
             <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg relative">
               <div class="flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
