@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/includes/security.php';
 
 unset($_SESSION['applied_promo_code']);
 unset($_SESSION['promo_discount_amount']);
@@ -106,6 +107,11 @@ foreach ($cart as $item) {
 $is_urgent = $_SESSION['is_urgent_order'] ?? false;
 $urgent_multiplier = $is_urgent ? 1.5 : 1;
 $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
+
+// Ошибки валидации и сохраненные данные
+$checkout_errors = $_SESSION['checkout_errors'] ?? [];
+$checkout_data = $_SESSION['checkout_data'] ?? [];
+unset($_SESSION['checkout_errors'], $_SESSION['checkout_data']);
 ?>
 
 <?php include_once __DIR__ . '/includes/header.php'; ?>
@@ -155,8 +161,8 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
                   <!-- Изображение товара -->
                   <div class="flex-shrink-0">
                     <?php $image_url = $item['main_image'] ?: '/assets/images/no-image.webp'; ?>
-                    <img src="<?php echo htmlspecialchars($image_url); ?>" 
-                         alt="<?php echo htmlspecialchars($item['product']['name']); ?>" 
+                    <img src="<?php echo e($image_url); ?>" 
+                         alt="<?php echo e($item['product']['name']); ?>" 
                          class="w-24 h-24 object-cover rounded-xl">
                   </div>
                   
@@ -164,7 +170,7 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
                   <div class="flex-grow">
                     <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                       <div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2"><?php echo htmlspecialchars($item['product']['name']); ?></h3>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2"><?php echo e($item['product']['name']); ?></h3>
                         
                         <?php if (!empty($item['attributes'])): ?>
                           <div class="mb-3">
@@ -172,8 +178,8 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
                             <div class="flex flex-wrap gap-2">
                               <?php foreach ($item['attributes'] as $attribute): ?>
                                 <span class="px-3 py-1 bg-[#DEE5E5] text-gray-700 text-xs rounded-full">
-                                  <?php echo htmlspecialchars($attribute['attribute_name']); ?>: 
-                                  <?php echo htmlspecialchars($attribute['value']); ?>
+                                  <?php echo e($attribute['attribute_name']); ?>: 
+                                  <?php echo e($attribute['value']); ?>
                                   <?php if ($attribute['price_modifier'] > 0): ?>
                                     <span class="text-[#118568]">(+<?php echo number_format($attribute['price_modifier'], 0, '', ' '); ?> руб.)</span>
                                   <?php endif; ?>
@@ -184,7 +190,7 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
                         <?php endif; ?>
                         
                         <div class="flex flex-wrap items-center gap-4 text-sm">
-                          <span class="font-medium">Количество: <?php echo htmlspecialchars($item['quantity']); ?> шт.</span>
+                          <span class="font-medium">Количество: <?php echo e($item['quantity']); ?> шт.</span>
                           <span class="font-medium">Цена за единицу: <?php echo number_format($item['unit_price'] + $item['total_attributes_price'], 0, '', ' '); ?> руб.</span>
                         </div>
                       </div>
@@ -292,11 +298,29 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
             Контактные данные
           </h2>
 
+          <!-- Ошибки валидации -->
+          <?php if (!empty($checkout_errors)): ?>
+            <div class="mb-6 p-4 rounded-xl bg-red-100 border border-red-400 text-red-700">
+              <div class="flex items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <strong>Ошибки заполнения формы:</strong>
+              </div>
+              <ul class="list-disc list-inside space-y-1">
+                <?php foreach ($checkout_errors as $error): ?>
+                  <li><?php echo e($error); ?></li>
+                <?php endforeach; ?>
+              </ul>
+            </div>
+          <?php endif; ?>
+
           <form action="/checkoutshopcart/process" method="POST" class="space-y-6">
+            <?php echo csrf_field(); ?>
             <div>
               <label for="name" class="block text-gray-700 font-medium mb-2">Имя и фамилия *</label>
               <input type="text" id="name" name="name" 
-                     value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" 
+                     value="<?php echo e($checkout_data['name'] ?? $user['name'] ?? ''); ?>" 
                      class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
                      placeholder="Введите ваше имя" required>
             </div>
@@ -304,7 +328,7 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
             <div>
               <label for="email" class="block text-gray-700 font-medium mb-2">Email адрес *</label>
               <input type="email" id="email" name="email" 
-                     value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" 
+                     value="<?php echo e($checkout_data['email'] ?? $user['email'] ?? ''); ?>" 
                      class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
                      placeholder="Введите ваш email" required>
             </div>
@@ -312,7 +336,7 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
             <div>
               <label for="phone" class="block text-gray-700 font-medium mb-2">Номер телефона *</label>
               <input type="tel" id="phone" name="phone" 
-                     value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" 
+                     value="<?php echo e($checkout_data['phone'] ?? $user['phone'] ?? ''); ?>" 
                      class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
                      placeholder="+7 (___) ___-____" required>
             </div>
@@ -321,14 +345,14 @@ $final_total = ($total_price * $urgent_multiplier) - $promo_discount;
               <label for="shipping_address" class="block text-gray-700 font-medium mb-2">Адрес доставки *</label>
               <textarea id="shipping_address" name="shipping_address" 
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300 resize-none"
-                        placeholder="Введите полный адрес доставки" rows="4" required><?php echo htmlspecialchars($user['shipping_address'] ?? ''); ?></textarea>
+                        placeholder="Введите полный адрес доставки" rows="4" required><?php echo e($checkout_data['shipping_address'] ?? $user['shipping_address'] ?? ''); ?></textarea>
             </div>
 
             <div>
               <label for="comment" class="block text-gray-700 font-medium mb-2">Комментарий к заказу</label>
               <textarea id="comment" name="comment" 
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300 resize-none"
-                        placeholder="Дополнительная информация для доставки" rows="3"></textarea>
+                        placeholder="Дополнительная информация для доставки" rows="3"><?php echo e($checkout_data['comment'] ?? ''); ?></textarea>
             </div>
 
             <!-- Чекбокс "Срочный заказ" -->

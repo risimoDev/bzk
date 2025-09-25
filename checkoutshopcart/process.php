@@ -1,6 +1,7 @@
 <?php 
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/security.php';
 
 $functions_path = __DIR__ . '/../admin/buhgalt/functions.php';
 if (file_exists($functions_path)) {
@@ -9,20 +10,50 @@ if (file_exists($functions_path)) {
     error_log("process.php: functions.php not found at $functions_path");
 }
 
+// Verify CSRF token
+verify_csrf();
+
 $cart = $_SESSION['cart'] ?? [];
 if (empty($cart)) {
     header("Location: /cart?error=empty_cart");
     exit();
 }
 
-$name = trim($_POST['name'] ?? '');
-$email = trim($_POST['email'] ?? '');
-$phone = trim($_POST['phone'] ?? '');
-$shipping_address = trim($_POST['shipping_address'] ?? '');
-$comment = trim($_POST['comment'] ?? '');
+$name = sanitize_text($_POST['name'] ?? '', 100);
+$email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+$phone = sanitize_text($_POST['phone'] ?? '', 20);
+$shipping_address = sanitize_text($_POST['shipping_address'] ?? '', 500);
+$comment = sanitize_text($_POST['comment'] ?? '', 1000);
 
-if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/', $phone) || !$shipping_address) {
-    header("Location: /checkout?error=invalid_fields");
+// Comprehensive input validation
+$errors = [];
+
+if (empty($name) || strlen($name) < 2) {
+    $errors[] = 'Имя должно содержать минимум 2 символа';
+}
+
+if (!$email) {
+    $errors[] = 'Введите корректный email адрес';
+}
+
+if (empty($phone)) {
+    $errors[] = 'Введите номер телефона';
+}
+
+if (empty($shipping_address) || strlen($shipping_address) < 10) {
+    $errors[] = 'Адрес доставки должен содержать минимум 10 символов';
+}
+
+if (!empty($errors)) {
+    $_SESSION['checkout_errors'] = $errors;
+    $_SESSION['checkout_data'] = [
+        'name' => $name,
+        'email' => $_POST['email'] ?? '',
+        'phone' => $phone,
+        'shipping_address' => $shipping_address,
+        'comment' => $comment
+    ];
+    header("Location: /checkout?error=validation_failed");
     exit();
 }
 

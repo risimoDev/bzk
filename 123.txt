@@ -16,3 +16,4 @@ EXIT;
 CREATE USER 'pmauser'@'localhost' IDENTIFIED BY 'ваш_пароль_из_конфига';
 GRANT ALL PRIVILEGES ON *.* TO 'pmauser'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+Ты — senior full-stack PHP-разработчик и UX-специалист с опытом в безопасности веб-приложений. Перед тобой самописный PHP-проект рекламно-производственной компании (B2B + B2C), использующий PDO, собственную архитектуру и Tailwind CSS. Твоя задача — провести комплексный аудит и предложить улучшения по трём направлениям: безопасность, UX/UI, архитектура и поддерживаемость кода.

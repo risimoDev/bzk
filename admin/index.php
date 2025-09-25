@@ -155,7 +155,180 @@ if (isset($pdo)) {
       <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
     </div>
 
-    <!-- Статистика -->
+    <!-- Поиск и фильтры -->
+    <div class="bg-white rounded-3xl shadow-2xl p-6 mb-8 animate-fade-in">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-[#118568]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          Поиск и фильтры
+        </h2>
+        
+        <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <!-- Поиск по заказам -->
+          <div class="relative">
+            <input type="text" id="global-search" placeholder="Поиск по заказам, клиентам..." 
+                   class="w-full sm:w-80 px-4 py-2 pl-10 pr-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
+            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          
+          <!-- Фильтр по статусу -->
+          <select id="status-filter" class="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
+            <option value="all">Все статусы</option>
+            <option value="pending">В ожидании</option>
+            <option value="processing">В обработке</option>
+            <option value="shipped">Отправлен</option>
+            <option value="delivered">Доставлен</option>
+            <option value="completed">Выполнен</option>
+            <option value="cancelled">Отменен</option>
+          </select>
+          
+          <!-- Фильтр по дате -->
+          <select id="date-filter" class="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
+            <option value="all">Все даты</option>
+            <option value="today">Сегодня</option>
+            <option value="week">На этой неделе</option>
+            <option value="month">В этом месяце</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Результаты поиска -->
+      <div id="search-results" class="mt-6 hidden">
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">Результаты поиска</h3>
+          <div id="search-content" class="space-y-4">
+            <!-- Результаты будут загружены динамически -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow визуализация статусов заказов -->
+    <div class="bg-white rounded-3xl shadow-2xl p-6 mb-8 animate-fade-in">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <svg class="w-6 h-6 mr-2 text-[#118568]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002-2h2a2 2 0 002 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+        </svg>
+        Workflow статусов заказов
+      </h2>
+      
+      <!-- Визуальная линейка workflow -->
+      <div class="relative overflow-x-auto">
+        <div class="flex items-center justify-between min-w-full">
+          <!-- В ожидании -->
+          <div class="flex-1 text-center relative">
+            <div class="relative inline-flex items-center justify-center w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full border-4 border-yellow-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-yellow-600"><?php echo $pending_orders; ?></div>
+              <div class="text-sm text-gray-600">В ожидании</div>
+            </div>
+          </div>
+          
+          <!-- Стрелка -->
+          <div class="px-4">
+            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+          
+          <!-- В обработке -->
+          <div class="flex-1 text-center relative">
+            <div class="relative inline-flex items-center justify-center w-12 h-12 bg-blue-100 text-blue-600 rounded-full border-4 border-blue-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-blue-600"><?php echo $processing_orders; ?></div>
+              <div class="text-sm text-gray-600">В обработке</div>
+            </div>
+          </div>
+          
+          <!-- Стрелка -->
+          <div class="px-4">
+            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+          
+          <!-- Отправлен -->
+          <div class="flex-1 text-center relative">
+            <div class="relative inline-flex items-center justify-center w-12 h-12 bg-purple-100 text-purple-600 rounded-full border-4 border-purple-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-purple-600"><?php echo $shipped_orders; ?></div>
+              <div class="text-sm text-gray-600">Отправлен</div>
+            </div>
+          </div>
+          
+          <!-- Стрелка -->
+          <div class="px-4">
+            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+          
+          <!-- Доставлен -->
+          <div class="flex-1 text-center relative">
+            <div class="relative inline-flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full border-4 border-indigo-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M17 13h-2v2H7v-2"></path>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-indigo-600"><?php echo $delivered_orders; ?></div>
+              <div class="text-sm text-gray-600">Доставлен</div>
+            </div>
+          </div>
+          
+          <!-- Стрелка -->
+          <div class="px-4">
+            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+          
+          <!-- Выполнен -->
+          <div class="flex-1 text-center relative">
+            <div class="relative inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full border-4 border-green-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-green-600"><?php echo $completed_orders; ?></div>
+              <div class="text-sm text-gray-600">Выполнен</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Отмененные заказы (отдельно) -->
+        <div class="mt-6 pt-4 border-t border-gray-200">
+          <div class="text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full border-4 border-red-300 shadow-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-red-600"><?php echo $canceled_orders; ?></div>
+              <div class="text-sm text-gray-600">Отменено</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-2xl shadow-xl p-6 stat-card border-l-4 border-[#118568] animate-slide-in"
         style="animation-delay: 0.1s">
@@ -694,6 +867,121 @@ if (isset($pdo)) {
       });
 
     })();
+    
+    // Поиск и фильтрация
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('global-search');
+      const statusFilter = document.getElementById('status-filter');
+      const dateFilter = document.getElementById('date-filter');
+      const searchResults = document.getElementById('search-results');
+      const searchContent = document.getElementById('search-content');
+      
+      let searchTimeout;
+      
+      function performSearch() {
+        const query = searchInput.value.trim();
+        const status = statusFilter.value;
+        const date = dateFilter.value;
+        
+        if (query.length < 2 && status === 'all' && date === 'all') {
+          searchResults.classList.add('hidden');
+          return;
+        }
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          fetch('/admin/ajax/search.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              query: query,
+              status: status,
+              date: date
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              displaySearchResults(data.results);
+              searchResults.classList.remove('hidden');
+            }
+          })
+          .catch(error => {
+            console.error('Ошибка поиска:', error);
+          });
+        }, 300);
+      }
+      
+      function displaySearchResults(results) {
+        if (results.length === 0) {
+          searchContent.innerHTML = '<p class="text-gray-500 text-center py-4">Ничего не найдено</p>';
+          return;
+        }
+        
+        let html = '';
+        results.forEach(result => {
+          const statusColors = {
+            'pending': 'bg-yellow-100 text-yellow-800',
+            'processing': 'bg-blue-100 text-blue-800',
+            'shipped': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-indigo-100 text-indigo-800',
+            'cancelled': 'bg-red-100 text-red-800',
+            'completed': 'bg-green-100 text-green-800'
+          };
+          
+          const statusNames = {
+            'pending': 'В ожидании',
+            'processing': 'В обработке',
+            'shipped': 'Отправлен',
+            'delivered': 'Доставлен',
+            'cancelled': 'Отменен',
+            'completed': 'Выполнен'
+          };
+          
+          html += `
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 bg-[#118568] rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002-2h2a2 2 0 002 2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900">Заказ #${result.id}</div>
+                  <div class="text-sm text-gray-500">${result.user_name} - ${result.created_at}</div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-4">
+                <span class="px-2 py-1 text-xs rounded-full ${statusColors[result.status] || 'bg-gray-100 text-gray-800'}">
+                  ${statusNames[result.status] || result.status}
+                </span>
+                <div class="font-bold text-[#118568]">${parseInt(result.total_price).toLocaleString()} ₽</div>
+                <a href="/admin/order/details?id=${result.id}" class="px-3 py-1 bg-[#118568] text-white text-xs rounded hover:bg-[#0f755a] transition">
+                  Детали
+                </a>
+              </div>
+            </div>
+          `;
+        });
+        
+        searchContent.innerHTML = html;
+      }
+      
+      searchInput.addEventListener('input', performSearch);
+      statusFilter.addEventListener('change', performSearch);
+      dateFilter.addEventListener('change', performSearch);
+      
+      // Очистка поиска при клике вне области
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('#search-results') && !e.target.closest('.relative')) {
+          if (searchInput.value.trim() === '') {
+            searchResults.classList.add('hidden');
+          }
+        }
+      });
+    });
   </script>
 
 </body>

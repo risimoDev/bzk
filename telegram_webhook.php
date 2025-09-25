@@ -1,24 +1,54 @@
 <?php
 /**
- * Telegram Webhook для автоматического получения chat_id пользователей
- * Этот файл нужно настроить как webhook для Telegram бота
+ * Secure Telegram Webhook for BZK Print Application
+ * Enhanced with security validation and rate limiting
  */
 
-// Защита от прямого доступа
-if (!isset($_ENV['TELEGRAM_BOT_TOKEN'])) {
-    require_once 'vendor/autoload.php';
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
+require_once 'includes/db.php';
+require_once 'includes/security.php';
+
+// Security: Verify Telegram secret token if configured
+function verifyTelegramWebhook() {
+    $secret_token = $_ENV['TELEGRAM_WEBHOOK_SECRET'] ?? null;
+    
+    if ($secret_token) {
+        $received_token = $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '';
+        if (!hash_equals($secret_token, $received_token)) {
+            error_log('Telegram webhook: Invalid secret token');
+            http_response_code(401);
+            exit('Unauthorized');
+        }
+    }
 }
 
-require_once 'includes/db.php';
+// Verify webhook security
+verifyTelegramWebhook();
 
-// Получение данных от Telegram
+// Rate limiting
+$client_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$rate_limit = check_rate_limit($client_ip, 'telegram_webhook', 100, 300); // 100 requests per 5 minutes
+if (!$rate_limit['allowed']) {
+    http_response_code(429);
+    exit('Too Many Requests');
+}
+record_rate_limit_attempt($client_ip, 'telegram_webhook');
+
+// Validate and sanitize input
 $input = file_get_contents('php://input');
-$update = json_decode($input, true);
+if (empty($input)) {
+    http_response_code(400);
+    exit('Bad Request');
+}
 
-// Логирование для отладки (можно удалить в продакшене)
-error_log("Telegram webhook received: " . $input);
+$update = json_decode($input, true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    error_log('Telegram webhook: Invalid JSON');
+    http_response_code(400);
+    exit('Invalid JSON');
+}
+
+// Log for security monitoring (sanitized)
+error_log('Telegram webhook received from IP: ' . $client_ip);
 
 if (!$update || !isset($update['message'])) {
     http_response_code(200);
@@ -26,12 +56,18 @@ if (!$update || !isset($update['message'])) {
 }
 
 $message = $update['message'];
-$chat_id = $message['chat']['id'];
-$user_id = $message['from']['id'];
-$first_name = $message['from']['first_name'] ?? '';
-$last_name = $message['from']['last_name'] ?? '';
-$username = $message['from']['username'] ?? '';
-$text = $message['text'] ?? '';
+$chat_id = (int)($message['chat']['id'] ?? 0);
+$user_id = (int)($message['from']['id'] ?? 0);
+$first_name = sanitize_text($message['from']['first_name'] ?? '', 50);
+$last_name = sanitize_text($message['from']['last_name'] ?? '', 50);
+$username = sanitize_text($message['from']['username'] ?? '', 50);
+$text = sanitize_text($message['text'] ?? '', 1000);
+
+// Additional validation
+if (!$chat_id || !$user_id) {
+    http_response_code(400);
+    exit('Invalid message data');
+}
 
 // Обработка команд
 if (strpos($text, '/start') === 0) {
@@ -68,11 +104,19 @@ function handleStartCommand($chat_id, $first_name)
 }
 
 /**
- * Обработка команды /connect
+ * Обработка команды /connect с дополнительной безопасностью
  */
 function handleConnectCommand($chat_id, $text, $first_name)
 {
     global $pdo;
+
+    // Rate limiting for connect attempts
+    $rate_limit = check_rate_limit($chat_id, 'telegram_connect', 5, 300);
+    if (!$rate_limit['allowed']) {
+        sendTelegramMessage($chat_id, "⏳ Слишком много попыток подключения. Попробуйте через 5 минут.");
+        return;
+    }
+    record_rate_limit_attempt($chat_id, 'telegram_connect');
 
     // Извлечение email из команды
     $parts = explode(' ', $text, 2);
@@ -86,20 +130,20 @@ function handleConnectCommand($chat_id, $text, $first_name)
 
     $email = trim($parts[1]);
 
-    // Валидация email
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    // Enhanced email validation
+    if (!validate_email($email)) {
         sendTelegramMessage($chat_id, "❌ Неверный формат email адреса!");
         return;
     }
 
     try {
-        // Поиск пользователя по email
+        // Поиск пользователя по email с дополнительными проверками
         $stmt = $pdo->prepare("SELECT id, name, telegram_chat_id FROM users WHERE email = ? AND is_blocked = 0");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
-            $message = "❌ Пользователь с email $email не найден!\n\n";
+            $message = "❌ Пользователь с email " . e($email) . " не найден!\n\n";
             $message .= "Убедитесь, что:\n";
             $message .= "• Email указан правильно\n";
             $message .= "• У вас есть аккаунт на сайте\n";
@@ -108,22 +152,31 @@ function handleConnectCommand($chat_id, $text, $first_name)
             return;
         }
 
+        // Проверка, не привязан ли аккаунт к другому chat_id
+        if (!empty($user['telegram_chat_id']) && $user['telegram_chat_id'] != $chat_id) {
+            sendTelegramMessage($chat_id, "⚠️ Этот аккаунт уже привязан к другому Telegram. Обратитесь к администратору.");
+            return;
+        }
+
         // Обновление chat_id
-        $stmt = $pdo->prepare("UPDATE users SET telegram_chat_id = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE users SET telegram_chat_id = ?, updated_at = NOW() WHERE id = ?");
         if ($stmt->execute([$chat_id, $user['id']])) {
-            $message = "✅ Отлично, {$user['name']}!\n\n";
+            $message = "✅ Отлично, " . e($user['name']) . "!\n\n";
             $message .= "Ваш аккаунт успешно связан с Telegram!\n";
             $message .= "Теперь вы будете получать уведомления:\n\n";
             $message .= "📦 О ваших заказах\n";
             $message .= "📧 Рассылки промокодов и акций\n";
             $message .= "💬 Обновления статусов\n\n";
-            $message .= "🔗 Chat ID: <code>$chat_id</code>";
+            $message .= "🔗 Chat ID: <code>" . e($chat_id) . "</code>";
 
             sendTelegramMessage($chat_id, $message);
 
             // Отправляем тестовое уведомление
             $test_message = "🎉 Тестовое уведомление!\n\nВаш Telegram успешно подключен к системе BZK PRINT.";
             sendTelegramMessage($chat_id, $test_message);
+            
+            // Log successful connection
+            error_log("Telegram account connected: user_id={$user['id']}, chat_id=$chat_id");
         } else {
             sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже.");
         }

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../includes/security.php';
 $pageTitle = "Создание задачи";
 
 // Проверка авторизации
@@ -21,6 +22,8 @@ if (isset($_SESSION['notifications'])) {
 
 // Обработка создания задачи
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_task'])) {
+    // Verify CSRF token
+    verify_csrf();
     $title = trim($_POST['title']);
     $description = trim($_POST['description']);
     $priority = $_POST['priority'];
@@ -130,6 +133,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Форма создания задачи -->
     <div class="bg-white rounded-2xl shadow-xl p-8">
         <form method="post" class="space-y-6">
+            <?php echo csrf_field(); ?>
             <!-- Заголовок задачи -->
             <div>
                 <label for="title" class="block text-sm font-medium text-gray-700 mb-2">

@@ -1,12 +1,15 @@
 <?php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/security.php';
 
-// CSRF (простейшая проверка)
+// CSRF verification
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: /catalog");
     exit();
 }
+
+verify_csrf();
 
 $product_id = (int)($_POST['product_id'] ?? 0);
 $quantity = max(1, (int)($_POST['quantity'] ?? 1));

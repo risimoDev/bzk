@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/includes/security.php';
 ;
 $pageTitle = "Товар";
 
@@ -89,7 +90,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
     </div>
 
     <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4"><?php echo htmlspecialchars($product['name']); ?>
+      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4"><?php echo e($product['name']); ?>
       </h1>
       <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto"></div>
     </div>
@@ -103,8 +104,8 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
             <div class="rounded-2xl overflow-hidden shadow-2xl bg-white">
               <div id="main-image-container" class="relative">
                 <img id="main-image"
-                  src="<?php echo !empty($images) ? htmlspecialchars($images[0]) : '/assets/images/no-image.webp'; ?>"
-                  alt="<?php echo htmlspecialchars($product['name']); ?>"
+                  src="<?php echo !empty($images) ? e($images[0]) : '/assets/images/no-image.webp'; ?>"
+                  alt="<?php echo e($product['name']); ?>"
                   class="w-full h-96 object-cover cursor-pointer transition-transform duration-300 hover:scale-105">
 
                 <?php if (count($images) > 1): ?>
@@ -144,8 +145,8 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                     <button
                       class="thumbnail flex-shrink-0 <?php echo $index === 0 ? 'ring-2 ring-white' : 'opacity-60 hover:opacity-100'; ?> transition-all duration-300 rounded-lg overflow-hidden"
                       data-index="<?php echo $index; ?>">
-                      <img src="<?php echo htmlspecialchars($image); ?>"
-                        alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-16 h-16 object-cover">
+                      <img src="<?php echo e($image); ?>"
+                        alt="<?php echo e($product['name']); ?>" class="w-16 h-16 object-cover">
                     </button>
                   <?php endforeach; ?>
                 </div>
@@ -176,7 +177,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
               </div>
 
               <h1 class="text-3xl lg:text-4xl font-bold text-gray-800 mb-4 leading-tight">
-                <?php echo htmlspecialchars($product['name']); ?>
+                <?php echo e($product['name']); ?>
               </h1>
 
               <div class="w-20 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full"></div>
@@ -193,7 +194,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                 Описание
               </h3>
               <p class="text-gray-600 leading-relaxed">
-                <?php echo nl2br(htmlspecialchars($product['description'])); ?>
+                <?php echo safe_nl2br($product['description']); ?>
               </p>
             </div>
 
@@ -209,6 +210,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
               </h3>
 
               <form id="add-to-cart-form" action="/cart/add" method="POST" class="space-y-6">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
 
                 <!-- Количество -->
@@ -233,7 +235,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                 <?php if (!empty($attributes)): ?>
                   <?php foreach ($attributes as $attribute_id => $attribute_data): ?>
                     <div class="bg-white border-2 border-[#DEE5E5] rounded-2xl p-4 hover:border-[#17B890]">
-                      <h4 class="text-gray-700 font-medium mb-3"><?php echo htmlspecialchars($attribute_data['name']); ?>:
+                      <h4 class="text-gray-700 font-medium mb-3"><?php echo e($attribute_data['name']); ?>:
                       </h4>
                       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         <?php foreach ($attribute_data['values'] as $value): ?>
@@ -244,7 +246,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                             <div
                               class="px-2 py-3 text-sm lg:text-md border-2 border-gray-200 rounded-lg text-center 
                                         hover:border-[#17B890] peer-checked:border-[#118568] peer-checked:bg-[#118568] peer-checked:text-white">
-                              <?php echo htmlspecialchars($value['value']); ?>
+                              <?php echo e($value['value']); ?>
                             </div>
                           </label>
                         <?php endforeach; ?>

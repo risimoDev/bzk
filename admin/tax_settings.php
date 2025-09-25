@@ -1,6 +1,7 @@
 <?php
 // admin/tax_settings.php
 session_start();
+require_once '../includes/security.php';
 $pageTitle = "Настройки налога";
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
@@ -17,6 +18,8 @@ unset($_SESSION['notifications']);
 
 // Сохранение налога
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tax_rate'])) {
+    // Verify CSRF token
+    verify_csrf();
     $tax_rate = floatval($_POST['tax_rate']);
     if ($tax_rate >= 0 && $tax_rate <= 100) {
         if (set_setting($pdo, 'tax_rate', $tax_rate)) {
@@ -65,6 +68,7 @@ $current_tax = get_setting($pdo, 'tax_rate', 20.0);
 
     <div class="bg-white rounded-3xl shadow-2xl p-8">
       <form method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <div>
           <label for="tax_rate" class="block text-gray-700 font-medium mb-2">Ставка налога (%)</label>
           <input type="number" step="0.01" id="tax_rate" name="tax_rate" 

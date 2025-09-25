@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/security.php';
 $pageTitle = "Управление товарами";
 
 // Проверка авторизации
@@ -23,6 +24,9 @@ if (isset($_SESSION['notifications'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Verify CSRF token
+  verify_csrf();
+  
   if (isset($_POST['action'])) {
       $action = $_POST['action'];
 
@@ -193,6 +197,7 @@ $products_with_images = $pdo->query("
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Добавить новый товар</h2>
         
       <form action="" method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="add_product">
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -391,6 +396,7 @@ $products_with_images = $pdo->query("
                   </a>
                   
                   <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?\n\nВнимание: Если товар присутствует в заказах, его удаление невозможно.')" class="m-0">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="action" value="delete_product">
                     <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                     <button type="submit" 

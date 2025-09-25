@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../includes/security.php';
 $pageTitle = "Управление задачами";
 
 // Проверка авторизации
@@ -21,6 +22,8 @@ if (isset($_SESSION['notifications'])) {
 
 // Обработка изменения статуса задачи
 if (isset($_POST['update_status'])) {
+    // Verify CSRF token
+    verify_csrf();
     $task_id = intval($_POST['task_id']);
     $new_status = $_POST['status'];
 
@@ -400,6 +403,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
 
                                 <!-- Форма изменения статуса -->
                                 <form method="post" class="flex gap-2">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="task_id" value="<?php echo $task['id']; ?>">
                                     <select name="status"
                                         class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent">

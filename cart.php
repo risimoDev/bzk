@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/includes/security.php';
 $pageTitle = "Корзина";
 
 
@@ -8,6 +9,9 @@ include_once __DIR__ . '/includes/db.php';
 
 // --- Добавлено: Обработка действий с корзиной ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    verify_csrf();
+    
     if (isset($_POST['action']) && isset($_POST['index'])) {
         $action = $_POST['action'];
         $index = intval($_POST['index']);
@@ -158,7 +162,7 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
     <?php if (isset($_SESSION['notifications'])): ?>
       <?php foreach ($_SESSION['notifications'] as $notification): ?>
         <div class="mb-6 p-4 rounded-xl <?php echo $notification['type'] === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'; ?>">
-          <?php echo htmlspecialchars($notification['message']); ?>
+          <?php echo e($notification['message']); ?>
         </div>
       <?php endforeach; ?>
       <?php unset($_SESSION['notifications']); ?>
@@ -190,13 +194,13 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
             
             <div class="divide-y divide-gray-100">
               <?php foreach ($cart_items as $item): ?>
-                <div class="p-6 hover:bg-gray-50 transition-colors duration-300">
+                <div class="p-6 hover:bg-gray-50 transition-colors duration-300 cart-item">
                   <div class="flex flex-col md:flex-row gap-6">
                     <!-- Изображение товара -->
                     <div class="flex-shrink-0">
                       <?php $image_url = $item['main_image'] ?: '/assets/images/no-image.webp'; ?>
-                      <img src="<?php echo htmlspecialchars($image_url); ?>" 
-                           alt="<?php echo htmlspecialchars($item['product']['name']); ?>" 
+                      <img src="<?php echo e($image_url); ?>" 
+                           alt="<?php echo e($item['product']['name']); ?>" 
                            class="w-24 h-24 object-cover rounded-xl">
                     </div>
                     
@@ -205,23 +209,54 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
                       <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                         <div>
                           <h3 class="text-xl font-bold text-gray-800 mb-2">
-                            <?php echo htmlspecialchars($item['product']['name']); ?>
+                            <?php echo e($item['product']['name']); ?>
                           </h3>
                           
-                          <!-- Характеристики -->
+                          <!-- Характеристики с возможностью редактирования -->
                           <?php if (!empty($item['attributes'])): ?>
                             <div class="mb-3">
-                              <div class="text-sm text-gray-600 mb-1">Характеристики:</div>
-                              <div class="flex flex-wrap gap-2">
+                              <div class="flex items-center justify-between mb-2">
+                                <div class="text-sm text-gray-600">Характеристики:</div>
+                                <button type="button" onclick="toggleAttributeEdit(<?php echo $item['index']; ?>)" 
+                                        class="text-xs text-[#118568] hover:text-[#0f755a] font-medium flex items-center">
+                                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                  </svg>
+                                  Изменить
+                                </button>
+                              </div>
+                              <div class="flex flex-wrap gap-2" id="attributes-display-<?php echo $item['index']; ?>">
                                 <?php foreach ($item['attributes'] as $attribute): ?>
                                   <span class="px-2 py-1 bg-[#DEE5E5] text-gray-700 text-xs rounded-full">
-                                    <?php echo htmlspecialchars($attribute['attribute_name']); ?>: 
-                                    <?php echo htmlspecialchars($attribute['value']); ?>
+                                    <?php echo e($attribute['attribute_name']); ?>: 
+                                    <?php echo e($attribute['value']); ?>
                                     <?php if ($attribute['price_modifier'] > 0): ?>
                                       <span class="text-[#17B890]">(+<?php echo number_format($attribute['price_modifier'], 0, '', ' '); ?> руб.)</span>
                                     <?php endif; ?>
                                   </span>
                                 <?php endforeach; ?>
+                              </div>
+                              
+                              <!-- Форма редактирования характеристик (скрытая по умолчанию) -->
+                              <div class="hidden mt-3 p-3 bg-gray-50 rounded-lg" id="attributes-edit-<?php echo $item['index']; ?>">
+                                <form action="/cart0/update_attributes.php" method="POST" class="space-y-2">
+                                  <?php echo csrf_field(); ?>
+                                  <input type="hidden" name="cart_index" value="<?php echo $item['index']; ?>">
+                                  <input type="hidden" name="product_id" value="<?php echo $item['product']['id']; ?>">
+                                  
+                                  <!-- Здесь будут динамически загружены варианты атрибутов -->
+                                  <div class="text-xs text-gray-500 mb-2">Перейдите на страницу товара для изменения характеристик</div>
+                                  <div class="flex gap-2">
+                                    <a href="/service?id=<?php echo $item['product']['id']; ?>" 
+                                       class="px-3 py-1 bg-[#118568] text-white text-xs rounded hover:bg-[#0f755a] transition-colors">
+                                      Настроить
+                                    </a>
+                                    <button type="button" onclick="toggleAttributeEdit(<?php echo $item['index']; ?>)" 
+                                            class="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition-colors">
+                                      Отмена
+                                    </button>
+                                  </div>
+                                </form>
                               </div>
                             </div>
                           <?php endif; ?>
@@ -241,11 +276,12 @@ $unitPrice = getUnitPrice($pdo, $product['id'], $item['quantity']);
                         </div>
                       </div>
                       <!-- Контролы количества и удаления -->
-                      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
-                        <div class="flex items-center">
+                      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 item-actions">
+                        <div class="flex items-center quantity-controls">
                           <!-- --- Исправлено: Форма изменения количества с ручным вводом --- -->
                           <form action="" method="POST" class="flex items-center">
-                            <input type="hidden" name="index" value="<?php echo $item['index']; ?>">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="index" value="<?php echo e($item['index']); ?>">
 
                             <button type="submit" name="action" value="decrease" 
                                     class="w-10 h-10 bg-[#DEE5E5] rounded-l-lg hover:bg-[#9DC5BB] transition-colors duration-300 flex items-center justify-center <?php echo $item['quantity'] <= 1 ? 'opacity-50 cursor-not-allowed' : ''; ?>"
@@ -277,7 +313,8 @@ $unitPrice = getUnitPrice($pdo, $product['id'], $item['quantity']);
                         </div>
 
                         <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этот товар из корзины?')" class="m-0">
-                          <input type="hidden" name="index" value="<?php echo $item['index']; ?>">
+                          <?php echo csrf_field(); ?>
+                          <input type="hidden" name="index" value="<?php echo e($item['index']); ?>">
                           <button type="submit" name="action" value="remove" 
                                   class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -300,26 +337,33 @@ $unitPrice = getUnitPrice($pdo, $product['id'], $item['quantity']);
           <div class="bg-white rounded-3xl shadow-2xl p-6 sticky top-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Итог заказа</h2>
             
-            <div class="space-y-4 mb-6">
+            <!-- Переключатель срочного заказа -->
+            <div class="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200">
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" id="urgent-order" class="mr-3 w-4 h-4 text-orange-600 rounded focus:ring-orange-500" onchange="toggleUrgentOrder()">
+                <div>
+                  <span class="font-bold text-orange-800">Срочный заказ</span>
+                  <div class="text-xs text-orange-600">Выполнение за 1-2 дня (+50% к стоимости)</div>
+                </div>
+              </label>
+            </div>
+            
+            <div class="space-y-4 mb-6" id="order-summary">
               <div class="flex justify-between">
                 <span class="text-gray-600">Товары (<?php echo array_sum(array_column($cart_items, 'quantity')); ?> шт.):</span>
-                <span class="font-medium"><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
+                <span class="font-medium" id="base-price"><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
               </div>
               
-              <!--<div class="flex justify-between">
-                <span class="text-gray-600">Доставка:</span>
-                <span class="font-medium">Бесплатно</span>
+              <!-- Доплата за срочность (скрытая по умолчанию) -->
+              <div class="flex justify-between hidden" id="urgent-surcharge">
+                <span class="text-orange-600">Доплата за срочность (+50%):</span>
+                <span class="font-medium text-orange-600" id="urgent-amount">0 руб.</span>
               </div>
-              
-              <!--<div class="flex justify-between">
-                <span class="text-gray-600">Налоги:</span>
-                <span class="font-medium">0 руб.</span>
-              </div> -->
               
               <div class="border-t border-gray-200 pt-4">
                 <div class="flex justify-between text-xl font-bold">
                   <span>Итого к оплате:</span>
-                  <span class="text-[#118568]"><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
+                  <span class="text-[#118568]" id="total-price"><?php echo number_format($total_cart_price, 0, '', ' '); ?> руб.</span>
                 </div>
               </div>
             </div>
@@ -340,6 +384,20 @@ $unitPrice = getUnitPrice($pdo, $product['id'], $item['quantity']);
   </div>
 </main>
 <script>
+// Визуальная обратная связь при обновлении
+function showUpdateFeedback(element, type = 'success') {
+    element.classList.add('animate-pulse');
+    const originalBg = element.style.backgroundColor;
+    element.style.backgroundColor = type === 'success' ? '#10B981' : '#EF4444';
+    element.style.color = 'white';
+    
+    setTimeout(() => {
+        element.style.backgroundColor = originalBg;
+        element.style.color = '';
+        element.classList.remove('animate-pulse');
+    }, 1000);
+}
+
 function updateCartItemQuantity(inputElement) {
     const index = inputElement.getAttribute('data-index');
     const step = parseInt(inputElement.getAttribute('data-step')) || 1;
@@ -352,10 +410,20 @@ function updateCartItemQuantity(inputElement) {
 
     inputElement.value = newQuantity;
 
+    // Показываем обратную связь
+    showUpdateFeedback(inputElement.parentElement);
+
     // Создаем форму для отправки
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '';
+
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
 
     const indexInput = document.createElement('input');
     indexInput.type = 'hidden';
@@ -378,5 +446,118 @@ function updateCartItemQuantity(inputElement) {
     document.body.appendChild(form);
     form.submit();
 }
+
+// Переключение редактирования атрибутов
+function toggleAttributeEdit(index) {
+    const displayElement = document.getElementById(`attributes-display-${index}`);
+    const editElement = document.getElementById(`attributes-edit-${index}`);
+    
+    if (displayElement && editElement) {
+        displayElement.parentElement.classList.toggle('editing');
+        displayElement.classList.toggle('hidden');
+        editElement.classList.toggle('hidden');
+    }
+}
+
+// Калькулятор срочного заказа
+function toggleUrgentOrder() {
+    const checkbox = document.getElementById('urgent-order');
+    const urgentSurcharge = document.getElementById('urgent-surcharge');
+    const urgentAmount = document.getElementById('urgent-amount');
+    const totalPrice = document.getElementById('total-price');
+    
+    const basePrice = <?php echo $total_cart_price; ?>;
+    
+    if (checkbox.checked) {
+        const surcharge = Math.round(basePrice * 0.5);
+        const newTotal = basePrice + surcharge;
+        
+        urgentAmount.textContent = surcharge.toLocaleString('ru-RU') + ' руб.';
+        totalPrice.textContent = newTotal.toLocaleString('ru-RU') + ' руб.';
+        urgentSurcharge.classList.remove('hidden');
+        
+        // Анимация изменения цены
+        totalPrice.classList.add('animate-pulse', 'text-orange-600');
+        setTimeout(() => {
+            totalPrice.classList.remove('animate-pulse');
+        }, 1000);
+    } else {
+        totalPrice.textContent = basePrice.toLocaleString('ru-RU') + ' руб.';
+        urgentSurcharge.classList.add('hidden');
+        totalPrice.classList.remove('text-orange-600');
+        totalPrice.classList.add('text-[#118568]');
+    }
+}
+
+// Улучшенная мобильная адаптация
+document.addEventListener('DOMContentLoaded', function() {
+    // Адаптивные карточки товаров для мобильных устройств
+    if (window.innerWidth <= 768) {
+        const cartItems = document.querySelectorAll('.cart-item');
+        cartItems.forEach(item => {
+            item.classList.add('mobile-optimized');
+        });
+    }
+    
+    // Плавная прокрутка к корзине при изменениях
+    const forms = document.querySelectorAll('form[action=""]');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<div class="spinner">⏳</div> Обновление...';
+            }
+        });
+    });
+});
 </script>
+
+<!-- Дополнительные стили для анимаций -->
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+    animation: pulse 1s ease-in-out;
+}
+
+.mobile-optimized {
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.editing {
+    border-left: 3px solid #118568;
+    padding-left: 1rem;
+}
+
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .cart-item {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .quantity-controls {
+        justify-content: center;
+    }
+    
+    .item-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
 <?php include_once __DIR__ . '/includes/footer.php'; ?>

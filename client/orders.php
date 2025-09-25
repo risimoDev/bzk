@@ -4,6 +4,8 @@ $pageTitle = "История заказов";
 
 // Подключение к базе данных
 include_once('../includes/db.php');
+include_once('../includes/security.php');
+include_once('../includes/common.php');
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: /login");
@@ -155,52 +157,33 @@ $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
       </div>
 
       <!-- Список заказов -->
-      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8">
-        <div class="p-6 border-b border-[#DEE5E5]">
-          <h2 class="text-2xl font-bold text-gray-800">Список заказов</h2>
-        </div>
-
-        <div class="divide-y divide-[#DEE5E5]">
-          <?php foreach ($orders as $order): ?>
-            <div class="p-6 hover:bg-[#f8fafa] transition-colors duration-300">
-              <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div class="flex items-center">
-                  <div class="w-12 h-12 bg-[#17B890] rounded-xl flex items-center justify-center mr-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-bold text-gray-800">Заказ #<?php echo htmlspecialchars($order['id']); ?></h3>
-                    <p class="text-gray-600 text-sm">
-                      <?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?>
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div class="flex items-center">
-                    <span class="px-3 py-1 rounded-full text-sm font-medium <?php echo $status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800'; ?>">
-                      <?php echo htmlspecialchars($statuses[$order['status']] ?? 'Неизвестно'); ?>
-                    </span>
-                  </div>
-
-                  <div class="text-right">
-                    <div class="text-xl font-bold text-[#118568]">
-                      <?php echo number_format($order['total_price'], 0, '', ' '); ?> <span class="text-base">руб.</span>
-                    </div>
-                  </div>
-
-                  <a href="/client/order_details.php?id=<?php echo $order['id']; ?>" 
-                     class="px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 font-medium text-center whitespace-nowrap">
-                    Подробнее
-                  </a>
-                </div>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
+      <?php
+      // Подготовка данных для responsive_table
+      $columns = [
+          'order' => ['title' => 'Заказ'],
+          'date' => ['title' => 'Дата создания'],
+          'status' => ['title' => 'Статус'],
+          'amount' => ['title' => 'Сумма'],
+          'actions' => ['title' => 'Действия']
+      ];
+      
+      $table_data = [];
+      foreach ($orders as $order) {
+          $table_data[] = [
+              'order' => '<div class="flex items-center"><div class="w-10 h-10 bg-[#17B890] rounded-xl flex items-center justify-center mr-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg></div><div><div class="font-bold text-gray-800">Заказ #' . e($order['id']) . '</div></div></div>',
+              'date' => '<div class="text-gray-600">' . date('d.m.Y H:i', strtotime($order['created_at'])) . '</div>',
+              'status' => '<span class="px-3 py-1 rounded-full text-sm font-medium ' . ($status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800') . '">' . e($statuses[$order['status']] ?? 'Неизвестно') . '</span>',
+              'amount' => '<div class="text-xl font-bold text-[#118568]">' . number_format($order['total_price'], 0, '', ' ') . ' <span class="text-base">руб.</span></div>',
+              'actions' => '<a href="/client/order_details.php?id=' . $order['id'] . '" class="px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 font-medium text-center whitespace-nowrap inline-block">Подробнее</a>'
+          ];
+      }
+      
+      echo responsive_table($columns, $table_data, [
+          'default_view' => 'cards', // Показываем карточки на мобильных по умолчанию
+          'table_classes' => 'w-full bg-white rounded-3xl shadow-2xl overflow-hidden',
+          'card_classes' => 'grid grid-cols-1 gap-6'
+      ]);
+      ?>
 
       <!-- Статистика заказов -->
       <div class="bg-white rounded-3xl shadow-2xl p-6">

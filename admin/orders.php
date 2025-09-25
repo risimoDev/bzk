@@ -9,6 +9,8 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 include_once('../includes/db.php');
+include_once('../includes/security.php');
+include_once('../includes/common.php');
 include_once(__DIR__ . '/buhgalt/functions.php');
 
 // ---------- CSRF ----------
@@ -38,11 +40,7 @@ $status_colors = [
 
 // ---------- Обработка изменения статуса ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка безопасности (CSRF).'];
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
-    }
+    verify_csrf();
 
     $order_id = (int)($_POST['order_id'] ?? 0);
     $status = $_POST['update_status'] ?? null;
@@ -51,11 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
         $stmt->execute([$status, $order_id]);
 
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Статус заказа успешно изменен.'];
+        add_notification('success', 'Статус заказа успешно изменен.');
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();
     } else {
-        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Некорректные данные для изменения статуса.'];
+        add_notification('error', 'Некорректные данные для изменения статуса.');
     }
 }
 
@@ -110,13 +108,7 @@ foreach ($stmt_stats->fetchAll(PDO::FETCH_ASSOC) as $row) {
     </div>
 
     <!-- уведомления -->
-    <?php if (!empty($_SESSION['notifications'])): ?>
-      <?php foreach ($_SESSION['notifications'] as $n): ?>
-        <div class="mb-6 p-4 rounded-xl <?php echo $n['type'] === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'; ?>">
-          <?php echo htmlspecialchars($n['message']); ?>
-        </div>
-      <?php endforeach; unset($_SESSION['notifications']); ?>
-    <?php endif; ?>
+    <?php echo display_notifications(); ?>
 
     <!-- статистика -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -136,85 +128,54 @@ foreach ($stmt_stats->fetchAll(PDO::FETCH_ASSOC) as $row) {
         <p class="text-gray-600">Пока нет заказов</p>
       </div>
     <?php else: ?>
-      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-[#118568] text-white">
-              <tr>
-                <th class="py-4 px-6 text-left">Заказ</th>
-                <th class="py-4 px-6 text-left">Клиент</th>
-                <th class="py-4 px-6 text-left">Дата</th>
-                <th class="py-4 px-6 text-left">Сумма</th>
-                <th class="py-4 px-6 text-left">Прибыль</th>
-                <th class="py-4 px-6 text-left">Статус</th>
-                <th class="py-4 px-6 text-left">Действия</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[#DEE5E5]">
-              <?php foreach ($orders as $order): ?>
-                <?php $profit = $order['accounting_id'] ? get_order_profit($pdo, $order['accounting_id']) : null; ?>
-                <tr class="hover:bg-[#f8fafa] transition">
-                  <td class="py-4 px-6">
-                    <div class="font-bold">#<?php echo htmlspecialchars($order['id']); ?></div>
-                    <div class="text-sm text-gray-500"><?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?></div>
-                  </td>
-                  <td class="py-4 px-6">
-                    <div class="font-medium"><?php echo htmlspecialchars($order['user_name'] ?? 'Гость'); ?></div>
-                    <div class="text-sm text-gray-500"><?php echo htmlspecialchars($order['email'] ?? 'Не указан'); ?></div>
-                  </td>
-                  <td class="py-4 px-6 text-gray-600"><?php echo date('d.m.Y', strtotime($order['created_at'])); ?></td>
-                  <td class="py-4 px-6 font-bold text-[#118568]"><?php echo number_format($order['total_price'], 0, '', ' '); ?> ₽</td>
-                  <td class="py-4 px-6 font-bold <?php echo ($profit < 0 ? 'text-red-600' : 'text-green-600'); ?>">
-                    <?php echo $profit !== null ? number_format($profit, 0, '', ' ') . ' ₽' : '—'; ?>
-                  </td>
-                  <td class="py-4 px-6">
-                    <span class="px-3 py-1 rounded-full text-xs font-medium <?php echo $status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800'; ?>">
-                      <?php echo htmlspecialchars($statuses[$order['status']] ?? 'Неизвестно'); ?>
-                    </span>
-                  </td>
-                  <td class="py-4 px-6">
-                    <div class="flex flex-col sm:flex-row gap-2">
-                      <form action="" method="POST">
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                        <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                        <select name="update_status" onchange="this.form.submit()" class="text-xs rounded border-gray-300 focus:border-[#118568] focus:ring-[#17B890]">
-                          <?php foreach ($statuses as $k => $name): ?>
-                            <option value="<?php echo $k; ?>" <?php echo $order['status'] === $k ? 'selected' : ''; ?>>
-                              <?php echo $name; ?>
-                            </option>
-                          <?php endforeach; ?>
-                        </select>
+      <?php
+      // Подготовка данных для responsive_table
+      $columns = [
+          'order' => ['title' => 'Заказ'],
+          'client' => ['title' => 'Клиент'],
+          'date' => ['title' => 'Дата'],
+          'amount' => ['title' => 'Сумма'],
+          'profit' => ['title' => 'Прибыль'],
+          'status' => ['title' => 'Статус'],
+          'actions' => ['title' => 'Действия']
+      ];
+      
+      $table_data = [];
+      foreach ($orders as $order) {
+          $profit = $order['accounting_id'] ? get_order_profit($pdo, $order['accounting_id']) : null;
+          
+          $table_data[] = [
+              'order' => '<div class="font-bold">#' . e($order['id']) . '</div><div class="text-sm text-gray-500">' . date('d.m.Y H:i', strtotime($order['created_at'])) . '</div>',
+              'client' => '<div class="font-medium">' . e($order['user_name'] ?? 'Гость') . '</div><div class="text-sm text-gray-500">' . e($order['email'] ?? 'Не указан') . '</div>',
+              'date' => date('d.m.Y', strtotime($order['created_at'])),
+              'amount' => '<span class="font-bold text-[#118568]">' . number_format($order['total_price'], 0, '', ' ') . ' ₽</span>',
+              'profit' => '<span class="font-bold ' . ($profit < 0 ? 'text-red-600' : 'text-green-600') . '">' . ($profit !== null ? number_format($profit, 0, '', ' ') . ' ₽' : '—') . '</span>',
+              'status' => '<span class="px-3 py-1 rounded-full text-xs font-medium ' . ($status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800') . '">' . e($statuses[$order['status']] ?? 'Неизвестно') . '</span>',
+              'actions' => '
+                  <div class="flex flex-col sm:flex-row gap-2">
+                      <form action="" method="POST" class="inline">
+                          ' . csrf_field() . '
+                          <input type="hidden" name="order_id" value="' . $order['id'] . '">
+                          <select name="update_status" onchange="this.form.submit()" class="text-xs rounded border-gray-300 focus:border-[#118568] focus:ring-[#17B890] w-full sm:w-auto">
+                              ' . implode('', array_map(function($k, $name) use ($order) {
+                                  return '<option value="' . e($k) . '"' . ($order['status'] === $k ? ' selected' : '') . '>' . e($name) . '</option>';
+                              }, array_keys($statuses), $statuses)) . '
+                          </select>
                       </form>
-
-                      <a href="/admin/order/details?id=<?php echo $order['id']; ?>" class="px-3 py-1 bg-[#17B890] text-white text-xs rounded hover:bg-[#14a380] transition flex items-center">
-                        Детали
+                      <a href="/admin/order/details?id=' . $order['id'] . '" class="px-3 py-1 bg-[#17B890] text-white text-xs rounded hover:bg-[#14a380] transition flex items-center justify-center whitespace-nowrap">
+                          Детали
                       </a>
-                    </div>
-                  </td>
-                </tr>
+                  </div>'
+          ];
+      }
+      
+      echo responsive_table($columns, $table_data, [
+          'default_view' => 'cards', // Показываем карточки на мобильных по умолчанию
+          'table_classes' => 'w-full bg-white rounded-2xl shadow-lg overflow-hidden'
+      ]);
+      ?>
+    <?php endif; ?>
 
-                <!-- быстрый просмотр состава заказа -->
-                <tr class="bg-gray-50">
-                  <td colspan="7" class="px-6 py-2 text-sm text-gray-600">
-                    <?php
-                    $stmt_items = $pdo->prepare("SELECT oi.*, p.name FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
-                    $stmt_items->execute([$order['id']]);
-                    $items = $stmt_items->fetchAll(PDO::FETCH_ASSOC);
-                    if ($items):
-                        foreach ($items as $it):
-                            echo "- " . htmlspecialchars($it['name']) . " × " . (int)$it['quantity'] . "<br>";
-                        endforeach;
-                    else:
-                        echo "Нет товаров";
-                    endif;
-                    ?>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       <!-- пагинация -->
       <?php if ($total_pages > 1): ?>
@@ -238,7 +199,6 @@ foreach ($stmt_stats->fetchAll(PDO::FETCH_ASSOC) as $row) {
           </div>
         </div>
       <?php endif; ?>
-    <?php endif; ?>
   </div>
 </main>
 

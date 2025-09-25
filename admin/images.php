@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/security.php';
 $pageTitle = "Управление изображениями";
 
 // Проверка авторизации
@@ -35,71 +36,57 @@ if (isset($_SESSION['notifications'])) {
 
 // Добавление изображения
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    // Verify CSRF token
+    verify_csrf();
+    
     $action = $_POST['action'];
     
     if ($action === 'upload_image' && isset($_FILES['image'])) {
         $image = $_FILES['image'];
         
-        // Проверка загрузки файла
-        if ($image['error'] === UPLOAD_ERR_OK) {
-            // Проверка типа файла
-            $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $file_type = mime_content_type($image['tmp_name']);
+        // Use secure file upload
+        $upload_result = secure_file_upload($image, [
+            'allowed_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+            'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            'max_size' => 10 * 1024 * 1024, // 10MB
+            'upload_dir' => __DIR__ . '/../storage/uploads/',
+            'public_dir' => '/storage/uploads/',
+            'filename_prefix' => 'product_' . $product_id . '_'
+        ]);
+        
+        if ($upload_result['success']) {
+            $imageUrl = $upload_result['public_url'];
             
-            if (in_array($file_type, $allowed_types)) {
-                $uploadDir = __DIR__ . '/../uploads/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                
-                // Генерация уникального имени файла
-                $file_extension = pathinfo($image['name'], PATHINFO_EXTENSION);
-                $fileName = uniqid() . '_' . time() . '.' . $file_extension;
-                $filePath = $uploadDir . $fileName;
-                
-                if (move_uploaded_file($image['tmp_name'], $filePath)) {
-                    $imageUrl = '/uploads/' . $fileName;
-                    
-                    // Проверяем, есть ли уже главное изображение
-                    $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM product_images WHERE product_id = ? AND is_main = 1");
-                    $stmt_check->execute([$product_id]);
-                    $has_main = $stmt_check->fetchColumn();
-                    
-                    $is_main = $has_main ? 0 : 1; // Первое изображение становится главным
-                    
-                    // Сохранение пути к изображению в базу данных
-                    $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_url, is_main) VALUES (?, ?, ?)");
-                    $result = $stmt->execute([$product_id, $imageUrl, $is_main]);
-                    
-                    if ($result) {
-                        $_SESSION['notifications'][] = [
-                            'type' => 'success',
-                            'message' => 'Изображение успешно загружено.'
-                        ];
-                    } else {
-                        $_SESSION['notifications'][] = [
-                            'type' => 'error',
-                            'message' => 'Ошибка при сохранении изображения в базу данных.'
-                        ];
-                        // Удаляем файл в случае ошибки базы данных
-                        unlink($filePath);
-                    }
-                } else {
-                    $_SESSION['notifications'][] = [
-                        'type' => 'error',
-                        'message' => 'Ошибка при перемещении файла.'
-                    ];
-                }
+            // Проверяем, есть ли уже главное изображение
+            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM product_images WHERE product_id = ? AND is_main = 1");
+            $stmt_check->execute([$product_id]);
+            $has_main = $stmt_check->fetchColumn();
+            
+            $is_main = $has_main ? 0 : 1; // Первое изображение становится главным
+            
+            // Сохранение пути к изображению в базу данных
+            $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_url, is_main) VALUES (?, ?, ?)");
+            $result = $stmt->execute([$product_id, $imageUrl, $is_main]);
+            
+            if ($result) {
+                $_SESSION['notifications'][] = [
+                    'type' => 'success',
+                    'message' => 'Изображение успешно загружено.'
+                ];
             } else {
                 $_SESSION['notifications'][] = [
                     'type' => 'error',
-                    'message' => 'Недопустимый формат файла. Разрешены только JPG, PNG, GIF, WEBP.'
+                    'message' => 'Ошибка при сохранении изображения в базу данных.'
                 ];
+                // Удаляем файл в случае ошибки базы данных
+                if (file_exists($upload_result['full_path'])) {
+                    unlink($upload_result['full_path']);
+                }
             }
         } else {
             $_SESSION['notifications'][] = [
                 'type' => 'error',
-                'message' => 'Ошибка загрузки файла.'
+                'message' => 'Ошибка загрузки: ' . $upload_result['error']
             ];
         }
         
@@ -266,6 +253,7 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Загрузить новое изображение</h2>
       
       <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="upload_image">
         
         <div class="border-2 border-dashed border-[#118568] rounded-2xl p-8 text-center hover:bg-[#f8fafa] transition-colors duration-300">
@@ -332,6 +320,7 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
                   <div class="flex gap-2">
                     <?php if (!$image['is_main']): ?>
                       <form action="" method="POST" class="m-0">
+                        <?php echo csrf_field(); ?>
                         <input type="hidden" name="action" value="set_main_image">
                         <input type="hidden" name="image_id" value="<?php echo $image['id']; ?>">
                         <button type="submit" 
@@ -345,6 +334,7 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
                     <?php endif; ?>
                     
                     <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить это изображение?')" class="m-0">
+                      <?php echo csrf_field(); ?>
                       <input type="hidden" name="action" value="delete_image">
                       <input type="hidden" name="image_id" value="<?php echo $image['id']; ?>">
                       <button type="submit" 
