@@ -8,8 +8,8 @@ include_once('../includes/security.php');
 include_once('../includes/common.php');
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: /login");
-    exit();
+  header("Location: /login");
+  exit();
 }
 
 $user_id = $_SESSION['user_id'];
@@ -23,25 +23,25 @@ $sql = "SELECT o.id, o.total_price, o.status, o.created_at FROM orders o WHERE o
 $params = [$user_id];
 
 if ($filter_status !== 'all') {
-    $sql .= " AND o.status = ?";
-    $params[] = $filter_status;
+  $sql .= " AND o.status = ?";
+  $params[] = $filter_status;
 }
 
 // Добавление сортировки
 switch ($filter_sort) {
-    case 'date_asc':
-        $sql .= " ORDER BY o.created_at ASC";
-        break;
-    case 'price_desc':
-        $sql .= " ORDER BY o.total_price DESC";
-        break;
-    case 'price_asc':
-        $sql .= " ORDER BY o.total_price ASC";
-        break;
-    case 'date_desc':
-    default:
-        $sql .= " ORDER BY o.created_at DESC";
-        break;
+  case 'date_asc':
+    $sql .= " ORDER BY o.created_at ASC";
+    break;
+  case 'price_desc':
+    $sql .= " ORDER BY o.total_price DESC";
+    break;
+  case 'price_asc':
+    $sql .= " ORDER BY o.total_price ASC";
+    break;
+  case 'date_desc':
+  default:
+    $sql .= " ORDER BY o.created_at DESC";
+    break;
 }
 
 $stmt = $pdo->prepare($sql);
@@ -73,7 +73,7 @@ $stmt_statuses->execute([$user_id]);
 $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
-<?php include_once('../includes/header.php');?>
+<?php include_once('../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
@@ -96,17 +96,21 @@ $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
     <?php if (empty($orders)): ?>
       <div class="bg-white rounded-3xl shadow-2xl p-12 text-center">
         <div class="w-24 h-24 bg-[#DEE5E5] rounded-full flex items-center justify-center mx-auto mb-8">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-[#5E807F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-[#5E807F]" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
           </svg>
         </div>
         <h2 class="text-2xl font-bold text-gray-800 mb-4">У вас пока нет заказов</h2>
         <p class="text-gray-600 mb-8">Совершите свой первый заказ прямо сейчас</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/catalog" class="px-6 py-3 bg-gradient-to-r from-[#118568] to-[#0f755a] text-white rounded-xl hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
+          <a href="/catalog"
+            class="px-6 py-3 bg-gradient-to-r from-[#118568] to-[#0f755a] text-white rounded-xl hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
             Перейти в каталог
           </a>
-          <a href="/client/dashboard" class="px-6 py-3 bg-[#DEE5E5] text-[#118568] rounded-xl hover:bg-[#9DC5BB] transition-colors duration-300 font-bold text-lg">
+          <a href="/client/dashboard"
+            class="px-6 py-3 bg-[#DEE5E5] text-[#118568] rounded-xl hover:bg-[#9DC5BB] transition-colors duration-300 font-bold text-lg">
             Вернуться в кабинет
           </a>
         </div>
@@ -117,15 +121,16 @@ $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
         <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <h2 class="text-2xl font-bold text-gray-800">Фильтры и сортировка</h2>
           <div class="text-gray-600">
-            Найдено: <?php echo count($orders); ?> <?php echo count($orders) == 1 ? 'заказ' : (count($orders) < 5 ? 'заказа' : 'заказов'); ?>
+            Найдено: <?php echo count($orders); ?>
+            <?php echo count($orders) == 1 ? 'заказ' : (count($orders) < 5 ? 'заказа' : 'заказов'); ?>
           </div>
         </div>
-        
+
         <form method="GET" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Статус заказа</label>
-            <select id="status" name="status" onchange="this.form.submit()" 
-                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
+            <select id="status" name="status" onchange="this.form.submit()"
+              class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
               <option value="all" <?php echo $filter_status === 'all' ? 'selected' : ''; ?>>Все статусы</option>
               <?php foreach ($available_statuses as $status): ?>
                 <option value="<?php echo $status; ?>" <?php echo $filter_status === $status ? 'selected' : ''; ?>>
@@ -134,21 +139,25 @@ $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
               <?php endforeach; ?>
             </select>
           </div>
-          
+
           <div>
             <label for="sort" class="block text-sm font-medium text-gray-700 mb-2">Сортировка</label>
-            <select id="sort" name="sort" onchange="this.form.submit()" 
-                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
-              <option value="date_desc" <?php echo $filter_sort === 'date_desc' ? 'selected' : ''; ?>>Дата (новые первые)</option>
-              <option value="date_asc" <?php echo $filter_sort === 'date_asc' ? 'selected' : ''; ?>>Дата (старые первые)</option>
-              <option value="price_desc" <?php echo $filter_sort === 'price_desc' ? 'selected' : ''; ?>>Цена (высокая)</option>
+            <select id="sort" name="sort" onchange="this.form.submit()"
+              class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300">
+              <option value="date_desc" <?php echo $filter_sort === 'date_desc' ? 'selected' : ''; ?>>Дата (новые первые)
+              </option>
+              <option value="date_asc" <?php echo $filter_sort === 'date_asc' ? 'selected' : ''; ?>>Дата (старые первые)
+              </option>
+              <option value="price_desc" <?php echo $filter_sort === 'price_desc' ? 'selected' : ''; ?>>Цена (высокая)
+              </option>
               <option value="price_asc" <?php echo $filter_sort === 'price_asc' ? 'selected' : ''; ?>>Цена (низкая)</option>
             </select>
           </div>
-          
+
           <?php if ($filter_status !== 'all' || $filter_sort !== 'date_desc'): ?>
             <div class="flex items-end">
-              <a href="/client/orders" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-300 text-sm font-medium">
+              <a href="/client/orders"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-300 text-sm font-medium">
                 Сбросить фильтры
               </a>
             </div>
@@ -160,82 +169,83 @@ $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
       <?php
       // Подготовка данных для responsive_table
       $columns = [
-          'order' => ['title' => 'Заказ'],
-          'date' => ['title' => 'Дата создания'],
-          'status' => ['title' => 'Статус'],
-          'amount' => ['title' => 'Сумма'],
-          'actions' => ['title' => 'Действия']
+        'order' => ['title' => 'Заказ', 'allow_html' => true],
+        'date' => ['title' => 'Дата создания', 'allow_html' => true],
+        'status' => ['title' => 'Статус', 'allow_html' => true],
+        'amount' => ['title' => 'Сумма', 'allow_html' => true],
+        'actions' => ['title' => 'Действия', 'allow_html' => true]
       ];
-      
+
       $table_data = [];
       foreach ($orders as $order) {
-          $table_data[] = [
-              'order' => '<div class="flex items-center"><div class="w-10 h-10 bg-[#17B890] rounded-xl flex items-center justify-center mr-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg></div><div><div class="font-bold text-gray-800">Заказ #' . e($order['id']) . '</div></div></div>',
-              'date' => '<div class="text-gray-600">' . date('d.m.Y H:i', strtotime($order['created_at'])) . '</div>',
-              'status' => '<span class="px-3 py-1 rounded-full text-sm font-medium ' . ($status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800') . '">' . e($statuses[$order['status']] ?? 'Неизвестно') . '</span>',
-              'amount' => '<div class="text-xl font-bold text-[#118568]">' . number_format($order['total_price'], 0, '', ' ') . ' <span class="text-base">руб.</span></div>',
-              'actions' => '<a href="/client/order_details.php?id=' . $order['id'] . '" class="px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 font-medium text-center whitespace-nowrap inline-block">Подробнее</a>'
-          ];
+        $table_data[] = [
+          'order' => '<div class="flex items-center"><div class="w-12 h-12 bg-gradient-to-br from-[#118568] to-[#17B890] rounded-xl flex items-center justify-center mr-4"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg></div><div><div class="font-bold text-gray-800 text-lg">Заказ #' . e($order['id']) . '</div><div class="text-gray-500 text-sm">' . date('d.m.Y H:i', strtotime($order['created_at'])) . '</div></div></div>',
+          'date' => '<div class="text-gray-600">' . date('d.m.Y H:i', strtotime($order['created_at'])) . '</div>',
+          'status' => '<span class="px-3 py-1 rounded-full text-sm font-medium ' . ($status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800') . '">' . e($statuses[$order['status']] ?? 'Неизвестно') . '</span>',
+          'amount' => '<div class="text-2xl font-bold text-[#118568]">' . number_format($order['total_price'], 0, '', ' ') . ' <span class="text-base">руб.</span></div>',
+          'actions' => '<a href="/client/order_details.php?id=' . $order['id'] . '" class="px-4 py-2 bg-gradient-to-r from-[#118568] to-[#17B890] text-white rounded-lg hover:from-[#0f755a] hover:to-[#14a380] transition-all duration-300 font-medium text-center whitespace-nowrap inline-block w-full text-center">Подробнее</a>'
+        ];
       }
-      
+
       echo responsive_table($columns, $table_data, [
-          'default_view' => 'cards', // Показываем карточки на мобильных по умолчанию
-          'table_classes' => 'w-full bg-white rounded-3xl shadow-2xl overflow-hidden',
-          'card_classes' => 'grid grid-cols-1 gap-6'
+        'default_view' => 'cards', // Show cards on mobile by default
+        'table_classes' => 'w-full bg-white',
+        'card_classes' => 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6',
+        'show_toggle' => true
       ]);
       ?>
 
       <!-- Статистика заказов -->
-      <div class="bg-white rounded-3xl shadow-2xl p-6">
+      <div class="bg-white rounded-3xl shadow-2xl p-6 mt-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Статистика заказов</h2>
-        
+
         <?php
         $status_counts = [];
         foreach ($orders as $order) {
-            $status_counts[$order['status']] = ($status_counts[$order['status']] ?? 0) + 1;
+          $status_counts[$order['status']] = ($status_counts[$order['status']] ?? 0) + 1;
         }
         ?>
-        
+
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-[#118568] mb-2"><?php echo count($orders); ?></div>
             <div class="text-gray-600 text-sm">Всего заказов</div>
           </div>
-          
+
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-green-600 mb-2"><?php echo $status_counts['completed'] ?? 0; ?></div>
             <div class="text-gray-600 text-sm">Завершено</div>
           </div>
-          
+
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-blue-600 mb-2"><?php echo $status_counts['processing'] ?? 0; ?></div>
             <div class="text-gray-600 text-sm">В обработке</div>
           </div>
-          
+
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-yellow-600 mb-2"><?php echo $status_counts['pending'] ?? 0; ?></div>
             <div class="text-gray-600 text-sm">В ожидании</div>
           </div>
-          
+
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-purple-600 mb-2"><?php echo $status_counts['shipped'] ?? 0; ?></div>
             <div class="text-gray-600 text-sm">Отправлено</div>
           </div>
-          
+
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-red-600 mb-2"><?php echo $status_counts['cancelled'] ?? 0; ?></div>
             <div class="text-gray-600 text-sm">Отменено</div>
           </div>
         </div>
-        
+
         <!-- Общая сумма заказов -->
         <div class="mt-6 pt-4 border-t border-[#DEE5E5]">
           <div class="flex justify-between items-center">
             <span class="text-gray-700 font-medium">Общая сумма всех заказов:</span>
             <span class="text-2xl font-bold text-[#118568]">
-              <?php 
+              <?php
               $total_spent = array_sum(array_column($orders, 'total_price'));
-              echo number_format($total_spent, 0, '', ' '); 
+              echo number_format($total_spent, 0, '', ' ');
               ?> руб.
             </span>
           </div>

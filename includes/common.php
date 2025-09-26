@@ -14,7 +14,8 @@ require_once __DIR__ . '/security.php';
  * @param array $custom_path
  * @return string
  */
-function generateBreadcrumbs($current_page = '', $custom_path = []) {
+function generateonceBreadcrumbs($current_page = '', $custom_path = [])
+{
     $breadcrumbs = [
         '' => 'Главная',
         'catalog' => 'Каталог',
@@ -35,17 +36,17 @@ function generateBreadcrumbs($current_page = '', $custom_path = []) {
         'admin/products' => 'Управление товарами',
         'admin/users' => 'Управление пользователями'
     ];
-    
+
     if (!empty($custom_path)) {
         $breadcrumbs = array_merge($breadcrumbs, $custom_path);
     }
-    
+
     $current_url = $_SERVER['REQUEST_URI'];
     $current_path = trim(parse_url($current_url, PHP_URL_PATH), '/');
-    
+
     $html = '<nav class="flex" aria-label="Breadcrumb">';
     $html .= '<ol class="inline-flex items-center space-x-1 md:space-x-3">';
-    
+
     // Home link
     $html .= '<li class="inline-flex items-center">';
     $html .= '<a href="/" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-[#118568] transition-colors duration-200">';
@@ -55,36 +56,37 @@ function generateBreadcrumbs($current_page = '', $custom_path = []) {
     $html .= 'Главная';
     $html .= '</a>';
     $html .= '</li>';
-    
+
     // Build path segments
     $path_segments = explode('/', $current_path);
     $accumulated_path = '';
-    
+
     foreach ($path_segments as $segment) {
-        if (empty($segment)) continue;
-        
+        if (empty($segment))
+            continue;
+
         $accumulated_path .= ($accumulated_path ? '/' : '') . $segment;
         $page_name = $breadcrumbs[$accumulated_path] ?? ucfirst($segment);
-        
+
         $html .= '<li>';
         $html .= '<div class="flex items-center">';
         $html .= '<svg class="w-3 h-3 text-gray-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18 6-6-6-6"></path>';
         $html .= '</svg>';
-        
+
         if ($accumulated_path === $current_path) {
             $html .= '<span class="text-sm font-medium text-gray-500">' . e($page_name) . '</span>';
         } else {
             $html .= '<a href="/' . e($accumulated_path) . '" class="text-sm font-medium text-gray-700 hover:text-[#118568] transition-colors duration-200">' . e($page_name) . '</a>';
         }
-        
+
         $html .= '</div>';
         $html .= '</li>';
     }
-    
+
     $html .= '</ol>';
     $html .= '</nav>';
-    
+
     return $html;
 }
 
@@ -94,16 +96,17 @@ function generateBreadcrumbs($current_page = '', $custom_path = []) {
  * @param string $text
  * @return string
  */
-function backButton($custom_url = null, $text = 'Назад') {
+function backButtononce($custom_url = null, $text = 'Назад')
+{
     $back_url = $custom_url ?: 'javascript:history.back()';
-    
+
     $html = '<a href="' . e($back_url) . '" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 font-medium rounded-lg transition-all duration-200 group">';
     $html .= '<svg class="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
     $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>';
     $html .= '</svg>';
     $html .= e($text);
     $html .= '</a>';
-    
+
     return $html;
 }
 
@@ -114,11 +117,12 @@ function backButton($custom_url = null, $text = 'Назад') {
  * @param string $type - success, error, warning, info
  * @param string $message
  */
-function add_notification($type, $message) {
+function add_notification($type, $message)
+{
     if (!isset($_SESSION['notifications'])) {
         $_SESSION['notifications'] = [];
     }
-    
+
     $_SESSION['notifications'][] = [
         'type' => $type,
         'message' => $message,
@@ -130,7 +134,8 @@ function add_notification($type, $message) {
  * Get and clear notifications from session
  * @return array
  */
-function get_notifications() {
+function get_notifications()
+{
     $notifications = $_SESSION['notifications'] ?? [];
     unset($_SESSION['notifications']);
     return $notifications;
@@ -140,31 +145,32 @@ function get_notifications() {
  * Display notifications HTML
  * @return string
  */
-function display_notifications() {
+function display_notifications()
+{
     $notifications = get_notifications();
     if (empty($notifications)) {
         return '';
     }
-    
+
     $html = '';
     foreach ($notifications as $notification) {
         $type = $notification['type'];
         $message = $notification['message'];
-        
+
         $bg_color = [
             'success' => 'bg-green-100 border-green-400 text-green-700',
             'error' => 'bg-red-100 border-red-400 text-red-700',
             'warning' => 'bg-yellow-100 border-yellow-400 text-yellow-700',
             'info' => 'bg-blue-100 border-blue-400 text-blue-700'
         ][$type] ?? 'bg-gray-100 border-gray-400 text-gray-700';
-        
+
         $icon = [
             'success' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>',
             'error' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>',
             'warning' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>',
             'info' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
         ][$type] ?? '';
-        
+
         $html .= '<div class="mb-4 p-4 border rounded-lg ' . $bg_color . ' notification-alert" role="alert">';
         $html .= '<div class="flex items-center">';
         $html .= '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' . $icon . '</svg>';
@@ -177,7 +183,7 @@ function display_notifications() {
         $html .= '</div>';
         $html .= '</div>';
     }
-    
+
     return $html;
 }
 
@@ -192,9 +198,10 @@ function display_notifications() {
  * @param array $validation_rules
  * @return string
  */
-function form_input($type, $name, $value = '', $attributes = [], $validation_rules = []) {
+function form_input($type, $name, $value = '', $attributes = [], $validation_rules = [])
+{
     $html = '<div class="mb-4">';
-    
+
     // Label
     if (isset($attributes['label'])) {
         $required = in_array('required', $validation_rules) ? ' *' : '';
@@ -203,28 +210,29 @@ function form_input($type, $name, $value = '', $attributes = [], $validation_rul
         $html .= '</label>';
         unset($attributes['label']);
     }
-    
+
     // Input wrapper
     $html .= '<div class="relative">';
-    
+
     // Icon
     if (isset($attributes['icon'])) {
         $html .= '<div class="absolute left-3 top-3 text-gray-400">' . $attributes['icon'] . '</div>';
         $attributes['class'] = ($attributes['class'] ?? '') . ' pl-10';
         unset($attributes['icon']);
     }
-    
+
     // Default classes
     $default_classes = 'w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300';
     $attributes['class'] = ($attributes['class'] ?? '') . ' ' . $default_classes;
-    
+
     // Build attributes string
     $attr_string = '';
     foreach ($attributes as $key => $val) {
-        if ($key === 'label') continue;
+        if ($key === 'label')
+            continue;
         $attr_string .= ' ' . e($key) . '="' . e($val) . '"';
     }
-    
+
     // Add validation attributes
     foreach ($validation_rules as $rule) {
         if ($rule === 'required') {
@@ -241,23 +249,23 @@ function form_input($type, $name, $value = '', $attributes = [], $validation_rul
             }
         }
     }
-    
+
     // Generate input
     if ($type === 'textarea') {
         $html .= '<textarea name="' . e($name) . '" id="' . e($name) . '"' . $attr_string . '>' . e($value) . '</textarea>';
     } else {
         $html .= '<input type="' . e($type) . '" name="' . e($name) . '" id="' . e($name) . '" value="' . e($value) . '"' . $attr_string . '>';
     }
-    
+
     $html .= '</div>';
-    
+
     // Help text
     if (isset($attributes['help'])) {
         $html .= '<p class="text-xs text-gray-500 mt-1">' . e($attributes['help']) . '</p>';
     }
-    
+
     $html .= '</div>';
-    
+
     return $html;
 }
 
@@ -269,23 +277,24 @@ function form_input($type, $name, $value = '', $attributes = [], $validation_rul
  * @param array $options
  * @return string
  */
-function renderOrderCard($order, $options = []) {
+function renderOrderCard($order, $options = [])
+{
     $defaults = [
         'show_actions' => true,
         'show_details' => true,
         'admin_view' => false
     ];
     $config = array_merge($defaults, $options);
-    
+
     $status_colors = [
         'pending' => 'bg-yellow-100 text-yellow-800',
-        'processing' => 'bg-blue-100 text-blue-800', 
+        'processing' => 'bg-blue-100 text-blue-800',
         'shipped' => 'bg-purple-100 text-purple-800',
         'delivered' => 'bg-indigo-100 text-indigo-800',
         'cancelled' => 'bg-red-100 text-red-800',
         'completed' => 'bg-green-100 text-green-800'
     ];
-    
+
     $status_names = [
         'pending' => 'В ожидании',
         'processing' => 'В обработке',
@@ -294,12 +303,12 @@ function renderOrderCard($order, $options = []) {
         'cancelled' => 'Отменен',
         'completed' => 'Выполнен'
     ];
-    
+
     $status_class = $status_colors[$order['status']] ?? 'bg-gray-100 text-gray-800';
     $status_name = $status_names[$order['status']] ?? 'Неизвестно';
-    
+
     $html = '<div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100">';
-    
+
     // Header
     $html .= '<div class="p-6 border-b border-gray-100">';
     $html .= '<div class="flex items-center justify-between">';
@@ -310,10 +319,10 @@ function renderOrderCard($order, $options = []) {
     $html .= '<span class="px-3 py-1 rounded-full text-xs font-medium ' . $status_class . '">' . e($status_name) . '</span>';
     $html .= '</div>';
     $html .= '</div>';
-    
+
     // Content
     $html .= '<div class="p-6">';
-    
+
     if ($config['show_details']) {
         // Order details
         if (isset($order['total_price'])) {
@@ -321,17 +330,17 @@ function renderOrderCard($order, $options = []) {
             $html .= '<div class="text-2xl font-bold text-[#118568]">' . number_format($order['total_price'], 0, '', ' ') . ' ₽</div>';
             $html .= '</div>';
         }
-        
+
         if (isset($order['items_count'])) {
             $html .= '<div class="text-sm text-gray-600 mb-4">';
             $html .= 'Позиций в заказе: ' . e($order['items_count']);
             $html .= '</div>';
         }
     }
-    
+
     if ($config['show_actions']) {
         $html .= '<div class="flex gap-2">';
-        
+
         if ($config['admin_view']) {
             $html .= '<a href="/admin/order/details?id=' . e($order['id']) . '" class="flex-1 bg-[#118568] text-white py-2 px-4 rounded-lg hover:bg-[#0f755a] transition-colors duration-200 text-center text-sm font-medium">';
             $html .= 'Управление';
@@ -341,13 +350,13 @@ function renderOrderCard($order, $options = []) {
             $html .= 'Подробнее';
             $html .= '</a>';
         }
-        
+
         $html .= '</div>';
     }
-    
+
     $html .= '</div>';
     $html .= '</div>';
-    
+
     return $html;
 }
 
@@ -360,19 +369,20 @@ function renderOrderCard($order, $options = []) {
  * @param array $options
  * @return string
  */
-function responsive_table($columns, $data, $options = []) {
+function responsive_table($columns, $data, $options = [])
+{
     $defaults = [
-        'table_classes' => 'w-full bg-white rounded-2xl shadow-lg overflow-hidden',
-        'card_classes' => 'grid grid-cols-1 gap-4',
+        'table_classes' => 'w-full bg-white',
+        'card_classes' => 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6',
         'show_toggle' => true,
         'default_view' => 'table' // 'table' or 'cards'
     ];
     $config = array_merge($defaults, $options);
-    
+
     $table_id = 'table_' . uniqid();
-    
+
     $html = '<div class="responsive-table-container">';
-    
+
     // Toggle buttons
     if ($config['show_toggle']) {
         $html .= '<div class="mb-4 flex justify-end">';
@@ -390,15 +400,15 @@ function responsive_table($columns, $data, $options = []) {
         $html .= '</div>';
         $html .= '</div>';
     }
-    
+
     // Container
     $html .= '<div id="' . $table_id . '" class="table-responsive-container">';
-    
+
     // Table view
-    $html .= '<div class="table-view ' . ($config['default_view'] === 'cards' ? 'hidden' : '') . '">';
-    $html .= '<div class="overflow-x-auto">';
+    $html .= '<div class="table-view ' . ($config['default_view'] === 'cards' ? 'hidden' : '') . ' mb-6">';
+    $html .= '<div class="overflow-x-auto rounded-2xl shadow-lg border border-gray-100">';
     $html .= '<table class="' . $config['table_classes'] . '">';
-    
+
     // Table header
     $html .= '<thead class="bg-gradient-to-r from-[#118568] to-[#0f755a] text-white">';
     $html .= '<tr>';
@@ -407,7 +417,7 @@ function responsive_table($columns, $data, $options = []) {
     }
     $html .= '</tr>';
     $html .= '</thead>';
-    
+
     // Table body
     $html .= '<tbody class="divide-y divide-gray-200">';
     foreach ($data as $row) {
@@ -416,6 +426,9 @@ function responsive_table($columns, $data, $options = []) {
             $value = $row[$key] ?? '';
             if (isset($column['render'])) {
                 $value = $column['render']($value, $row);
+            } elseif (isset($column['allow_html']) && $column['allow_html']) {
+                // Allow HTML content for specific columns
+                $value = $value;
             } else {
                 $value = e($value);
             }
@@ -427,32 +440,64 @@ function responsive_table($columns, $data, $options = []) {
     $html .= '</table>';
     $html .= '</div>';
     $html .= '</div>';
-    
+
     // Cards view
     $html .= '<div class="cards-view ' . ($config['default_view'] === 'table' ? 'hidden' : '') . '">';
     $html .= '<div class="' . $config['card_classes'] . '">';
     foreach ($data as $row) {
-        $html .= '<div class="bg-white rounded-lg shadow p-6 border border-gray-200">';
+        $html .= '<div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full">';
         foreach ($columns as $key => $column) {
             $value = $row[$key] ?? '';
             if (isset($column['render'])) {
                 $value = $column['render']($value, $row);
+            } elseif (isset($column['allow_html']) && $column['allow_html']) {
+                // Allow HTML content for specific columns
+                $value = $value;
             } else {
                 $value = e($value);
             }
-            $html .= '<div class="mb-2">';
-            $html .= '<span class="text-sm font-medium text-gray-600">' . e($column['title']) . ':</span> ';
-            $html .= '<span class="text-sm text-gray-900">' . $value . '</span>';
+
+            // Special styling for different field types
+            $field_classes = '';
+            if ($key === 'order') {
+                $field_classes = 'mb-4';
+            } elseif ($key === 'status') {
+                $field_classes = 'mb-3';
+            } elseif ($key === 'amount') {
+                $field_classes = 'mb-4';
+            } elseif ($key === 'actions') {
+                $field_classes = 'mt-4 pt-4 border-t border-gray-100 mt-auto';
+            } else {
+                $field_classes = 'mb-3';
+            }
+
+            $html .= '<div class="' . $field_classes . '">';
+
+            // Don't show label for order field (it's self-descriptive) and actions
+            if ($key !== 'order' && $key !== 'actions') {
+                $html .= '<div class="text-sm font-medium text-gray-500 mb-1">' . e($column['title']) . '</div>';
+            } elseif ($key === 'order') {
+                // Special handling for order field - add a label for accessibility
+                $html .= '<div class="sr-only">' . e($column['title']) . '</div>';
+            }
+
+            // Special styling for amount field
+            if ($key === 'amount') {
+                $html .= '<div class="text-2xl font-bold text-[#118568]">' . $value . '</div>';
+            } else {
+                $html .= '<div>' . $value . '</div>';
+            }
+
             $html .= '</div>';
         }
         $html .= '</div>';
     }
     $html .= '</div>';
     $html .= '</div>';
-    
+
     $html .= '</div>';
     $html .= '</div>';
-    
+
     // JavaScript for toggle functionality
     $html .= '<script>';
     $html .= 'function toggleView(tableId, view) {';
@@ -475,11 +520,13 @@ function responsive_table($columns, $data, $options = []) {
     $html .= '  });';
     $html .= '  ';
     $html .= '  const activeToggle = container.parentElement.querySelector(`[onclick*="${view}"]`);';
-    $html .= '  activeToggle.classList.remove("text-gray-500", "hover:text-gray-700");';
-    $html .= '  activeToggle.classList.add("bg-[#118568]", "text-white");';
+    $html .= '  if (activeToggle) {';
+    $html .= '    activeToggle.classList.remove("text-gray-500", "hover:text-gray-700");';
+    $html .= '    activeToggle.classList.add("bg-[#118568]", "text-white");';
+    $html .= '  }';
     $html .= '}';
     $html .= '</script>';
-    
+
     return $html;
 }
 
@@ -491,23 +538,24 @@ function responsive_table($columns, $data, $options = []) {
  * @param array $rules
  * @return array ['valid' => bool, 'errors' => array]
  */
-function validate_form($data, $rules) {
+function validate_form($data, $rules)
+{
     $errors = [];
-    
+
     foreach ($rules as $field => $field_rules) {
         $value = $data[$field] ?? null;
         $field_errors = [];
-        
+
         foreach ($field_rules as $rule) {
             if ($rule === 'required' && (empty($value) && $value !== '0')) {
                 $field_errors[] = "Поле {$field} обязательно для заполнения";
             } elseif (strpos($rule, 'min:') === 0) {
-                $min = (int)substr($rule, 4);
+                $min = (int) substr($rule, 4);
                 if (strlen($value) < $min) {
                     $field_errors[] = "Поле {$field} должно содержать минимум {$min} символов";
                 }
             } elseif (strpos($rule, 'max:') === 0) {
-                $max = (int)substr($rule, 4);
+                $max = (int) substr($rule, 4);
                 if (strlen($value) > $max) {
                     $field_errors[] = "Поле {$field} должно содержать максимум {$max} символов";
                 }
@@ -521,12 +569,12 @@ function validate_form($data, $rules) {
                 }
             }
         }
-        
+
         if (!empty($field_errors)) {
             $errors[$field] = $field_errors;
         }
     }
-    
+
     return [
         'valid' => empty($errors),
         'errors' => $errors

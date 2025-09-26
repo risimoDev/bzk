@@ -151,6 +151,62 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
     .swiper-pagination-bullet-active {
       background-color: #118568 !important; /* зелёный */
     }
+    
+    /* Responsive table and card styles */
+    .responsive-table-container {
+      width: 100%;
+    }
+    
+    .table-responsive-container {
+      width: 100%;
+    }
+    
+    .view-toggle {
+      transition: all 0.2s ease-in-out;
+    }
+    
+    /* Mobile card improvements */
+    @media (max-width: 767px) {
+      .cards-view .bg-white {
+        padding: 1rem;
+      }
+      
+      .cards-view .mb-3 {
+        margin-bottom: 0.75rem;
+      }
+      
+      .cards-view .text-sm {
+        font-size: 0.875rem;
+      }
+    }
+    
+    /* Ensure proper spacing on mobile */
+    @media (max-width: 639px) {
+      .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      
+      .px-6 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      
+      .py-4 {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+      
+      /* Improve card spacing on mobile */
+      .cards-view .bg-white {
+        margin-bottom: 1rem;
+      }
+      
+      /* Ensure tables scroll horizontally on mobile */
+      .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+      }
+    }
   </style>
   <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
