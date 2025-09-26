@@ -1,4 +1,22 @@
 User-agent: *
-Allow: /
 Disallow: /admin/
-Sitemap: https://your-site.com/sitemap.xml
+Disallow: /includes/
+Disallow: /vendor/
+Disallow: /cache/
+Disallow: /logs/
+Disallow: /backup/
+Disallow: /private/
+Disallow: /tmp/
+Disallow: /cgi-bin/
+Disallow: /ajax/
+
+# Allow access to specific directories
+Allow: /assets/css/
+Allow: /assets/js/
+Allow: /assets/images/
+
+# Sitemap
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Host
+Host: https://yourdomain.com
