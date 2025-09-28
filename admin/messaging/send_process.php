@@ -79,14 +79,14 @@ try {
     // Настройка PHPMailer
     $mail = new PHPMailer(true);
     $mail->isSMTP();
-    $mail->Host = $_ENV['SMTP_HOST'] ?? 'localhost';
+    $mail->Host = 'localhost';
     $mail->SMTPAuth = true;
-    $mail->Username = $_ENV['SMTP_USERNAME'] ?? '';
-    $mail->Password = $_ENV['SMTP_PASSWORD'] ?? '';
+    $mail->Username = 'mailer@bzkprint.ru';
+    $mail->Password = 'jezGFC3tHLhIajpZYYSq';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = $_ENV['SMTP_PORT'] ?? 587;
+    $mail->Port = 587;
     $mail->CharSet = 'UTF-8';
-    $mail->setFrom($_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@example.com', 'BZK Print');
+    $mail->setFrom('mailer@bzkprint.ru', 'BZK Print');
 
     // Инициализация Telegram бота
     $telegram = getTelegramBot();

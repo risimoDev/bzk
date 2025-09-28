@@ -163,16 +163,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           try {
             // Настройки SMTP
             $mail->isSMTP();
-            $mail->Host = 'mail.bzkprint.ru';
+            $mail->Host = $_ENV['SMTP_HOST'] ?? 'localhost';
             $mail->SMTPAuth = true;
-            $mail->Username = 'mailuser';
-            $mail->Password = 'risimo1517';
+            $mail->Username = $_ENV['SMTP_USERNAME'] ?? 'mailer@bzkprint.ru';
+            $mail->Password = $_ENV['SMTP_PASSWORD'] ?? 'jezGFC3tHLhIajpZYYSq';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = 587;
+            $mail->Port = $_ENV['SMTP_PORT'] ?? 587;
             $mail->CharSet = 'UTF-8';
 
             // Отправитель и получатель
-            $mail->setFrom('info@bzkprint.ru', 'Типография BZK Print');
+            $mail->setFrom($_ENV['SMTP_FROM_EMAIL'] ?? 'mailer@bzkprint.ru', $_ENV['SMTP_FROM_NAME'] ?? 'Типография BZK Print');
             $mail->addAddress($email, $user['name']);
 
             // Содержимое письма
@@ -298,18 +298,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </li>
         <li class="flex items-start">
           <span class="text-blue-500 mr-2">📧</span>
-          Если Telegram не подключен, мы отправим ссылку на ваш email
-        </li>
-        <li class="flex items-start">
-          <span class="text-blue-500 mr-2">🔗</span>
-          Перейдите по ссылке в сообщении
-        </li>
-        <li class="flex items-start">
-          <span class="text-blue-500 mr-2">🔒</span>
-          Установите новый пароль
+          Или на email если Telegram не подключен
         </li>
       </ul>
     </div>
+
   </div>
 </main>
 

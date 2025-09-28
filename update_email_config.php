@@ -1,82 +1,111 @@
 <?php
 /**
- * Email Configuration Update Script
- * Updates all PHPMailer configurations across the project to use your new mail server
+ * Update email configuration script
+ * This script updates the SMTP settings in all PHPMailer-using files
  */
 
-$old_configs = [
-    'mail.bzkprint.ru',
-    'mailuser',
-    'risimo1517'
+// Your SMTP configuration
+$smtp_config = [
+    'host' => 'localhost',
+    'port' => 587,
+    'encryption' => 'STARTTLS',
+    'username' => 'mailer@bzkprint.ru',
+    'password' => 'jezGFC3tHLhIajpZYYSq',
+    'from_email' => 'mailer@bzkprint.ru',
+    'from_name' => 'BZK Print'
 ];
 
-$new_configs = [
-    'mail.bzkprint.ru', // Your new mail server hostname
-    'info@bzkprint.ru', // New username
-    'pimzpDtsUn9GzTM!' // New password - update this!
-];
+echo "Updating email configuration...\n";
 
-$files_to_update = [
+// Files that use PHPMailer
+$files = [
+    'admin/messaging/send_process.php',
     'forgot-password.php',
-    // Add other files that use PHPMailer here
+    'register.php'
 ];
 
-echo "🔧 Email Configuration Update Script\n";
-echo "=====================================\n\n";
-
-foreach ($files_to_update as $file) {
-    if (!file_exists($file)) {
-        echo "❌ File not found: $file\n";
-        continue;
-    }
-
-    $content = file_get_contents($file);
-    $original_content = $content;
-
-    // Update SMTP settings
-    $content = str_replace(
-        "\$mail->Host = 'mail.bzkprint.ru';",
-        "\$mail->Host = '{$new_configs[0]}';",
-        $content
-    );
-
-    $content = str_replace(
-        "\$mail->Username = 'mailuser';",
-        "\$mail->Username = '{$new_configs[1]}';",
-        $content
-    );
-
-    $content = str_replace(
-        "\$mail->Password = 'risimo1517';",
-        "\$mail->Password = '{$new_configs[2]}';",
-        $content
-    );
-
-    if ($content !== $original_content) {
-        // Create backup
-        copy($file, $file . '.backup_' . date('Y-m-d_H-i-s'));
-
-        // Write updated content
-        file_put_contents($file, $content);
-        echo "✅ Updated: $file\n";
+foreach ($files as $file) {
+    $file_path = __DIR__ . '/' . $file;
+    
+    if (file_exists($file_path)) {
+        echo "Updating $file...\n";
+        
+        $content = file_get_contents($file_path);
+        
+        // Update SMTP Host
+        $content = preg_replace(
+            '/(\$mail->Host\s*=\s*[^;]*;)/',
+            '$mail->Host = \'' . $smtp_config['host'] . '\';',
+            $content
+        );
+        
+        // Update SMTP Port
+        $content = preg_replace(
+            '/(\$mail->Port\s*=\s*[^;]*;)/',
+            '$mail->Port = ' . $smtp_config['port'] . ';',
+            $content
+        );
+        
+        // Update SMTP Username
+        $content = preg_replace(
+            '/(\$mail->Username\s*=\s*[^;]*;)/',
+            '$mail->Username = \'' . $smtp_config['username'] . '\';',
+            $content
+        );
+        
+        // Update SMTP Password
+        $content = preg_replace(
+            '/(\$mail->Password\s*=\s*[^;]*;)/',
+            '$mail->Password = \'' . $smtp_config['password'] . '\';',
+            $content
+        );
+        
+        // Update SMTP From Email (first pattern)
+        $content = preg_replace(
+            '/(\$mail->setFrom\s*\(\s*[^,]+,)/',
+            '$mail->setFrom(\'' . $smtp_config['from_email'] . '\',',
+            $content
+        );
+        
+        // Update SMTP From Email (second pattern)
+        $content = preg_replace(
+            '/(setFrom\s*\(\s*["\'])([^"\']*)(["\'])/',
+            '$1' . $smtp_config['from_email'] . '$3',
+            $content
+        );
+        
+        file_put_contents($file_path, $content);
     } else {
-        echo "ℹ️  No changes needed: $file\n";
+        echo "File $file not found!\n";
     }
 }
 
-echo "\n📧 Email Configuration Summary:\n";
-echo "==============================\n";
-echo "SMTP Server: {$new_configs[0]}\n";
-echo "Username: {$new_configs[1]}\n";
-echo "Password: [HIDDEN]\n";
-echo "Port: 587 (STARTTLS)\n";
-echo "Security: TLS/STARTTLS\n";
+// Update .env file
+$env_file = __DIR__ . '/.env';
+if (file_exists($env_file)) {
+    echo "Updating .env file...\n";
+    
+    $env_content = file_get_contents($env_file);
+    
+    // Add SMTP configuration to .env
+    $smtp_env_config = "\n# --- SMTP Configuration ---\n";
+    $smtp_env_config .= "SMTP_HOST=" . $smtp_config['host'] . "\n";
+    $smtp_env_config .= "SMTP_PORT=" . $smtp_config['port'] . "\n";
+    $smtp_env_config .= "SMTP_USERNAME=" . $smtp_config['username'] . "\n";
+    $smtp_env_config .= "SMTP_PASSWORD=" . $smtp_config['password'] . "\n";
+    $smtp_env_config .= "SMTP_FROM_EMAIL=" . $smtp_config['from_email'] . "\n";
+    $smtp_env_config .= "SMTP_FROM_NAME=" . $smtp_config['from_name'] . "\n";
+    
+    // Check if SMTP config already exists
+    if (strpos($env_content, 'SMTP_HOST') === false) {
+        $env_content .= $smtp_env_config;
+        file_put_contents($env_file, $env_content);
+    }
+}
 
-echo "\n⚠️  Remember to:\n";
-echo "1. Update the password in this script before running\n";
-echo "2. Test email sending after configuration\n";
-echo "3. Set up proper DNS records (SPF, DKIM, DMARC)\n";
-echo "4. Configure reverse DNS (PTR record)\n";
-
-echo "\n✅ Configuration update completed!\n";
+echo "Email configuration updated successfully!\n";
+echo "SMTP Host: " . $smtp_config['host'] . "\n";
+echo "SMTP Port: " . $smtp_config['port'] . "\n";
+echo "SMTP Username: " . $smtp_config['username'] . "\n";
+echo "SMTP From Email: " . $smtp_config['from_email'] . "\n";
 ?>
