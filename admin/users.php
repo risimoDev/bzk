@@ -123,29 +123,80 @@ $blocked_count = $pdo->query("SELECT COUNT(*) FROM users WHERE is_blocked = 1")-
   <!-- Список пользователей (карточки) -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <?php foreach ($users as $u): ?>
-      <div class="bg-white rounded-2xl shadow-xl p-6 relative">
+      <div class="bg-white rounded-2xl shadow-xl p-6 relative hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
         <?php if ($u['is_blocked']): ?>
-          <div class="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded">Заблокирован</div>
+          <div class="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full">Заблокирован</div>
+        <?php elseif ($u['is_corporate']): ?>
+          <div class="absolute top-3 right-3 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">Корпоративный</div>
         <?php endif; ?>
+        
+        <div class="flex items-center mb-4">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#118568] to-[#17B890] flex items-center justify-center text-white font-bold mr-3">
+            <?php echo strtoupper(substr($u['name'], 0, 1)); ?>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-gray-800"><?php echo htmlspecialchars($u['name']); ?></h2>
+            <p class="text-xs text-gray-500">ID: <?php echo $u['id']; ?></p>
+          </div>
+        </div>
+        
+        <div class="space-y-2 mb-4">
+          <p class="text-sm text-gray-600 flex items-center">
+            <i class="fas fa-envelope mr-2 text-[#118568]"></i>
+            <?php echo htmlspecialchars($u['email']); ?>
+          </p>
+          <p class="text-sm text-gray-600 flex items-center">
+            <i class="fas fa-phone mr-2 text-[#118568]"></i>
+            <?php echo htmlspecialchars($u['phone'] ?? '—'); ?>
+          </p>
+          <p class="text-sm text-gray-600 flex items-center">
+            <i class="fas fa-calendar-alt mr-2 text-[#118568]"></i>
+            <?php echo date('d.m.Y', strtotime($u['created_at'])); ?>
+          </p>
+        </div>
+        
+        <!-- Роли с улучшенным дизайном -->
+        <div class="flex flex-wrap gap-1 mb-4">
+          <?php
+          $role_badges = [
+            'admin' => ['text' => 'Админ', 'class' => 'bg-red-100 text-red-800'],
+            'manager' => ['text' => 'Менеджер', 'class' => 'bg-purple-100 text-purple-800'],
+            'user' => ['text' => 'Клиент', 'class' => 'bg-blue-100 text-blue-800']
+          ];
+          $role_badge = $role_badges[$u['role']] ?? ['text' => $u['role'], 'class' => 'bg-gray-100 text-gray-800'];
+          ?>
+          <span class="px-2 py-1 rounded-full text-xs font-medium <?php echo $role_badge['class']; ?>">
+            <?php echo $role_badge['text']; ?>
+          </span>
+          
+          <?php if ($u['is_corporate']): ?>
+            <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Корпоративный
+            </span>
+          <?php endif; ?>
+        </div>
 
-        <h2 class="text-xl font-bold text-gray-800 mb-2"><?php echo htmlspecialchars($u['name']); ?></h2>
-        <p class="text-gray-600 mb-1">Email: <?php echo htmlspecialchars($u['email']); ?></p>
-        <p class="text-gray-600 mb-1">Телефон: <?php echo htmlspecialchars($u['phone'] ?? '—'); ?></p>
-        <p class="text-gray-600 mb-4">Дата: <?php echo date('d.m.Y', strtotime($u['created_at'])); ?></p>
+        <!-- Кнопка для перехода к карточке клиента -->
+        <div class="mt-4">
+          <a href="client_card.php?id=<?php echo $u['id']; ?>" 
+             class="w-full inline-block text-center px-4 py-2 bg-gradient-to-r from-[#118568] to-[#17B890] text-white text-sm rounded-lg hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 font-medium">
+            <i class="fas fa-user-circle mr-1"></i> Карточка клиента
+          </a>
+        </div>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2 mt-4">
           <!-- Роли -->
           <?php if ($u['id'] != $_SESSION['user_id']): ?>
-            <a href="?change_role=user&user_id=<?php echo $u['id']; ?>" class="px-3 py-1 rounded text-xs <?php echo $u['role']==='user'?'bg-blue-200 text-blue-800':'bg-blue-500 text-white hover:bg-blue-600'; ?>">Клиент</a>
-            <a href="?change_role=manager&user_id=<?php echo $u['id']; ?>" class="px-3 py-1 rounded text-xs <?php echo $u['role']==='manager'?'bg-purple-200 text-purple-800':'bg-purple-500 text-white hover:bg-purple-600'; ?>">Менеджер</a>
-            <a href="?change_role=admin&user_id=<?php echo $u['id']; ?>" class="px-3 py-1 rounded text-xs <?php echo $u['role']==='admin'?'bg-red-200 text-red-800':'bg-red-500 text-white hover:bg-red-600'; ?>">Админ</a>
+            <a href="?change_role=user&user_id=<?php echo $u['id']; ?>" class="px-2 py-1 rounded text-xs <?php echo $u['role']==='user'?'bg-blue-200 text-blue-800':'bg-blue-500 text-white hover:bg-blue-600'; ?>">Клиент</a>
+            <a href="?change_role=manager&user_id=<?php echo $u['id']; ?>" class="px-2 py-1 rounded text-xs <?php echo $u['role']==='manager'?'bg-purple-200 text-purple-800':'bg-purple-500 text-white hover:bg-purple-600'; ?>">Менеджер</a>
+            <a href="?change_role=admin&user_id=<?php echo $u['id']; ?>" class="px-2 py-1 rounded text-xs <?php echo $u['role']==='admin'?'bg-red-200 text-red-800':'bg-red-500 text-white hover:bg-red-600'; ?>">Админ</a>
           <?php else: ?>
-            <span class="px-3 py-1 bg-gray-200 text-gray-500 text-xs rounded">Вы</span>
+            <span class="px-2 py-1 bg-gray-200 text-gray-500 text-xs rounded">Вы</span>
           <?php endif; ?>
 
           <!-- Блокировка -->
           <?php if ($u['id'] != $_SESSION['user_id']): ?>
-            <a href="?toggle_block=1&user_id=<?php echo $u['id']; ?>" class="px-3 py-1 rounded text-xs <?php echo $u['is_blocked']?'bg-green-500 hover:bg-green-600 text-white':'bg-red-500 hover:bg-red-600 text-white'; ?>">
+            <a href="?toggle_block=1&user_id=<?php echo $u['id']; ?>" class="px-2 py-1 rounded text-xs <?php echo $u['is_blocked']?'bg-green-500 hover:bg-green-600 text-white':'bg-red-500 hover:bg-red-600 text-white'; ?>">
               <?php echo $u['is_blocked'] ? 'Разблокировать' : 'Заблокировать'; ?>
             </a>
           <?php endif; ?>

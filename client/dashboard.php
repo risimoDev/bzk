@@ -14,21 +14,6 @@ $user_id = $_SESSION['user_id'];
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// Обработка обновления данных профиля
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $full_name = $_POST['full_name'];
-  $phone = $_POST['phone'];
-  $shipping_address = $_POST['shipping_address'];
-
-  // Обновление данных пользователя
-  $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, shipping_address = ? WHERE id = ?");
-  $stmt->execute([$full_name, $phone, $shipping_address, $user_id]);
-
-  $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Данные успешно обновлены.'];
-  header("Location: /client/dashboard");
-  exit();
-}
 ?>
 
 <!DOCTYPE html>
@@ -119,15 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .input-focus {
-      transition: all 0.3s ease;
-    }
-
-    .input-focus:focus {
-      transform: scale(1.01);
-      box-shadow: 0 0 0 3px rgba(23, 184, 144, 0.1);
-    }
-
     .nav-item {
       transition: all 0.3s ease;
       position: relative;
@@ -170,6 +146,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       transition: all 0.2s ease;
       pointer-events: none;
       color: #6b7280;
+    }
+    
+    /* Address suggestions dropdown */
+    .address-suggestions {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-top: none;
+      border-radius: 0 0 0.5rem 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .address-suggestion {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .address-suggestion:hover {
+      background-color: #f3f4f6;
+    }
+    
+    /* Read-only styles */
+    .readonly-input {
+      background-color: #f9fafb;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -223,34 +229,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <p class="text-blue-100 mt-2">Основная информация о вашем аккаунте</p>
             </div>
 
-            <form action="" method="POST" class="p-8">
+            <div class="p-8">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="form-floating">
-                  <input type="text" name="full_name" value="<?php echo htmlspecialchars($user['name']); ?>"
-                    placeholder="Введите ваше имя" id="full_name"
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300 input-focus bg-white">
+                  <input type="text" value="<?php echo htmlspecialchars($user['name']); ?>" disabled
+                    id="full_name"
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="full_name" class="text-gray-700 font-medium">ФИО</label>
                 </div>
 
                 <div class="form-floating">
-                  <input type="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled
+                  <input type="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled
                     id="email"
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed">
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="email" class="text-gray-500 font-medium">Email адрес</label>
                 </div>
 
                 <div class="form-floating">
-                  <input type="tel" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>"
-                    placeholder="+7 (___) ___-____" id="phone"
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300 input-focus bg-white">
+                  <input type="tel" value="<?php echo htmlspecialchars($user['phone']); ?>" disabled
+                    id="phone"
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="phone" class="text-gray-700 font-medium">Номер телефона</label>
                 </div>
 
                 <div class="form-floating">
-                  <input type="text" value="<?php echo date('d.m.Y', strtotime($user['created_at'])); ?>" disabled
-                    id="created_at"
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed">
-                  <label for="created_at" class="text-gray-500 font-medium">Дата регистрации</label>
+                  <input type="date" value="<?php echo htmlspecialchars($user['birthday'] ?? ''); ?>" disabled
+                    id="birthday"
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                  <label for="birthday" class="text-gray-700 font-medium">Дата рождения</label>
                 </div>
               </div>
 
@@ -269,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <input type="text"
                   value="<?php echo $user['telegram_chat_id'] ? htmlspecialchars($user['telegram_chat_id']) : 'Не подключен'; ?>"
-                  disabled class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed">
+                  disabled class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                 <div
                   class="mt-3 p-4 <?php echo $user['telegram_chat_id'] ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'; ?> rounded-xl">
                   <?php if (!$user['telegram_chat_id']): ?>
@@ -294,21 +300,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
               <div class="mt-6">
                 <label class="block text-gray-700 font-medium mb-3">Адрес доставки</label>
-                <textarea name="shipping_address"
+                <textarea
                   placeholder="Введите полный адрес доставки с указанием города, улицы, дома и квартиры"
-                  class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300 resize-none input-focus bg-white"
-                  rows="4"><?php echo htmlspecialchars($user['shipping_address']); ?></textarea>
+                  class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input resize-none"
+                  rows="4" disabled><?php echo htmlspecialchars($user['shipping_address']); ?></textarea>
               </div>
 
-              <div class="mt-10 pt-6 border-t border-gray-200">
-                <button type="submit"
-                  class="w-full bg-gradient-to-r from-[#118568] to-[#17B890] text-white py-4 rounded-xl hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl flex items-center justify-center group">
-                  <i class="fas fa-save mr-3 group-hover:animate-bounce"></i>
-                  Сохранить изменения
-                </button>
+              <div class="mt-10 pt-6 border-t border-gray-200 text-center">
+                <a href="/client/settings"
+                  class="inline-block bg-gradient-to-r from-[#118568] to-[#17B890] text-white py-4 px-8 rounded-xl hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
+                  <i class="fas fa-user-cog mr-3"></i>
+                  Редактировать профиль
+                </a>
+                <p class="text-gray-600 mt-4 text-sm">
+                  Редактирование данных доступно только в разделе "Настройки"
+                </p>
               </div>
-            </form>
+            </div>
           </div>
+          
+          <!-- Корпоративная информация -->
+          <?php if ($user['is_corporate']): ?>
+          <div class="mt-8 bg-white rounded-3xl shadow-2xl overflow-hidden hover-lift">
+            <div class="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
+              <h2 class="text-2xl font-bold text-white flex items-center">
+                <i class="fas fa-building mr-3 text-3xl"></i>
+                Корпоративная информация
+              </h2>
+              <p class="text-blue-100 mt-2">Данные вашего корпоративного аккаунта</p>
+            </div>
+            
+            <div class="p-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-floating">
+                  <input type="text" value="<?php echo htmlspecialchars($user['company_name']); ?>" disabled
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                  <label class="text-gray-700 font-medium">Название компании</label>
+                </div>
+                
+                <div class="form-floating">
+                  <input type="text" value="<?php echo htmlspecialchars($user['inn']); ?>" disabled
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                  <label class="text-gray-700 font-medium">ИНН</label>
+                </div>
+                
+                <?php if (!empty($user['kpp'])): ?>
+                <div class="form-floating">
+                  <input type="text" value="<?php echo htmlspecialchars($user['kpp']); ?>" disabled
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                  <label class="text-gray-700 font-medium">КПП</label>
+                </div>
+                <?php endif; ?>
+              </div>
+              
+              <div class="mt-6">
+                <label class="block text-gray-700 font-medium mb-3">Юридический адрес</label>
+                <textarea disabled class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input resize-none"
+                  rows="3"><?php echo htmlspecialchars($user['legal_address']); ?></textarea>
+              </div>
+              
+              <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <p class="text-blue-700">
+                  <i class="fas fa-info-circle mr-2"></i>
+                  Ваш аккаунт имеет корпоративный статус. При оформлении заказов будут доступны специальные условия.
+                </p>
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
         </div>
 
         <!-- Правая колонка - Меню с улучшенным дизайном -->
@@ -419,40 +478,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <script>
     // Добавляем интерактивность
     document.addEventListener('DOMContentLoaded', function () {
-      // Автоматическое форматирование телефона
-      const phoneInput = document.querySelector('input[name="phone"]');
-      if (phoneInput) {
-        phoneInput.addEventListener('input', function (e) {
-          let value = e.target.value.replace(/\D/g, '');
-          if (value.length > 0) {
-            if (value.length <= 1) {
-              value = '+7 (' + value;
-            } else if (value.length <= 4) {
-              value = '+7 (' + value.substring(1);
-            } else if (value.length <= 7) {
-              value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4);
-            } else if (value.length <= 9) {
-              value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7);
-            } else {
-              value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7, 11);
-            }
-          }
-          e.target.value = value;
-        });
-      }
-
-      // Анимация успешного сохранения
-      const form = document.querySelector('form');
-      if (form) {
-        form.addEventListener('submit', function () {
-          const button = form.querySelector('button[type="submit"]');
-          const icon = button.querySelector('i');
-          icon.className = 'fas fa-spinner fa-spin mr-3';
-          button.innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i>Сохранение...';
-          button.disabled = true;
-        });
-      }
-
       // Прогресс заполнения профиля
       function updateProfileProgress() {
         const fields = ['full_name', 'phone', 'shipping_address'];
@@ -469,11 +494,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       updateProfileProgress();
-
-      // Обновление прогресса при изменении полей
-      document.querySelectorAll('input, textarea').forEach(input => {
-        input.addEventListener('input', updateProfileProgress);
-      });
     });
   </script>
 
