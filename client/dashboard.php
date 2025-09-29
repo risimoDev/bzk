@@ -147,7 +147,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
       pointer-events: none;
       color: #6b7280;
     }
-    
+
     /* Address suggestions dropdown */
     .address-suggestions {
       position: absolute;
@@ -161,17 +161,17 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
       overflow-y: auto;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
-    
+
     .address-suggestion {
       padding: 0.75rem 1rem;
       cursor: pointer;
       transition: background-color 0.2s;
     }
-    
+
     .address-suggestion:hover {
       background-color: #f3f4f6;
     }
-    
+
     /* Read-only styles */
     .readonly-input {
       background-color: #f9fafb;
@@ -232,30 +232,26 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
             <div class="p-8">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="form-floating">
-                  <input type="text" value="<?php echo htmlspecialchars($user['name']); ?>" disabled
-                    id="full_name"
+                  <input type="text" value="<?php echo htmlspecialchars($user['name']); ?>" disabled id="full_name"
                     class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="full_name" class="text-gray-700 font-medium">ФИО</label>
                 </div>
 
                 <div class="form-floating">
-                  <input type="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled
-                    id="email"
+                  <input type="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled id="email"
                     class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="email" class="text-gray-500 font-medium">Email адрес</label>
                 </div>
 
                 <div class="form-floating">
-                  <input type="tel" value="<?php echo htmlspecialchars($user['phone']); ?>" disabled
-                    id="phone"
+                  <input type="tel" value="<?php echo htmlspecialchars($user['phone']); ?>" disabled id="phone"
                     class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="phone" class="text-gray-700 font-medium">Номер телефона</label>
                 </div>
 
                 <div class="form-floating">
                   <input type="date" value="<?php echo htmlspecialchars($user['birthday'] ?? ''); ?>" disabled
-                    id="birthday"
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                    id="birthday" class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
                   <label for="birthday" class="text-gray-700 font-medium">Дата рождения</label>
                 </div>
               </div>
@@ -283,7 +279,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                       <i class="fas fa-info-circle mr-2"></i>Инструкция по подключению:
                     </p>
                     <ol class="text-sm text-blue-600 space-y-1 ml-4">
-                      <li>1. Найдите в Telegram бота нашей компании</li>
+                      <li>1. Найдите в <a href="https://t.me/bzkprintbot">Telegram бота</a> нашей компании</li>
                       <li>2. Отправьте команду: <code
                           class="bg-blue-100 px-2 py-1 rounded">/connect <?php echo htmlspecialchars($user['email']); ?></code>
                       </li>
@@ -300,10 +296,9 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
               <div class="mt-6">
                 <label class="block text-gray-700 font-medium mb-3">Адрес доставки</label>
-                <textarea
-                  placeholder="Введите полный адрес доставки с указанием города, улицы, дома и квартиры"
-                  class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input resize-none"
-                  rows="4" disabled><?php echo htmlspecialchars($user['shipping_address']); ?></textarea>
+                <textarea placeholder="Введите полный адрес доставки с указанием города, улицы, дома и квартиры"
+                  class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input resize-none" rows="4"
+                  disabled><?php echo htmlspecialchars($user['shipping_address']); ?></textarea>
               </div>
 
               <div class="mt-10 pt-6 border-t border-gray-200 text-center">
@@ -318,55 +313,56 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
               </div>
             </div>
           </div>
-          
+
           <!-- Корпоративная информация -->
           <?php if ($user['is_corporate']): ?>
-          <div class="mt-8 bg-white rounded-3xl shadow-2xl overflow-hidden hover-lift">
-            <div class="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
-              <h2 class="text-2xl font-bold text-white flex items-center">
-                <i class="fas fa-building mr-3 text-3xl"></i>
-                Корпоративная информация
-              </h2>
-              <p class="text-blue-100 mt-2">Данные вашего корпоративного аккаунта</p>
+            <div class="mt-8 bg-white rounded-3xl shadow-2xl overflow-hidden hover-lift">
+              <div class="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
+                <h2 class="text-2xl font-bold text-white flex items-center">
+                  <i class="fas fa-building mr-3 text-3xl"></i>
+                  Корпоративная информация
+                </h2>
+                <p class="text-blue-100 mt-2">Данные вашего корпоративного аккаунта</p>
+              </div>
+
+              <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="form-floating">
+                    <input type="text" value="<?php echo htmlspecialchars($user['company_name']); ?>" disabled
+                      class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                    <label class="text-gray-700 font-medium">Название компании</label>
+                  </div>
+
+                  <div class="form-floating">
+                    <input type="text" value="<?php echo htmlspecialchars($user['inn']); ?>" disabled
+                      class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                    <label class="text-gray-700 font-medium">ИНН</label>
+                  </div>
+
+                  <?php if (!empty($user['kpp'])): ?>
+                    <div class="form-floating">
+                      <input type="text" value="<?php echo htmlspecialchars($user['kpp']); ?>" disabled
+                        class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
+                      <label class="text-gray-700 font-medium">КПП</label>
+                    </div>
+                  <?php endif; ?>
+                </div>
+
+                <div class="mt-6">
+                  <label class="block text-gray-700 font-medium mb-3">Юридический адрес</label>
+                  <textarea disabled
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input resize-none"
+                    rows="3"><?php echo htmlspecialchars($user['legal_address']); ?></textarea>
+                </div>
+
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p class="text-blue-700">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Ваш аккаунт имеет корпоративный статус. При оформлении заказов будут доступны специальные условия.
+                  </p>
+                </div>
+              </div>
             </div>
-            
-            <div class="p-8">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="form-floating">
-                  <input type="text" value="<?php echo htmlspecialchars($user['company_name']); ?>" disabled
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
-                  <label class="text-gray-700 font-medium">Название компании</label>
-                </div>
-                
-                <div class="form-floating">
-                  <input type="text" value="<?php echo htmlspecialchars($user['inn']); ?>" disabled
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
-                  <label class="text-gray-700 font-medium">ИНН</label>
-                </div>
-                
-                <?php if (!empty($user['kpp'])): ?>
-                <div class="form-floating">
-                  <input type="text" value="<?php echo htmlspecialchars($user['kpp']); ?>" disabled
-                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input">
-                  <label class="text-gray-700 font-medium">КПП</label>
-                </div>
-                <?php endif; ?>
-              </div>
-              
-              <div class="mt-6">
-                <label class="block text-gray-700 font-medium mb-3">Юридический адрес</label>
-                <textarea disabled class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl readonly-input resize-none"
-                  rows="3"><?php echo htmlspecialchars($user['legal_address']); ?></textarea>
-              </div>
-              
-              <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <p class="text-blue-700">
-                  <i class="fas fa-info-circle mr-2"></i>
-                  Ваш аккаунт имеет корпоративный статус. При оформлении заказов будут доступны специальные условия.
-                </p>
-              </div>
-            </div>
-          </div>
           <?php endif; ?>
         </div>
 
