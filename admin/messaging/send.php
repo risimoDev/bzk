@@ -11,11 +11,10 @@ require_once '../../includes/db.php';
 require_once '../../includes/telegram.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
-require __DIR__ . '/../../PHPMailer/src/Exception.php';
-require __DIR__ . '/../../PHPMailer/src/PHPMailer.php';
-require __DIR__ . '/../../PHPMailer/src/SMTP.php';
+require 'vendor/autoload.php'; // если через Composer
 
 $message_id = intval($_GET['id'] ?? 0);
 

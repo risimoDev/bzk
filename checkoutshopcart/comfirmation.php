@@ -58,7 +58,7 @@ $pageTitle = "Подтверждение заказа | Типография";
               </svg>
             </div>
             <h3 class="text-lg font-bold text-gray-800 mb-2">Обработка</h3>
-            <p class="text-gray-700 text-sm">Наш менеджер свяжется с вами в течение 30 минут</p>
+            <p class="text-gray-700 text-sm">Наш менеджер свяжется с вами в течение часа (В рабочие дни)</p>
           </div>
 
           <div class="text-center p-6 bg-[#5E807F] rounded-2xl hover:bg-[#118568] transition-colors duration-300">
@@ -92,7 +92,7 @@ $pageTitle = "Подтверждение заказа | Типография";
             Вернуться на главную
           </a>
           
-          <a href="/orders" class="px-8 py-4 bg-[#DEE5E5] text-[#118568] rounded-xl hover:bg-[#9DC5BB] transition-all duration-300 font-bold text-lg text-center">
+          <a href="/client/orders" class="px-8 py-4 bg-[#DEE5E5] text-[#118568] rounded-xl hover:bg-[#9DC5BB] transition-all duration-300 font-bold text-lg text-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
