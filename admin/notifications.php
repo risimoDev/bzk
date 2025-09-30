@@ -10,208 +10,285 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
   exit();
 }
 
-// Добавление нового уведомления
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_notification'])) {
-  $stmt = $pdo->prepare("INSERT INTO notifications (title, message, type, active, target_audience, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
-  $stmt->execute([
-    $_POST['title'],
-    $_POST['message'],
-    $_POST['type'],
-    isset($_POST['active']) ? 1 : 0,
-    $_POST['target_audience'] ?? 'all',
-    $_POST['start_date'] ?: null,
-    $_POST['end_date'] ?: null
-  ]);
-  $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Уведомление успешно добавлено!'];
-  header("Location: notifications.php");
-  exit;
-}
-
-// Редактирование уведомления
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_notification'])) {
-  $stmt = $pdo->prepare("UPDATE notifications SET title=?, message=?, type=?, active=?, target_audience=?, start_date=?, end_date=? WHERE id=?");
-  $stmt->execute([
-    $_POST['title'],
-    $_POST['message'],
-    $_POST['type'],
-    isset($_POST['active']) ? 1 : 0,
-    $_POST['target_audience'] ?? 'all',
-    $_POST['start_date'] ?: null,
-    $_POST['end_date'] ?: null,
-    $_POST['notification_id']
-  ]);
-  $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Уведомление успешно обновлено!'];
-  header("Location: notifications.php");
-  exit;
-}
-
-// Включение/выключение
-if (isset($_GET['toggle'])) {
-  $id = (int) $_GET['toggle'];
-  $stmt = $pdo->prepare("UPDATE notifications SET active = 1 - active WHERE id = ?");
-  $stmt->execute([$id]);
-  $_SESSION['notifications'][] = ['type' => 'info', 'message' => 'Статус уведомления изменен!'];
-  header("Location: notifications.php");
-  exit;
-}
-
-// Обработка массовых операций
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action'])) {
-  $selected_ids = $_POST['selected_ids'] ?? [];
-
-  if (!empty($selected_ids)) {
-    switch ($_POST['bulk_action']) {
-      case 'delete':
-        $placeholders = str_repeat('?,', count($selected_ids) - 1) . '?';
-        $stmt = $pdo->prepare("DELETE FROM notifications WHERE id IN ($placeholders)");
-        $stmt->execute($selected_ids);
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Удалено ' . count($selected_ids) . ' уведомлений'];
-        break;
-
-      case 'toggle_status':
-        $status = (int) $_POST['bulk_status'];
-        $placeholders = str_repeat('?,', count($selected_ids) - 1) . '?';
-        $params = array_merge([$status], $selected_ids);
-        $stmt = $pdo->prepare("UPDATE notifications SET active = ? WHERE id IN ($placeholders)");
-        $stmt->execute($params);
-        $action_text = $status ? 'Активировано' : 'Деактивировано';
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => $action_text . ' ' . count($selected_ids) . ' уведомлений'];
-        break;
-    }
-    header("Location: notifications.php");
-    exit;
-  }
-}
-
-// Дублирование уведомления
-if (isset($_GET['duplicate'])) {
-  $id = (int) $_GET['duplicate'];
-  $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ?");
-  $stmt->execute([$id]);
-  $original = $stmt->fetch(PDO::FETCH_ASSOC);
-
-  if ($original) {
-    $stmt = $pdo->prepare("INSERT INTO notifications (title, message, type, active, target_audience, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([
-      $original['title'] . ' (копия)',
-      $original['message'],
-      $original['type'],
-      0, // Копия создаётся неактивной
-      $original['target_audience'],
-      $original['start_date'],
-      $original['end_date']
-    ]);
-    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Уведомление дублировано'];
-    header("Location: notifications.php");
-    exit;
-  }
-}
-
-// Экспорт уведомлений
-if (isset($_GET['export'])) {
-  if ($_GET['export'] === 'all') {
-    $export_stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
-    $export_notifications = $export_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="notifications_" . date("Y-m-d_H-i-s") . ".csv"');
-
-    $output = fopen('php://output', 'w');
-    fputcsv($output, ['ID', 'Заголовок', 'Сообщение', 'Тип', 'Статус', 'Аудитория', 'Дата создания']);
-
-    foreach ($export_notifications as $n) {
-      fputcsv($output, [
-        $n['id'],
-        $n['title'],
-        $n['message'],
-        $n['type'],
-        $n['active'] ? 'Активно' : 'Неактивно',
-        $n['target_audience'],
-        $n['created_at']
-      ]);
+    // Добавление нового уведомления
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_notification'])) {
+      // Санитизация и валидация данных
+      $title = trim($_POST['title'] ?? '');
+      $message = trim($_POST['message'] ?? '');
+      $type = $_POST['type'] ?? 'info';
+      $active = isset($_POST['active']) ? 1 : 0;
+      $target_audience = $_POST['target_audience'] ?? 'all';
+      $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+      $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+      
+      // Проверка на минимальную и максимальную длину
+      if (strlen($title) < 5) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Заголовок должен содержать минимум 5 символов'];
+      } elseif (strlen($title) > 100) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Заголовок не должен превышать 100 символов'];
+      } elseif (strlen($message) < 10) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Сообщение должно содержать минимум 10 символов'];
+      } elseif (strlen($message) > 500) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Сообщение не должно превышать 500 символов'];
+      } else {
+        // Подготовленный запрос для безопасности
+        $stmt = $pdo->prepare("INSERT INTO notifications (title, message, type, active, target_audience, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$title, $message, $type, $active, $target_audience, $start_date, $end_date])) {
+          // Don't add to session notifications to prevent duplicates - new system will show from database
+        } else {
+          $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при добавлении уведомления'];
+        }
+      }
+      header("Location: notifications.php");
+      exit;
     }
 
-    fclose($output);
-    exit;
-  }
-}
-
-// Проверка AJAX-запросов
-if (isset($_GET['ajax'])) {
-  header('Content-Type: application/json');
-
-  if ($_GET['ajax'] === 'stats') {
-    $total = $pdo->query("SELECT COUNT(*) FROM notifications")->fetchColumn();
-    $active = $pdo->query("SELECT COUNT(*) FROM notifications WHERE active = 1")->fetchColumn();
-
-    echo json_encode([
-      'total' => $total,
-      'active' => $active,
-      'inactive' => $total - $active
-    ]);
-    exit;
-  }
-
-  if ($_GET['ajax'] === 'preview' && isset($_GET['id'])) {
-    $id = (int) $_GET['id'];
-    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ?");
-    $stmt->execute([$id]);
-    $notification = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($notification) {
-      echo json_encode([
-        'success' => true,
-        'notification' => $notification
-      ]);
-    } else {
-      echo json_encode(['success' => false]);
+    // Редактирование уведомления
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_notification'])) {
+      // Санитизация и валидация данных
+      $title = trim($_POST['title'] ?? '');
+      $message = trim($_POST['message'] ?? '');
+      $type = $_POST['type'] ?? 'info';
+      $active = isset($_POST['active']) ? 1 : 0;
+      $target_audience = $_POST['target_audience'] ?? 'all';
+      $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+      $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+      $notification_id = (int) $_POST['notification_id'];
+      
+      // Проверка на минимальную и максимальную длину
+      if (strlen($title) < 5) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Заголовок должен содержать минимум 5 символов'];
+      } elseif (strlen($title) > 100) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Заголовок не должен превышать 100 символов'];
+      } elseif (strlen($message) < 10) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Сообщение должно содержать минимум 10 символов'];
+      } elseif (strlen($message) > 500) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Сообщение не должно превышать 500 символов'];
+      } else {
+        // Подготовленный запрос для безопасности
+        $stmt = $pdo->prepare("UPDATE notifications SET title=?, message=?, type=?, active=?, target_audience=?, start_date=?, end_date=? WHERE id=?");
+        if ($stmt->execute([$title, $message, $type, $active, $target_audience, $start_date, $end_date, $notification_id])) {
+          // Don't add to session notifications to prevent duplicates - new system will show from database
+        } else {
+          $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при обновлении уведомления'];
+        }
+      }
+      header("Location: notifications.php");
+      exit;
     }
-    exit;
-  }
-}
 
-// Получение уведомления для редактирования
-$edit_notification = null;
-if (isset($_GET['edit'])) {
-  $id = (int) $_GET['edit'];
-  $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ?");
-  $stmt->execute([$id]);
-  $edit_notification = $stmt->fetch(PDO::FETCH_ASSOC);
-}
+    // Включение/выключение
+    if (isset($_GET['toggle'])) {
+      $id = (int) $_GET['toggle'];
+      $stmt = $pdo->prepare("UPDATE notifications SET active = 1 - active WHERE id = ?");
+      if ($stmt->execute([$id])) {
+        // Don't add to session notifications to prevent duplicates - new system will show from database
+      } else {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при изменении статуса уведомления'];
+      }
+      header("Location: notifications.php");
+      exit;
+    }
 
-// Получение всех уведомлений с фильтрацией
-$filter_type = $_GET['filter_type'] ?? '';
-$filter_status = $_GET['filter_status'] ?? '';
-$search = $_GET['search'] ?? '';
+    // Удаление уведомления
+    if (isset($_GET['delete'])) {
+      $id = (int) $_GET['delete'];
+      // Проверка существования уведомления перед удалением
+      $stmt = $pdo->prepare("SELECT id FROM notifications WHERE id = ?");
+      $stmt->execute([$id]);
+      if ($stmt->fetch()) {
+        $stmt = $pdo->prepare("DELETE FROM notifications WHERE id = ?");
+        if ($stmt->execute([$id])) {
+          // Don't add to session notifications to prevent duplicates - new system will show from database
+        } else {
+          $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при удалении уведомления'];
+        }
+      } else {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Уведомление не найдено'];
+      }
+      header("Location: notifications.php");
+      exit;
+    }
 
-$query = "SELECT * FROM notifications WHERE 1=1";
-$params = [];
+    // Обработка массовых операций
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action'])) {
+      $selected_ids = $_POST['selected_ids'] ?? [];
 
-if ($filter_type) {
-  $query .= " AND type = ?";
-  $params[] = $filter_type;
-}
+      if (!empty($selected_ids)) {
+        // Преобразуем в массив целых чисел
+        $selected_ids = array_map('intval', $selected_ids);
+        
+        switch ($_POST['bulk_action']) {
+          case 'delete':
+            $placeholders = str_repeat('?,', count($selected_ids) - 1) . '?';
+            $stmt = $pdo->prepare("DELETE FROM notifications WHERE id IN ($placeholders)");
+            if ($stmt->execute($selected_ids)) {
+              // Don't add to session notifications to prevent duplicates - new system will show from database
+            } else {
+              $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при удалении уведомлений'];
+            }
+            break;
 
-if ($filter_status !== '') {
-  $query .= " AND active = ?";
-  $params[] = (int) $filter_status;
-}
+          case 'toggle_status':
+            $status = (int) $_POST['bulk_status'];
+            $placeholders = str_repeat('?,', count($selected_ids) - 1) . '?';
+            $params = array_merge([$status], $selected_ids);
+            $stmt = $pdo->prepare("UPDATE notifications SET active = ? WHERE id IN ($placeholders)");
+            if ($stmt->execute($params)) {
+              $action_text = $status ? 'Активировано' : 'Деактивировано';
+              // Don't add to session notifications to prevent duplicates - new system will show from database
+            } else {
+              $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при изменении статуса уведомлений'];
+            }
+            break;
+        }
+        header("Location: notifications.php");
+        exit;
+      }
+    }
 
-if ($search) {
-  $query .= " AND (title LIKE ? OR message LIKE ?)";
-  $params[] = "%$search%";
-  $params[] = "%$search%";
-}
+    // Дублирование уведомления
+    if (isset($_GET['duplicate'])) {
+      $id = (int) $_GET['duplicate'];
+      $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ?");
+      $stmt->execute([$id]);
+      $original = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$query .= " ORDER BY created_at DESC";
-$stmt = $pdo->prepare($query);
-$stmt->execute($params);
-$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      if ($original) {
+        // Санитизация данных перед вставкой
+        $title = $original['title'] . ' (копия)';
+        $message = $original['message'];
+        $type = $original['type'];
+        $target_audience = $original['target_audience'];
+        $start_date = $original['start_date'];
+        $end_date = $original['end_date'];
+        
+        $stmt = $pdo->prepare("INSERT INTO notifications (title, message, type, active, target_audience, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([
+          $title,
+          $message,
+          $type,
+          0, // Копия создаётся неактивной
+          $target_audience,
+          $start_date,
+          $end_date
+        ])) {
+          // Don't add to session notifications to prevent duplicates - new system will show from database
+        } else {
+          $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при дублировании уведомления'];
+        }
+      } else {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Уведомление не найдено'];
+      }
+      header("Location: notifications.php");
+      exit;
+    }
 
-// Статистика
-$total_notifications = $pdo->query("SELECT COUNT(*) FROM notifications")->fetchColumn();
-$active_notifications = $pdo->query("SELECT COUNT(*) FROM notifications WHERE active = 1")->fetchColumn();
-$inactive_notifications = $total_notifications - $active_notifications;
+    // Экспорт уведомлений
+    if (isset($_GET['export'])) {
+      if ($_GET['export'] === 'all') {
+        $export_stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
+        $export_notifications = $export_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="notifications_" . date("Y-m-d_H-i-s") . ".csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['ID', 'Заголовок', 'Сообщение', 'Тип', 'Статус', 'Аудитория', 'Дата создания']);
+
+        foreach ($export_notifications as $n) {
+          fputcsv($output, [
+            $n['id'],
+            $n['title'],
+            $n['message'],
+            $n['type'],
+            $n['active'] ? 'Активно' : 'Неактивно',
+            $n['target_audience'],
+            $n['created_at']
+          ]);
+        }
+
+        fclose($output);
+        exit;
+      }
+    }
+
+    // Проверка AJAX-запросов
+    if (isset($_GET['ajax'])) {
+      header('Content-Type: application/json');
+
+      if ($_GET['ajax'] === 'stats') {
+        $total = $pdo->query("SELECT COUNT(*) FROM notifications")->fetchColumn();
+        $active = $pdo->query("SELECT COUNT(*) FROM notifications WHERE active = 1")->fetchColumn();
+
+        echo json_encode([
+          'total' => $total,
+          'active' => $active,
+          'inactive' => $total - $active
+        ]);
+        exit;
+      }
+
+      if ($_GET['ajax'] === 'preview' && isset($_GET['id'])) {
+        $id = (int) $_GET['id'];
+        $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ?");
+        $stmt->execute([$id]);
+        $notification = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($notification) {
+          echo json_encode([
+            'success' => true,
+            'notification' => $notification
+          ]);
+        } else {
+          echo json_encode(['success' => false]);
+        }
+        exit;
+      }
+    }
+
+    // Получение уведомления для редактирования
+    $edit_notification = null;
+    if (isset($_GET['edit'])) {
+      $id = (int) $_GET['edit'];
+      $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ?");
+      $stmt->execute([$id]);
+      $edit_notification = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Получение всех уведомлений с фильтрацией
+    $filter_type = $_GET['filter_type'] ?? '';
+    $filter_status = $_GET['filter_status'] ?? '';
+    $search = $_GET['search'] ?? '';
+
+    $query = "SELECT * FROM notifications WHERE 1=1";
+    $params = [];
+
+    if ($filter_type) {
+      $query .= " AND type = ?";
+      $params[] = $filter_type;
+    }
+
+    if ($filter_status !== '') {
+      $query .= " AND active = ?";
+      $params[] = (int) $filter_status;
+    }
+
+    if ($search) {
+      $query .= " AND (title LIKE ? OR message LIKE ?)";
+      $params[] = "%$search%";
+      $params[] = "%$search%";
+    }
+
+    $query .= " ORDER BY created_at DESC";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+    $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Статистика
+    $total_notifications = $pdo->query("SELECT COUNT(*) FROM notifications")->fetchColumn();
+    $active_notifications = $pdo->query("SELECT COUNT(*) FROM notifications WHERE active = 1")->fetchColumn();
+    $inactive_notifications = $total_notifications - $active_notifications;
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -247,6 +324,52 @@ $inactive_notifications = $total_notifications - $active_notifications;
     .hover-lift:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Улучшенные стили для уведомлений */
+    .notification-card {
+      transition: all 0.3s ease;
+      border-left-width: 4px;
+    }
+
+    .notification-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .notification-info {
+      border-left-color: #3b82f6;
+    }
+
+    .notification-success {
+      border-left-color: #10b981;
+    }
+
+    .notification-warning {
+      border-left-color: #f59e0b;
+    }
+
+    .notification-error {
+      border-left-color: #ef4444;
+    }
+    
+    /* Стили для скрытых уведомлений */
+    .notification-hidden {
+      opacity: 0.6;
+    }
+    
+    .notification-hidden .hidden-badge {
+      display: inline-block;
+    }
+    
+    .hidden-badge {
+      display: none;
+      background-color: #94a3b8;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      margin-left: 8px;
     }
   </style>
 </head>
@@ -312,7 +435,7 @@ $inactive_notifications = $total_notifications - $active_notifications;
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-600 mb-1">Неактивные</p>
-            <p class="text-3xl font-bold text-gray-900 stat-inactive"><?php echo $inactive_notifications; ?></p>
+            <p class="text-33xl font-bold text-gray-900 stat-inactive"><?php echo $inactive_notifications; ?></p>
             <p class="text-xs text-gray-500 mt-1">Отключенные уведомления</p>
           </div>
           <div class="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center">
@@ -509,6 +632,61 @@ $inactive_notifications = $total_notifications - $active_notifications;
                 </div>
               </div>
             </button>
+
+            <button onclick="fillTemplate('welcome')"
+              class="w-full text-left p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors duration-300">
+              <div class="flex items-center">
+                <i class="fas fa-hand-sparkles text-purple-600 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">Добро пожаловать</div>
+                  <div class="text-xs text-gray-600">Приветственное уведомление для новых пользователей</div>
+                </div>
+              </div>
+            </button>
+
+            <button onclick="fillTemplate('payment')"
+              class="w-full text-left p-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors duration-300">
+              <div class="flex items-center">
+                <i class="fas fa-credit-card text-indigo-600 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">Оплата заказа</div>
+                  <div class="text-xs text-gray-600">Напоминание об оплате заказа</div>
+                </div>
+              </div>
+            </button>
+
+            <button onclick="fillTemplate('delivery')"
+              class="w-full text-left p-3 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors duration-300">
+              <div class="flex items-center">
+                <i class="fas fa-truck text-teal-600 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">Доставка заказа</div>
+                  <div class="text-xs text-gray-600">Уведомление о статусе доставки</div>
+                </div>
+              </div>
+            </button>
+
+            <button onclick="fillTemplate('feedback')"
+              class="w-full text-left p-3 bg-pink-50 border border-pink-200 rounded-lg hover:bg-pink-100 transition-colors duration-300">
+              <div class="flex items-center">
+                <i class="fas fa-comment-dots text-pink-600 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">Обратная связь</div>
+                  <div class="text-xs text-gray-600">Запрос на отзыв о качестве услуг</div>
+                </div>
+              </div>
+            </button>
+
+            <button onclick="fillTemplate('holiday')"
+              class="w-full text-left p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors duration-300">
+              <div class="flex items-center">
+                <i class="fas fa-gifts text-amber-600 mr-3"></i>
+                <div>
+                  <div class="font-medium text-gray-800">Праздничные скидки</div>
+                  <div class="text-xs text-gray-600">Специальные предложения к праздникам</div>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -582,8 +760,23 @@ $inactive_notifications = $total_notifications - $active_notifications;
             <div class="space-y-4">
               <?php foreach ($notifications as $i => $n): ?>
                 <div
-                  class="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300 animate-slide-in"
-                  style="animation-delay: <?php echo 0.1 * ($i + 1); ?>s">
+                  class="notification-card p-6 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300 animate-slide-in <?php
+                    switch ($n['type']) {
+                      case 'success':
+                        echo 'notification-success bg-green-50';
+                        break;
+                      case 'warning':
+                        echo 'notification-warning bg-yellow-50';
+                        break;
+                      case 'error':
+                        echo 'notification-error bg-red-50';
+                        break;
+                      default:
+                        echo 'notification-info bg-blue-50';
+                    }
+                  ?>"
+                  style="animation-delay: <?php echo 0.1 * ($i + 1); ?>s"
+                  data-notification-id="<?php echo $n['id']; ?>">
                   <div class="flex justify-between items-start">
                     <div class="flex-1">
                       <div class="flex items-center mb-3">
@@ -630,16 +823,22 @@ $inactive_notifications = $total_notifications - $active_notifications;
                             <i class="fas fa-<?= $n['active'] ? 'eye' : 'eye-slash' ?> mr-1"></i>
                             <?= $n['active'] ? 'Активно' : 'Неактивно' ?>
                           </span>
+                          
+                          <!-- Badge for hidden notifications -->
+                          <span class="hidden-badge">Скрыто</span>
                         </div>
                       </div>
 
                       <p class="text-gray-700 mb-3 leading-relaxed"><?= htmlspecialchars($n['message']) ?></p>
 
                       <div class="flex items-center text-sm text-gray-500 space-x-4">
-                        <span><i
-                            class="fas fa-calendar mr-1"></i><?= date('d.m.Y H:i', strtotime($n['created_at'])) ?></span>
+                        <span class="flex items-center">
+                          <i class="fas fa-calendar mr-1"></i>
+                          <?= date('d.m.Y H:i', strtotime($n['created_at'])) ?>
+                        </span>
                         <?php if ($n['target_audience']): ?>
-                          <span><i class="fas fa-users mr-1"></i>
+                          <span class="flex items-center">
+                            <i class="fas fa-users mr-1"></i>
                             <?php
                             switch ($n['target_audience']) {
                               case 'all':
@@ -658,7 +857,8 @@ $inactive_notifications = $total_notifications - $active_notifications;
                           </span>
                         <?php endif; ?>
                         <?php if ($n['start_date'] || $n['end_date']): ?>
-                          <span><i class="fas fa-clock mr-1"></i>
+                          <span class="flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
                             <?php if ($n['start_date']): ?>
                               с <?= date('d.m.Y', strtotime($n['start_date'])) ?>
                             <?php endif; ?>
@@ -680,6 +880,11 @@ $inactive_notifications = $total_notifications - $active_notifications;
                         class="px-4 py-2 <?= $n['active'] ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600' ?> text-white rounded-lg transition-all duration-300 text-sm flex items-center justify-center">
                         <i class="fas fa-<?= $n['active'] ? 'eye-slash' : 'eye' ?> mr-1"></i>
                         <?= $n['active'] ? 'Отключить' : 'Включить' ?>
+                      </a>
+
+                      <a href="?duplicate=<?= $n['id'] ?>"
+                        class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all duration-300 text-sm flex items-center justify-center">
+                        <i class="fas fa-copy mr-1"></i>Копировать
                       </a>
 
                       <a href="?delete=<?= $n['id'] ?>"
@@ -726,6 +931,55 @@ $inactive_notifications = $total_notifications - $active_notifications;
           message: 'Не упустите возможность! Действует специальная скидка на наши услуги. Подробности уточняйте у менеджеров или в личном кабинете.',
           type: 'info',
           audience: 'clients'
+        },
+        // Новые шаблоны
+        welcome: {
+          title: 'Добро пожаловать!',
+          message: 'Добро пожаловать в наш сервис! Мы рады видеть вас и надеемся на долгое и плодотворное сотрудничество.',
+          type: 'success',
+          audience: 'clients'
+        },
+        payment: {
+          title: 'Оплата заказа',
+          message: 'Напоминаем о необходимости оплаты вашего заказа. Пожалуйста, произведите оплату в ближайшее время для продолжения обработки заказа.',
+          type: 'warning',
+          audience: 'clients'
+        },
+        delivery: {
+          title: 'Доставка заказа',
+          message: 'Ваш заказ отправлен и находится в пути. Ожидайте получение в ближайшие дни. Спасибо за выбор нашего сервиса!',
+          type: 'info',
+          audience: 'clients'
+        },
+        feedback: {
+          title: 'Обратная связь',
+          message: 'Нам важно ваше мнение! Пожалуйста, оставьте отзыв о качестве наших услуг. Это поможет нам стать лучше.',
+          type: 'info',
+          audience: 'clients'
+        },
+        holiday: {
+          title: 'Праздничные скидки',
+          message: 'С наступающим праздником! В честь праздника действуют специальные скидки на все услуги. Спешите воспользоваться предложением!',
+          type: 'success',
+          audience: 'all'
+        },
+        reminder: {
+          title: 'Напоминание',
+          message: 'Напоминаем вам о важном событии или задаче. Пожалуйста, уделите этому внимание в ближайшее время.',
+          type: 'info',
+          audience: 'all'
+        },
+        system: {
+          title: 'Системное уведомление',
+          message: 'Важное системное уведомление. Пожалуйста, ознакомьтесь с информацией и при необходимости примите меры.',
+          type: 'warning',
+          audience: 'all'
+        },
+        security: {
+          title: 'Безопасность',
+          message: 'Обратите внимание на безопасность вашего аккаунта. Рекомендуем проверить настройки безопасности и обновить пароль.',
+          type: 'error',
+          audience: 'all'
         }
       };
 
@@ -800,16 +1054,20 @@ $inactive_notifications = $total_notifications - $active_notifications;
 
       if (titleInput) {
         const titleCounter = titleInput.parentElement.querySelector('.text-xs');
-        titleCounter.id = 'title-counter';
-        titleInput.addEventListener('input', () => updateCharCounter(titleInput, 100, 'title-counter'));
-        updateCharCounter(titleInput, 100, 'title-counter');
+        if (titleCounter) {
+          titleCounter.id = 'title-counter';
+          titleInput.addEventListener('input', () => updateCharCounter(titleInput, 100, 'title-counter'));
+          updateCharCounter(titleInput, 100, 'title-counter');
+        }
       }
 
       if (messageTextarea) {
         const messageCounter = messageTextarea.parentElement.querySelector('.text-xs');
-        messageCounter.id = 'message-counter';
-        messageTextarea.addEventListener('input', () => updateCharCounter(messageTextarea, 500, 'message-counter'));
-        updateCharCounter(messageTextarea, 500, 'message-counter');
+        if (messageCounter) {
+          messageCounter.id = 'message-counter';
+          messageTextarea.addEventListener('input', () => updateCharCounter(messageTextarea, 500, 'message-counter'));
+          updateCharCounter(messageTextarea, 500, 'message-counter');
+        }
       }
     });
 
@@ -854,6 +1112,17 @@ $inactive_notifications = $total_notifications - $active_notifications;
         })
         .catch(err => console.log('Stats update failed:', err));
     }, 30000); // Обновление каждые 30 секунд
+    // Показать скрытые уведомления
+    document.addEventListener('DOMContentLoaded', function() {
+      // Помечаем скрытые уведомления в списке
+      const notificationCards = document.querySelectorAll('.notification-card');
+      notificationCards.forEach(card => {
+        const id = card.dataset.notificationId;
+        if (id && localStorage.getItem('notification_' + id) === 'closed') {
+          card.classList.add('notification-hidden');
+        }
+      });
+    });
   </script>
 
 </body>

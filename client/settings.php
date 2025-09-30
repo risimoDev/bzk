@@ -5,6 +5,9 @@ $pageTitle = "Настройки аккаунта";
 // Подключение к базе данных
 include_once('../includes/db.php');
 
+// Define Telegram bot username
+define('TELEGRAM_BOT_USERNAME', 'bzkprintbot');
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: /login");
     exit();
@@ -136,6 +139,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_account'])) {
     exit();
 }
 
+// Обработка отключения Telegram
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disconnect_telegram'])) {
+    try {
+        $stmt = $pdo->prepare("UPDATE users SET telegram_chat_id = NULL, telegram_notifications = 0 WHERE id = ?");
+        if ($stmt->execute([$user_id])) {
+            $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Telegram успешно отключен.'];
+        } else {
+            $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка при отключении Telegram. Попробуйте позже.'];
+        }
+    } catch (Exception $e) {
+        error_log("Telegram disconnect error: " . $e->getMessage());
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Произошла ошибка при отключении Telegram.'];
+    }
+    header("Location: /client/settings");
+    exit();
+}
+
 // Check if user has pending corporate account request
 $stmt = $pdo->prepare("SELECT id FROM corporate_account_requests WHERE user_id = ? AND status = 'pending'");
 $stmt->execute([$user_id]);
@@ -211,6 +231,16 @@ $has_pending_deletion_request = $stmt->fetch();
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
         Корпоративный аккаунт
+      </div>
+    </button>
+    
+    <button onclick="showTab('telegram')" id="telegram-tab" 
+            class="tab-button px-6 py-3 rounded-t-xl font-medium transition-all duration-300 whitespace-nowrap <?php echo $active_tab === 'telegram' ? 'bg-[#118568] text-white shadow-lg transform scale-105' : 'bg-[#DEE5E5] text-gray-700 hover:bg-[#9DC5BB]'; ?>">
+      <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 <?php echo $active_tab === 'telegram' ? 'text-white' : 'text-[#118568]'; ?>" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+        Telegram
       </div>
     </button>
   </nav>
@@ -538,6 +568,119 @@ $has_pending_deletion_request = $stmt->fetch();
         </div>
       </form>
       <?php endif; ?>
+    </div>
+
+    <!-- Вкладка Telegram -->
+    <div id="telegram-tab-content" class="tab-content bg-white rounded-3xl shadow-2xl overflow-hidden hidden">
+      <div class="p-6 border-b border-gray-200">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Настройки Telegram
+        </h2>
+        <p class="text-gray-600 mt-1">Подключите Telegram для получения уведомлений</p>
+      </div>
+
+      <div class="p-6">
+        <?php if ($user['telegram_chat_id']): ?>
+          <!-- Пользователь уже подключен к Telegram -->
+          <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-green-800">Telegram подключен</h3>
+                <div class="mt-2 text-sm text-green-700">
+                  <p>Ваш аккаунт успешно подключен к Telegram. Вы будете получать уведомления в боте.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gray-50 p-4 rounded-lg">
+            <div>
+              <h3 class="font-bold text-gray-800">Отключить Telegram</h3>
+              <p class="text-gray-600 text-sm">Вы больше не будете получать уведомления в Telegram</p>
+            </div>
+            <form method="POST">
+              <input type="hidden" name="disconnect_telegram" value="1">
+              <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 font-medium">
+                Отключить
+              </button>
+            </form>
+          </div>
+        <?php else: ?>
+          <!-- Пользователь не подключен к Telegram -->
+          <div class="mb-8">
+            <div class="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800">Как подключить Telegram</h3>
+                <ol class="text-sm text-gray-600 list-decimal list-inside mt-1">
+                  <li>Найдите нашего бота в Telegram: <a href="https://t.me/<?php echo TELEGRAM_BOT_USERNAME; ?>" target="_blank" class="text-[#118568] font-medium">@<?php echo TELEGRAM_BOT_USERNAME; ?></a></li>
+                  <li>Нажмите "Start" или отправьте команду /start</li>
+                  <li>Отправьте команду <code class="bg-gray-100 px-1 rounded">/connect <?php echo $user['email']; ?></code></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 class="font-bold text-gray-800 mb-4">Инструкция по подключению</h3>
+            <div class="space-y-4">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-[#118568] flex items-center justify-center mt-0.5">
+                  <span class="text-white text-xs font-bold">1</span>
+                </div>
+                <div class="ml-3">
+                  <p class="text-gray-700">Откройте Telegram и найдите нашего бота:</p>
+                  <a href="https://t.me/<?php echo TELEGRAM_BOT_USERNAME; ?>" target="_blank" class="mt-2 inline-flex items-center px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                    </svg>
+                    Открыть бота @<?php echo TELEGRAM_BOT_USERNAME; ?>
+                  </a>
+                </div>
+              </div>
+
+              <div class="flex items-start">
+                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-[#118568] flex items-center justify-center mt-0.5">
+                  <span class="text-white text-xs font-bold">2</span>
+                </div>
+                <div class="ml-3">
+                  <p class="text-gray-700">Отправьте боту команду для подключения:</p>
+                  <div class="mt-2 relative">
+                    <code class="block bg-gray-100 px-4 py-3 rounded-lg text-sm font-mono break-all">/connect <?php echo $user['email']; ?></code>
+                    <button onclick="copyToClipboard('/connect <?php echo $user['email']; ?>')" class="absolute right-2 top-2.5 text-gray-500 hover:text-gray-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-start">
+                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-[#118568] flex items-center justify-center mt-0.5">
+                  <span class="text-white text-xs font-bold">3</span>
+                </div>
+                <div class="ml-3">
+                  <p class="text-gray-700">Дождитесь подтверждения подключения</p>
+                  <p class="text-sm text-gray-500 mt-1">После успешного подключения вы начнете получать уведомления в Telegram</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php endif; ?>
+      </div>
     </div>
 
     <!-- Опасная зона -->

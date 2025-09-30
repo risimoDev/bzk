@@ -20,8 +20,8 @@ $og_image = $seo['og_image'] ?? "/assets/img/default-og.png";
 // --- Подготовить уведомления для фронтенда ---
 $site_notifications = [];
 try {
-    // Если в проекте $pdo определён (includes/db.php подключён в header)
-    $stmt = $pdo->prepare("
+  // Если в проекте $pdo определён (includes/db.php подключён в header)
+  $stmt = $pdo->prepare("
         SELECT id, title, message, type, persistent
         FROM site_notifications
         WHERE active = 1
@@ -29,17 +29,17 @@ try {
           AND (end_at IS NULL OR end_at >= NOW())
         ORDER BY created_at DESC
     ");
-    $stmt->execute();
-    $site_notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $stmt->execute();
+  $site_notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
-    // пропускаем, если нет таблицы/доступа
-    $site_notifications = [];
+  // пропускаем, если нет таблицы/доступа
+  $site_notifications = [];
 }
 
 // Вытаскиваем сессионные уведомления и удаляем их, чтобы не показывать при следующем запросе
 $session_notifications = $_SESSION['notifications'] ?? [];
 if (isset($_SESSION['notifications'])) {
-    unset($_SESSION['notifications']);
+  unset($_SESSION['notifications']);
 }
 $cart_count = isset($_SESSION['cart']) ? array_sum(array_column($_SESSION['cart'], 'quantity')) : 0;
 include_once __DIR__ . '/session_check.php';
@@ -60,15 +60,16 @@ include_once __DIR__ . '/notifications.php';
   <meta property="og:description" content="<?= htmlspecialchars($og_description) ?>">
   <meta property="og:image" content="<?= htmlspecialchars($og_image) ?>">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="<?= htmlspecialchars("https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>">
+  <meta property="og:url"
+    content="<?= htmlspecialchars("https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>">
 
-  
+
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="/../assets/css/output.css">
   <script>
-  // Переменные доступны для /assets/js/notifications.js
-  window.serverNotifications = <?php echo json_encode($session_notifications, JSON_UNESCAPED_UNICODE); ?>;
-  window.siteNotifications = <?php echo json_encode($site_notifications, JSON_UNESCAPED_UNICODE); ?>;
+    // Переменные доступны для /assets/js/notifications.js
+    window.serverNotifications = <?php echo json_encode($session_notifications, JSON_UNESCAPED_UNICODE); ?>;
+    window.siteNotifications = <?php echo json_encode($site_notifications, JSON_UNESCAPED_UNICODE); ?>;
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="
@@ -78,48 +79,10 @@ https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
   <script src="
 https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
 "></script>
-<script src="https://kit.fontawesome.com/9e7604a404.js" crossorigin="anonymous"></script>
+  <script src="https://kit.fontawesome.com/9e7604a404.js" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="/../assets/js/notifications.js" defer></script>
   <style>
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      color: white;
-      z-index: 9999;
-      transform: translateX(120%);
-      transition: transform 0.3s ease-in-out;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      max-width: 300px;
-    }
-
-    .notification.show {
-      transform: translateX(0);
-    }
-
-    .notification.success {
-      background-color: #10B981;
-      /* green-500 */
-    }
-
-    .notification.error {
-      background-color: #EF4444;
-      /* red-500 */
-    }
-
-    .notification.info {
-      background-color: #3B82F6;
-      /* blue-500 */
-    }
-
-    .notification.warning {
-      background-color: #F59E0B;
-      /* amber-500 */
-    }
-
     /* Стили для мобильного меню - новый подход */
     #mobile-menu {
       display: none;
@@ -132,76 +95,82 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
     /* Цвет стрелок */
     .swiper-button-next::after,
     .swiper-button-prev::after {
-      color: #118568; /* зелёный */
-      font-size: 24px; /* размер иконки */
+      color: #118568;
+      /* зелёный */
+      font-size: 24px;
+      /* размер иконки */
     }
 
     /* При наведении */
     .swiper-button-next:hover::after,
     .swiper-button-prev:hover::after {
-      color: #0f755a; /* более тёмный оттенок */
+      color: #0f755a;
+      /* более тёмный оттенок */
     }
+
     /* Базовый цвет точек */
     .swiper-pagination-bullet {
       background-color: #DEE5E5;
-      opacity: 1; /* чтобы не были полупрозрачными */
+      opacity: 1;
+      /* чтобы не были полупрозрачными */
     }
 
     /* Активная точка */
     .swiper-pagination-bullet-active {
-      background-color: #118568 !important; /* зелёный */
+      background-color: #118568 !important;
+      /* зелёный */
     }
-    
+
     /* Responsive table and card styles */
     .responsive-table-container {
       width: 100%;
     }
-    
+
     .table-responsive-container {
       width: 100%;
     }
-    
+
     .view-toggle {
       transition: all 0.2s ease-in-out;
     }
-    
+
     /* Mobile card improvements */
     @media (max-width: 767px) {
       .cards-view .bg-white {
         padding: 1rem;
       }
-      
+
       .cards-view .mb-3 {
         margin-bottom: 0.75rem;
       }
-      
+
       .cards-view .text-sm {
         font-size: 0.875rem;
       }
     }
-    
+
     /* Ensure proper spacing on mobile */
     @media (max-width: 639px) {
       .container {
         padding-left: 1rem;
         padding-right: 1rem;
       }
-      
+
       .px-6 {
         padding-left: 1rem;
         padding-right: 1rem;
       }
-      
+
       .py-4 {
         padding-top: 0.75rem;
         padding-bottom: 0.75rem;
       }
-      
+
       /* Improve card spacing on mobile */
       .cards-view .bg-white {
         margin-bottom: 1rem;
       }
-      
+
       /* Ensure tables scroll horizontally on mobile */
       .overflow-x-auto {
         -webkit-overflow-scrolling: touch;
@@ -209,32 +178,24 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
     }
   </style>
   <!-- Yandex.Metrika counter -->
-<script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=104056668', 'ym');
+  <script type="text/javascript">
+    (function (m, e, t, r, i, k, a) {
+      m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments) };
+      m[i].l = 1 * new Date();
+      for (var j = 0; j < document.scripts.length; j++) { if (document.scripts[j].src === r) { return; } }
+      k = e.createElement(t), a = e.getElementsByTagName(t)[0], k.async = 1, k.src = r, a.parentNode.insertBefore(k, a)
+    })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=104056668', 'ym');
 
-    ym(104056668, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
-</script>
-<noscript><div><img src="https://mc.yandex.ru/watch/104056668" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-<!-- /Yandex.Metrika counter -->
+    ym(104056668, 'init', { ssr: true, webvisor: true, clickmap: true, ecommerce: "dataLayer", accurateTrackBounce: true, trackLinks: true });
+  </script>
+  <noscript>
+    <div><img src="https://mc.yandex.ru/watch/104056668" style="position:absolute; left:-9999px;" alt="" /></div>
+  </noscript>
+  <!-- /Yandex.Metrika counter -->
 </head>
 
 <body class="font-sans bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB]">
-  <?php if (!empty($notifications)): ?>
-    <?php foreach ($notifications as $notification): ?>
-      <?php
-      $type = htmlspecialchars($notification['type'] ?? 'info');
-      $message = htmlspecialchars($notification['message'] ?? '');
-      if (!empty($message)) {
-        echo '<div class="notification ' . $type . ' show">' . $message . '</div>';
-      }
-      ?>
-    <?php endforeach; ?>
-  <?php endif; ?>
+  <!-- Old notification system removed to prevent duplicates -->
   <?php
   // Генерация breadcrumbs
   function generateBreadcrumbs($pageTitle)
@@ -388,7 +349,7 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
     <nav id="mobile-menu" class="lg:hidden bg-white border-t border-gray-200">
       <div class="px-4 py-3">
         <div class="space-y-2 pb-3">
-          <a href="/catalog"
+          <a href="/payment_delivery"
             class="flex items-center px-4 py-3 text-gray-700 hover:text-litegreen hover:bg-litegray rounded-lg transition duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="#1f1f1f" viewBox="0 -960 960 960">
               <path
@@ -522,34 +483,22 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
     </nav>
   </header>
   <script>
-    // Автоматически скрываем уведомления через 5 секунд
-    document.addEventListener('DOMContentLoaded', () => {
-      const notifications = document.querySelectorAll('.notification');
-      notifications.forEach(notification => {
-        setTimeout(() => {
-          notification.classList.remove('show');
-          setTimeout(() => {
-            notification.remove();
-          }, 300); // Задержка для завершения анимации
-        }, 5000);
+    // Мобильное меню - новый подход
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (menuToggle && mobileMenu) {
+      menuToggle.addEventListener('click', function () {
+        mobileMenu.classList.toggle('open');
       });
-      // Мобильное меню - новый подход
-      const menuToggle = document.getElementById('menu-toggle');
-      const mobileMenu = document.getElementById('mobile-menu');
-      if (menuToggle && mobileMenu) {
-        menuToggle.addEventListener('click', function () {
-          mobileMenu.classList.toggle('open');
-        });
-        // Закрываем меню при клике вне его
-        document.addEventListener('click', function (event) {
-          // Проверяем, является ли цель переключателем меню
-          if (event.target !== menuToggle && !menuToggle.contains(event.target)) {
-            // Проверяем, является ли цель самим меню или его потомком
-            if (mobileMenu.classList.contains('open') && !mobileMenu.contains(event.target)) {
-              mobileMenu.classList.remove('open');
-            }
+      // Закрываем меню при клике вне его
+      document.addEventListener('click', function (event) {
+        // Проверяем, является ли цель переключателем меню
+        if (event.target !== menuToggle && !menuToggle.contains(event.target)) {
+          // Проверяем, является ли цель самим меню или его потомком
+          if (mobileMenu.classList.contains('open') && !mobileMenu.contains(event.target)) {
+            mobileMenu.classList.remove('open');
           }
-        });
-      }
-    });
+        }
+      });
+    };
   </script>

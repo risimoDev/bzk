@@ -6,6 +6,7 @@
 
 require_once 'includes/db.php';
 require_once 'includes/security.php';
+require_once 'includes/telegram.php';
 
 // Security: Verify Telegram secret token if configured
 function verifyTelegramWebhook() {
@@ -50,7 +51,15 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 // Log for security monitoring (sanitized)
 error_log('Telegram webhook received from IP: ' . $client_ip);
 
-if (!$update || !isset($update['message'])) {
+// Обработка callback query (нажатия на кнопки)
+if (isset($update['callback_query'])) {
+    $telegram = getTelegramBot();
+    $telegram->handleCallbackQuery($update['callback_query']);
+    http_response_code(200);
+    exit('OK');
+}
+
+if (!isset($update['message'])) {
     http_response_code(200);
     exit('OK');
 }
@@ -178,12 +187,15 @@ function handleConnectCommand($chat_id, $text, $first_name)
             // Log successful connection
             error_log("Telegram account connected: user_id={$user['id']}, chat_id=$chat_id");
         } else {
-            sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже.");
+            // Получаем информацию об ошибке
+            $error_info = $stmt->errorInfo();
+            error_log("Telegram connect database error: " . print_r($error_info, true));
+            sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже. Код ошибки: " . $error_info[0]);
         }
 
     } catch (Exception $e) {
-        error_log("Telegram connect error: " . $e->getMessage());
-        sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору.");
+        error_log("Telegram connect exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+        sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору. Детали: " . $e->getMessage());
     }
 }
 
@@ -246,7 +258,7 @@ function handleGeneralMessage($chat_id, $text, $first_name)
 /**
  * Отправка сообщения в Telegram
  */
-function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML')
+function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML', $reply_markup = null)
 {
     $bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? '';
 
@@ -262,6 +274,11 @@ function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML')
         'text' => $text,
         'parse_mode' => $parse_mode
     ];
+
+    // Добавляем клавиатуру, если она передана
+    if ($reply_markup) {
+        $data['reply_markup'] = json_encode($reply_markup);
+    }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -289,4 +306,3 @@ function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML')
 
     return true;
 }
-?>

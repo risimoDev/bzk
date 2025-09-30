@@ -122,8 +122,11 @@ $my_tasks_count = $my_tasks->fetchColumn();
             <div class="flex gap-2">
                 <?php echo backButton(); ?>
                 <a href="/admin/tasks/add"
-                    class="px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 text-sm">
-                    + Новая задача
+                    class="px-4 py-2 bg-gradient-to-r from-[#118568] to-[#17B890] text-white rounded-lg hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 text-sm shadow-lg hover:shadow-xl flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Новая задача
                 </a>
             </div>
         </div>
@@ -139,14 +142,14 @@ $my_tasks_count = $my_tasks->fetchColumn();
     <!-- Уведомления -->
     <?php foreach ($notifications as $n): ?>
         <div
-            class="mb-6 p-4 rounded-xl <?php echo $n['type'] === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
+            class="mb-6 p-4 rounded-xl <?php echo $n['type'] === 'success' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'; ?> shadow-md">
             <?php echo htmlspecialchars($n['message']); ?>
         </div>
     <?php endforeach; ?>
 
     <!-- Статистические карточки -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-2xl shadow-xl p-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-[#118568] hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-[#118568] rounded-full flex items-center justify-center mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
@@ -162,7 +165,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl p-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-yellow-500 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
@@ -178,7 +181,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl p-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-blue-500 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
@@ -194,7 +197,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl p-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-green-500 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
@@ -213,23 +216,28 @@ $my_tasks_count = $my_tasks->fetchColumn();
 
     <!-- Фильтры -->
     <form method="get" class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Фильтры</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Фильтры
+        </h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Статус</label>
                 <select name="status"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-all duration-300">
                     <option value="all">Все статусы</option>
                     <option value="pending" <?php if ($filter_status === 'pending')
-                        echo 'selected'; ?>>В ожидании</option>
+                        echo 'selected'; ?>>⏳ В ожидании</option>
                     <option value="in_progress" <?php if ($filter_status === 'in_progress')
-                        echo 'selected'; ?>>В работе
+                        echo 'selected'; ?>>🔄 В работе
                     </option>
                     <option value="completed" <?php if ($filter_status === 'completed')
-                        echo 'selected'; ?>>Завершено
+                        echo 'selected'; ?>>✅ Завершено
                     </option>
                     <option value="cancelled" <?php if ($filter_status === 'cancelled')
-                        echo 'selected'; ?>>Отменено
+                        echo 'selected'; ?>>❌ Отменено
                     </option>
                 </select>
             </div>
@@ -237,7 +245,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
                 <select name="priority"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-all duration-300">
                     <option value="all">Все приоритеты</option>
                     <option value="urgent" <?php if ($filter_priority === 'urgent')
                         echo 'selected'; ?>>🔴 Срочно</option>
@@ -253,7 +261,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Исполнитель</label>
                 <select name="assigned"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-all duration-300">
                     <option value="all">Все исполнители</option>
                     <option value="me" <?php if ($filter_assigned === 'me')
                         echo 'selected'; ?>>Мои задачи</option>
@@ -271,7 +279,10 @@ $my_tasks_count = $my_tasks->fetchColumn();
 
             <div class="flex items-end">
                 <button type="submit"
-                    class="w-full px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300">
+                    class="w-full px-4 py-2 bg-gradient-to-r from-[#118568] to-[#17B890] text-white rounded-lg hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                     Применить
                 </button>
             </div>
@@ -293,7 +304,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
                 </svg>
                 <p class="text-gray-500 text-lg">Задач не найдено</p>
                 <a href="/admin/tasks/add"
-                    class="inline-block mt-4 px-6 py-3 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300">
+                    class="inline-block mt-4 px-6 py-3 bg-gradient-to-r from-[#118568] to-[#17B890] text-white rounded-lg hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 shadow-md hover:shadow-lg">
                     Создать первую задачу
                 </a>
             </div>
@@ -321,13 +332,13 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                     ];
                                     ?>
                                     <span
-                                        class="px-2 py-1 text-xs rounded-full <?php echo $priority_colors[$task['priority']]; ?>">
+                                        class="px-2 py-1 text-xs rounded-full <?php echo $priority_colors[$task['priority']]; ?> font-medium">
                                         <?php echo $priority_emojis[$task['priority']]; ?>
                                         <?php echo ucfirst($task['priority']); ?>
                                     </span>
 
                                     <!-- ID задачи -->
-                                    <span class="text-xs text-gray-500">#<?php echo $task['id']; ?></span>
+                                    <span class="text-xs text-gray-500 font-mono">#<?php echo $task['id']; ?></span>
                                 </div>
 
                                 <h3 class="text-lg font-semibold text-gray-800 mb-2">
@@ -340,7 +351,12 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                     if (is_array($task_items) && !empty($task_items)):
                                         ?>
                                         <div class="mb-3">
-                                            <p class="text-sm font-medium text-gray-700 mb-2">📋 Пункты для выполнения:</p>
+                                            <p class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                                </svg>
+                                                Пункты для выполнения:
+                                            </p>
                                             <ul class="text-sm text-gray-600 space-y-1 ml-4">
                                                 <?php foreach ($task_items as $index => $item): ?>
                                                     <li class="flex items-start">
@@ -355,8 +371,13 @@ $my_tasks_count = $my_tasks->fetchColumn();
 
                                 <?php if (!empty($task['description'])): ?>
                                     <div class="mb-3">
-                                        <p class="text-sm font-medium text-gray-700 mb-1">📄 Описание:</p>
-                                        <p class="text-gray-600 text-sm line-clamp-3">
+                                        <p class="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Описание:
+                                        </p>
+                                        <p class="text-gray-600 text-sm">
                                             <?php echo htmlspecialchars(substr($task['description'], 0, 200)); ?>            <?php if (strlen($task['description']) > 200)
                                                                  echo '...'; ?>
                                         </p>
@@ -364,17 +385,39 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                 <?php endif; ?>
 
                                 <div class="flex flex-wrap gap-4 text-sm text-gray-500">
-                                    <span>👤 Создал: <?php echo htmlspecialchars($task['creator_name']); ?></span>
+                                    <span class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        Создал: <?php echo htmlspecialchars($task['creator_name']); ?>
+                                    </span>
                                     <?php if ($task['assigned_name']): ?>
-                                        <span>🎯 Исполнитель: <?php echo htmlspecialchars($task['assigned_name']); ?></span>
+                                        <span class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            Исполнитель: <?php echo htmlspecialchars($task['assigned_name']); ?>
+                                        </span>
                                     <?php else: ?>
-                                        <span>🎯 Общая задача</span>
+                                        <span class="flex items-center text-orange-600 font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            Общая задача
+                                        </span>
                                     <?php endif; ?>
-                                    <span>📅 Создано: <?php echo date('d.m.Y H:i', strtotime($task['created_at'])); ?></span>
+                                    <span class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Создано: <?php echo date('d.m.Y H:i', strtotime($task['created_at'])); ?>
+                                    </span>
                                     <?php if ($task['due_date']): ?>
-                                        <span
-                                            class="<?php echo strtotime($task['due_date']) < time() && $task['status'] !== 'completed' ? 'text-red-600 font-medium' : ''; ?>">
-                                            ⏰ Срок: <?php echo date('d.m.Y H:i', strtotime($task['due_date'])); ?>
+                                        <span class="flex items-center <?php echo strtotime($task['due_date']) < time() && $task['status'] !== 'completed' ? 'text-red-600 font-medium' : ''; ?>">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 <?php echo strtotime($task['due_date']) < time() && $task['status'] !== 'completed' ? 'text-red-600' : 'text-[#118568]'; ?>" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Срок: <?php echo date('d.m.Y H:i', strtotime($task['due_date'])); ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
@@ -397,16 +440,16 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                     'cancelled' => '❌ Отменено'
                                 ];
                                 ?>
-                                <span class="px-3 py-1 text-sm rounded-full <?php echo $status_colors[$task['status']]; ?>">
+                                <span class="px-3 py-1 text-sm rounded-full <?php echo $status_colors[$task['status']]; ?> font-medium whitespace-nowrap">
                                     <?php echo $status_names[$task['status']]; ?>
                                 </span>
 
                                 <!-- Форма изменения статуса -->
-                                <form method="post" class="flex gap-2">
+                                <form method="post" class="flex gap-2 flex-wrap">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="task_id" value="<?php echo $task['id']; ?>">
                                     <select name="status"
-                                        class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                                        class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-all duration-300">
                                         <option value="pending" <?php if ($task['status'] === 'pending')
                                             echo 'selected'; ?>>⏳ В
                                             ожидании</option>
@@ -420,7 +463,7 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                             Отменено</option>
                                     </select>
                                     <button type="submit" name="update_status"
-                                        class="px-3 py-1 bg-[#118568] text-white text-sm rounded-lg hover:bg-[#0f755a] transition-colors duration-300">
+                                        class="px-3 py-1 bg-gradient-to-r from-[#118568] to-[#17B890] text-white text-sm rounded-lg hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap">
                                         Обновить
                                     </button>
                                 </form>
