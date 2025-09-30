@@ -279,7 +279,8 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                       <i class="fas fa-info-circle mr-2"></i>Инструкция по подключению:
                     </p>
                     <ol class="text-sm text-blue-600 space-y-1 ml-4">
-                      <li>1. Найдите в <a href="https://t.me/bzkprintbot">Telegram бота</a> нашей компании</li>
+                      <li>1. Найдите <a class="bg-green-200" href="https://t.me/bzkprintbot">Telegram
+                          бота</a> нашей компании</li>
                       <li>2. Отправьте команду: <code
                           class="bg-blue-100 px-2 py-1 rounded">/connect <?php echo htmlspecialchars($user['email']); ?></code>
                       </li>
