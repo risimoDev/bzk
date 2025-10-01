@@ -313,7 +313,7 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
                 <span class="text-xs mt-1">Кабинет</span> <!-- Добавлена подпись -->
               </button>
               <div
-                class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
+                class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-[100]">
                 <a href="/client/dashboard" class="block px-4 py-2 text-gray-800 hover:bg-litegray">Личный кабинет</a>
                 <a href="/client/orders" class="block px-4 py-2 text-gray-800 hover:bg-litegray">Мои заказы</a>
                 <a href="/client/settings" class="block px-4 py-2 text-gray-800 hover:bg-litegray">Настройки</a>
