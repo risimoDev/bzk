@@ -2,7 +2,7 @@
 $notifications = $pdo->query("SELECT * FROM notifications WHERE active = 1 ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 if ($notifications):
 ?>
-<div id="site-notifications" class="fixed bottom-4 right-4 space-y-2 z-[9999] w-64 sm:w-80 md:top-20 pt-16 md:pt-0">
+<div id="site-notifications" class="fixed bottom-4 right-4 space-y-2 z-[90] w-64 sm:w-80 md:top-20 pt-16 md:pt-0">
   <?php foreach ($notifications as $n): ?>
     <div data-id="<?= $n['id'] ?>" 
          class="notification p-2 rounded-md shadow-lg flex justify-between items-start transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl
