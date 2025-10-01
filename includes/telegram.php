@@ -166,10 +166,14 @@ class TelegramBot
      */
     public function handleCallbackQuery($callback_query)
     {
+        file_put_contents(__DIR__ . "/callback_debug.log", print_r($callback_query, true), FILE_APPEND);
+
         global $pdo;
 
         $data = $callback_query['data'] ?? '';
-        $chat_id = $callback_query['message']['chat']['id'] ?? '';
+        $chat_id = $callback_query['message']['chat']['id'] 
+            ?? $callback_query['from']['id'] 
+            ?? '';
         $message_id = $callback_query['message']['message_id'] ?? '';
 
         if (preg_match('/^task_status_(\d+)_(\w+)$/', $data, $matches)) {
