@@ -2,14 +2,14 @@
 $notifications = $pdo->query("SELECT * FROM notifications WHERE active = 1 ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 if ($notifications):
 ?>
-<div id="site-notifications" class="fixed bottom-4 right-4 space-y-2 z-[90] w-64 sm:w-80 md:top-20 pt-16 md:pt-0">
+<div id="site-notifications" class="fixed bottom-4 right-4 space-y-2 z-[90] w-64 sm:w-80 md:top-20 pt-16 md:pt-0 pointer-events-none">
   <?php foreach ($notifications as $n): ?>
     <div data-id="<?= $n['id'] ?>" 
          class="notification p-2 rounded-md shadow-lg flex justify-between items-start transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl
          <?= $n['type']=='success'?'bg-gradient-to-r from-green-500 to-green-600':
             ($n['type']=='warning'?'bg-gradient-to-r from-yellow-500 to-yellow-600':
             ($n['type']=='error'?'bg-gradient-to-r from-red-500 to-red-600':
-            'bg-gradient-to-r from-blue-500 to-blue-600')) ?> text-white animate-slideIn max-w-xs">
+            'bg-gradient-to-r from-blue-500 to-blue-600')) ?> text-white animate-slideIn max-w-xs pointer-events-auto">
       <div class="flex-1">
         <div class="flex items-center mb-1">
           <h4 class="font-bold text-sm mr-1"><?= htmlspecialchars($n['title']) ?></h4>
