@@ -162,6 +162,80 @@ class TelegramBot
     }
 
     /**
+     * Send task assignment notification to all admins and managers
+     */
+    public function sendTaskAssignmentToAll($task_data, $creator_user)
+    {
+        global $pdo;
+        
+        // Получаем всех администраторов и менеджеров с настроенным Telegram ID
+        $stmt = $pdo->prepare("
+            SELECT id, name, telegram_chat_id 
+            FROM users 
+            WHERE role IN ('admin', 'manager') 
+            AND is_blocked = 0 
+            AND telegram_chat_id IS NOT NULL 
+            AND telegram_chat_id != ''
+        ");
+        $stmt->execute();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $priority_emoji = [
+            'low' => '🟢',
+            'medium' => '🟡',
+            'high' => '🟠',
+            'urgent' => '🔴'
+        ];
+
+        $emoji = $priority_emoji[$task_data['priority']] ?? '⚪';
+
+        $message = "📋 <b>Новая общая задача!</b>\n\n";
+        $message .= "{$emoji} <b>Приоритет:</b> " . ucfirst($task_data['priority']) . "\n";
+        $message .= "📝 <b>Заголовок:</b> {$task_data['title']}\n\n";
+
+        if (!empty($task_data['task_items'])) {
+            $message .= "📋 <b>Пункты для выполнения:</b>\n";
+            $items = json_decode($task_data['task_items'], true);
+            if (is_array($items)) {
+                foreach ($items as $index => $item) {
+                    $num = $index + 1;
+                    $message .= "   {$num}. {$item}\n";
+                }
+            }
+            $message .= "\n";
+        }
+
+        if (!empty($task_data['description'])) {
+            $message .= "📄 <b>Описание:</b>\n{$task_data['description']}\n\n";
+        }
+
+        if (!empty($task_data['due_date'])) {
+            $due_date = date('d.m.Y H:i', strtotime($task_data['due_date']));
+            $message .= "⏰ <b>Срок выполнения:</b> {$due_date}\n";
+        }
+
+        $message .= "👤 <b>Создал:</b> {$creator_user['name']}\n";
+        $message .= "🎯 <b>Исполнитель:</b> Общая задача (для всех администраторов и менеджеров)\n";
+        $message .= "🆔 <b>ID задачи:</b> #{$task_data['id']}\n\n";
+        $message .= "🌐 Посмотреть все задачи: https://{$_SERVER['HTTP_HOST']}/admin/tasks";
+
+        $reply_markup = $this->generateTaskStatusKeyboard($task_data['id'], $task_data['status']);
+
+        // Отправляем уведомление каждому пользователю
+        $results = [];
+        foreach ($users as $user) {
+            $result = $this->sendToGroupAndUser($user['telegram_chat_id'], $message, 'HTML', $reply_markup);
+            $results[] = [
+                'user_id' => $user['id'],
+                'user_name' => $user['name'],
+                'result' => $result
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
      * Handle callback queries (button presses)
      */
     public function handleCallbackQuery($callback_query)
@@ -289,6 +363,7 @@ function sendTaskAssignmentNotification($task_id)
     $telegram = getTelegramBot();
 
     if ($task['assigned_to'] && $task['assigned_chat_id']) {
+        // Задача назначена конкретному пользователю
         $assigned_user = [
             'name' => $task['assigned_name'],
             'telegram_chat_id' => $task['assigned_chat_id']
@@ -297,7 +372,8 @@ function sendTaskAssignmentNotification($task_id)
 
         return $telegram->sendTaskAssignment($task, $assigned_user, $creator_user);
     } else {
+        // Общая задача - отправляем уведомления всем администраторам и менеджерам
         $creator_user = ['name' => $task['creator_name']];
-        return $telegram->sendTaskAssignment($task, ['name' => ''], $creator_user);
+        return $telegram->sendTaskAssignmentToAll($task, $creator_user);
     }
 }
