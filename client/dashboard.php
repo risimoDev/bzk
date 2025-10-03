@@ -384,7 +384,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
                 <div>
                   <h4 class="font-bold text-gray-800 text-lg">История заказов</h4>
-                  <p class="text-sm text-gray-600">Просмотр всех ваших заказов</p>
+                 
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
               </a>
@@ -397,10 +397,25 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
                 <div>
                   <h4 class="font-bold text-gray-800 text-lg">Настройки</h4>
-                  <p class="text-sm text-gray-700">Безопасность и пароль</p>
+                  
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
               </a>
+             <?php if ($user['mini_warehouse_enabled']): ?>
+              <a href="/client/mini_warehouse"
+                class="nav-item flex items-center p-5 bg-gradient-to-r from-[#DEE5E5] to-[#9DC5BB] rounded-xl hover:from-[#9DC5BB] hover:to-[#5E807F] transition-all duration-300 group shadow-md hover:shadow-lg">
+                <div
+                  class="w-14 h-14 bg-gradient-to-br from-[#3f7769] to-[#17B890] rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <i class="fas fa-warehouse text-white text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800 text-lg">Мини склад</h4>
+                  
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
+              </a>
+            <?php endif; ?>
+
 
               <a href="/logout"
                 class="nav-item flex items-center p-5 bg-gradient-to-r from-red-50 to-red-100 rounded-xl hover:from-red-100 hover:to-red-200 transition-all duration-300 group shadow-md hover:shadow-lg">

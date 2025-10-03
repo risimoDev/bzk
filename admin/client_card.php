@@ -90,6 +90,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_deletion'])) {
     exit();
 }
 
+// Обработка включения/выключения мини-склада
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_mini_warehouse'])) {
+    $client_id = intval($_POST['client_id']);
+    $enabled = intval($_POST['enabled']);
+    
+    $stmt = $pdo->prepare("UPDATE users SET mini_warehouse_enabled = ? WHERE id = ?");
+    $stmt->execute([$enabled, $client_id]);
+    
+    $status = $enabled ? 'включен' : 'выключен';
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => "Мини-склад для клиента {$status}."];
+    header("Location: client_card.php?id=" . $client_id);
+    exit();
+}
+
 // Получение ID клиента из параметров
 $client_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
@@ -147,6 +161,11 @@ $corporate_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stmt = $pdo->prepare("SELECT * FROM account_deletion_requests WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->execute([$client_id]);
 $account_deletion_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Получение товаров из мини-склада клиента
+$stmt = $pdo->prepare("SELECT * FROM mini_warehouse_items WHERE user_id = ? ORDER BY created_at DESC");
+$stmt->execute([$client_id]);
+$mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <?php include_once('../includes/header.php'); ?>
 
@@ -205,68 +224,105 @@ $account_deletion_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
       </div>
 
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 mb-3">Дополнительная информация</h3>
-        <div class="space-y-2">
-          <p><span class="font-medium">Дата регистрации:</span> 
-            <?php echo date('d.m.Y H:i', strtotime($client['created_at'])); ?>
-          </p>
-          <p><span class="font-medium">Последняя активность:</span> 
-            <?php echo !empty($client['last_activity']) ? date('d.m.Y H:i', strtotime($client['last_activity'])) : 'Неизвестно'; ?>
-          </p>
-          <p><span class="font-medium">Статус онлайн:</span> 
-            <?php echo $client['is_online'] ? 'Онлайн' : 'Офлайн'; ?>
-          </p>
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Настройки мини-склада</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span>Мини-склад:</span>
+            <?php if ($client['mini_warehouse_enabled']): ?>
+              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">Включен</span>
+            <?php else: ?>
+              <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-sm">Выключен</span>
+            <?php endif; ?>
+          </div>
+          
+          <form method="post" class="mt-3">
+            <input type="hidden" name="client_id" value="<?php echo $client['id']; ?>">
+            <?php if ($client['mini_warehouse_enabled']): ?>
+              <input type="hidden" name="enabled" value="0">
+              <button type="submit" name="toggle_mini_warehouse"
+                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 text-sm">
+                <i class="fas fa-times mr-2"></i>Выключить мини-склад
+              </button>
+            <?php else: ?>
+              <input type="hidden" name="enabled" value="1">
+              <button type="submit" name="toggle_mini_warehouse"
+                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 text-sm">
+                <i class="fas fa-check mr-2"></i>Включить мини-склад
+              </button>
+            <?php endif; ?>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Статистика клиента -->
+    <div class="mt-8">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Статистика</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 rounded-xl p-4">
+          <div class="text-2xl font-bold text-blue-800"><?php echo count($orders); ?></div>
+          <div class="text-blue-600">Всего заказов</div>
+        </div>
+        <div class="bg-green-50 rounded-xl p-4">
+          <div class="text-2xl font-bold text-green-800">
+            <?php 
+            $total_spent = array_sum(array_column($orders, 'total'));
+            echo number_format($total_spent, 2, '.', ' ');
+            ?> ₽
+          </div>
+          <div class="text-green-600">Общая сумма</div>
+        </div>
+        <div class="bg-purple-50 rounded-xl p-4">
+          <div class="text-2xl font-bold text-purple-800">
+            <?php echo $client['mini_warehouse_enabled'] ? 'Да' : 'Нет'; ?>
+          </div>
+          <div class="text-purple-600">Мини-склад</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Последний заказ -->
-  <?php if ($last_order): ?>
-  <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Последний заказ</h2>
-    <div class="border border-gray-200 rounded-xl p-4">
-      <div class="flex justify-between items-center mb-3">
-        <div>
-          <p class="font-medium">Заказ #<?php echo $last_order['id']; ?></p>
-          <p class="text-gray-600 text-sm"><?php echo date('d.m.Y H:i', strtotime($last_order['created_at'])); ?></p>
-        </div>
-        <span class="px-3 py-1 rounded-full text-sm 
-          <?php
-          $status_classes = [
-            'pending' => 'bg-yellow-100 text-yellow-800',
-            'processing' => 'bg-blue-100 text-blue-800',
-            'shipped' => 'bg-indigo-100 text-indigo-800',
-            'delivered' => 'bg-green-100 text-green-800',
-            'cancelled' => 'bg-red-100 text-red-800',
-            'completed' => 'bg-green-100 text-green-800'
-          ];
-          $status_texts = [
-            'pending' => 'В ожидании',
-            'processing' => 'В обработке',
-            'shipped' => 'Отправлен',
-            'delivered' => 'Доставлен',
-            'cancelled' => 'Отменен',
-            'completed' => 'Завершен'
-          ];
-          echo $status_classes[$last_order['status']] ?? 'bg-gray-100 text-gray-800';
-          ?>">
-          <?php echo $status_texts[$last_order['status']] ?? $last_order['status']; ?>
-        </span>
-      </div>
-      <p class="font-medium">Сумма: <?php echo number_format($last_order['total_price'], 2, '.', ' '); ?> ₽</p>
-      <p class="text-gray-600 text-sm mt-2">Адрес доставки: <?php echo htmlspecialchars($last_order['shipping_address']); ?></p>
-      <div class="mt-4">
-        <a href="order/details.php?id=<?php echo $last_order['id']; ?>" 
-           class="inline-flex items-center px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-200">
-          Подробнее
-        </a>
+  <!-- Товары из мини-склада -->
+  <?php if ($client['mini_warehouse_enabled'] && !empty($mini_warehouse_items)): ?>
+    <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Товары из мини-склада</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <?php foreach ($mini_warehouse_items as $item): ?>
+          <div class="border border-gray-200 rounded-xl p-5">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-lg font-semibold text-gray-800"><?php echo htmlspecialchars($item['name']); ?></h3>
+              <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                <?php echo $item['quantity']; ?> шт.
+              </span>
+            </div>
+            
+            <?php if (!empty($item['description'])): ?>
+              <p class="text-gray-600 text-sm mb-4"><?php echo htmlspecialchars($item['description']); ?></p>
+            <?php endif; ?>
+            
+            <div class="flex justify-between items-center mt-4">
+              <span class="text-xs text-gray-500">
+                Добавлено: <?php echo date('d.m.Y', strtotime($item['created_at'])); ?>
+              </span>
+              <span class="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
+                <?php 
+                $status_labels = [
+                  'in_stock' => 'На складе',
+                  'in_production' => 'В производстве',
+                  'shipped' => 'Отправлено',
+                  'returned' => 'Возвращено'
+                ];
+                echo $status_labels[$item['status']] ?? $item['status'];
+                ?>
+              </span>
+            </div>
+          </div>
+        <?php endforeach; ?>
       </div>
     </div>
-  </div>
   <?php endif; ?>
 
-  <!-- Все заказы клиента -->
+  <!-- Заказы клиента -->
   <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
     <h2 class="text-2xl font-bold text-gray-800 mb-4">Все заказы клиента (<?php echo count($orders); ?>)</h2>
     <?php if (!empty($orders)): ?>

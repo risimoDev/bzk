@@ -201,6 +201,7 @@ RewriteRule ^admin/suppliers/details$ admin/suppliers/details.php [L,QSA]
 RewriteRule ^client/dashboard$ client/dashboard.php [L,QSA]
 RewriteRule ^client/settings$ client/settings.php [L,QSA]
 RewriteRule ^client/orders$ client/orders.php [L,QSA]
+RewriteRule ^client/mini_warehouse$ client/mini_warehouse.php [L,QSA]
 
 # Custom error documents
 ErrorDocument 400 /404.php
