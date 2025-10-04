@@ -11,3 +11,4 @@ db.sql
 MAIL_SERVER_SETUP_GUIDE.md
 setup_mail_server.sh
 migrations
+update_mini_warehouse.sql
