@@ -11,8 +11,8 @@ $stmt = $pdo->prepare("SELECT * FROM seo_settings WHERE page = ?");
 $stmt->execute([$current_page]);
 $seo = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$meta_title = $seo['title'] ?? "Типография BZK-PRINT";
-$meta_description = $seo['description'] ?? "Описание по умолчанию";
+$meta_title = $seo['title'] ?? "BZK-PRINT";
+$meta_description = $seo['description'] ?? "Рекламно-производственная компания BZK-PRINT. Подберем для вас лучший продукт под ваш бюджет, даже в сжатые сроки";
 $meta_keywords = $seo['keywords'] ?? "";
 $og_title = $seo['og_title'] ?? $meta_title;
 $og_description = $seo['og_description'] ?? $meta_description;
@@ -54,7 +54,7 @@ include_once __DIR__ . '/notifications.php';
   <title><?= htmlspecialchars($meta_title) ?></title>
   <meta name="description" content="<?= htmlspecialchars($meta_description) ?>">
   <meta name="keywords" content="<?= htmlspecialchars($meta_keywords) ?>">
-
+  <link rel="icon" type="image/x-icon" href="../assets/images/favicon.ico">
   <!-- Open Graph -->
   <meta property="og:title" content="<?= htmlspecialchars($og_title) ?>">
   <meta property="og:description" content="<?= htmlspecialchars($og_description) ?>">

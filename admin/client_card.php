@@ -50,31 +50,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_corporate'])) 
     exit();
 }
 
-// Обработка одобрения удаления аккаунта
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_deletion'])) {
-    $request_id = intval($_POST['deletion_request_id']);
-    $admin_notes = $_POST['admin_notes'] ?? '';
-    
+// -------------------- Обработка запросов на удаление аккаунта --------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deletion_request_id'])) {
+    $request_id = (int) $_POST['deletion_request_id'];
+    $admin_notes = trim($_POST['admin_notes'] ?? '');
+
     // Получаем данные запроса
     $stmt = $pdo->prepare("SELECT * FROM account_deletion_requests WHERE id = ?");
     $stmt->execute([$request_id]);
     $request = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($request) {
-        // Обновляем статус запроса
-        $stmt = $pdo->prepare("UPDATE account_deletion_requests SET status = 'approved', admin_notes = ? WHERE id = ?");
-        $stmt->execute([$admin_notes, $request_id]);
-        
-        // Здесь можно добавить логику фактического удаления аккаунта или пометки его как удаленного
-        // Для безопасности мы просто помечаем аккаунт как удаленный, а не удаляем его физически
+
+    if (!$request) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Запрос не найден.'];
+        header("Location: client_card.php?id=" . htmlspecialchars($_GET['id'] ?? $client_id));
+        exit();
+    }
+
+    // Определяем действие
+    $action = isset($_POST['approve_deletion']) ? 'approved' :
+              (isset($_POST['reject_deletion']) ? 'rejected' : null);
+
+    if (!$action) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не указано действие.'];
+        header("Location: client_card.php?id=" . htmlspecialchars($request['user_id']));
+        exit();
+    }
+
+    // Обновляем статус запроса
+    $stmt = $pdo->prepare("UPDATE account_deletion_requests SET status = ?, admin_notes = ? WHERE id = ?");
+    $stmt->execute([$action, $admin_notes, $request_id]);
+
+    if ($action === 'approved') {
+        // Мягкое удаление аккаунта
         $stmt = $pdo->prepare("UPDATE users SET is_blocked = 1 WHERE id = ?");
         $stmt->execute([$request['user_id']]);
-        
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта одобрен.'];
+        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта одобрен. Аккаунт заблокирован.'];
+    } else {
+        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта отклонён.'];
     }
-    header("Location: client_card.php?id=" . $request['user_id']);
+
+    header("Location: client_card.php?id=" . htmlspecialchars($request['user_id']));
     exit();
 }
+// -------------------------------------------------------------------------------
 
 // Обработка отклонения удаления аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_deletion'])) {
