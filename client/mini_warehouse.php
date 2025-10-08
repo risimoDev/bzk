@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/security.php';
 $pageTitle = "Мини-склад";
 
 // Подключение к базе данных
@@ -26,6 +27,7 @@ if (!$user || !$user['mini_warehouse_enabled']) {
 
 // Обработка добавления нового товара
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_item'])) {
+  verify_csrf();
   $name = trim($_POST['name']);
   $description = trim($_POST['description']);
   $quantity = intval($_POST['quantity']);
@@ -52,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_item'])) {
 
 // Обработка удаления товара
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_item'])) {
+  verify_csrf();
   $item_id = intval($_POST['item_id']);
   
   // Проверяем, что товар принадлежит текущему пользователю и получаем его данные
@@ -220,6 +223,7 @@ if (isset($_SESSION['notifications'])) {
       <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 animate-fade-up" style="animation-delay: 0.4s">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Добавить футболку</h2>
         <form method="post" class="space-y-4">
+          <?php echo csrf_field(); ?>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
@@ -288,6 +292,7 @@ if (isset($_SESSION['notifications'])) {
                   </span>
                   
                   <form method="post" class="inline">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
                     <button type="submit" name="delete_item"
                       class="text-red-500 hover:text-red-700 transition-colors duration-300"

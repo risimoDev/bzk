@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/security.php';
 $pageTitle = "Карточка клиента";
 
 // Проверка авторизации
@@ -13,6 +14,7 @@ include_once('../includes/db.php');
 
 // Обработка одобрения корпоративного аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_corporate'])) {
+    verify_csrf();
     $request_id = intval($_POST['request_id']);
     $admin_notes = $_POST['admin_notes'] ?? '';
     
@@ -38,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_corporate']))
 
 // Обработка отклонения корпоративного аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_corporate'])) {
+    verify_csrf();
     $request_id = intval($_POST['request_id']);
     $admin_notes = $_POST['admin_notes'] ?? '';
     
@@ -52,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_corporate'])) 
 
 // -------------------- Обработка запросов на удаление аккаунта --------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deletion_request_id'])) {
+    verify_csrf();
     $request_id = (int) $_POST['deletion_request_id'];
     $admin_notes = trim($_POST['admin_notes'] ?? '');
 
@@ -96,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deletion_request_id']
 
 // Обработка отклонения удаления аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_deletion'])) {
+    verify_csrf();
     $request_id = intval($_POST['deletion_request_id']);
     $admin_notes = $_POST['admin_notes'] ?? '';
     
@@ -110,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_deletion'])) {
 
 // Обработка включения/выключения мини-склада
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_mini_warehouse'])) {
+    verify_csrf();
     $client_id = intval($_POST['client_id']);
     $enabled = intval($_POST['enabled']);
     

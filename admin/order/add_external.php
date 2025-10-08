@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 
 require_once '../../includes/db.php';
 require_once '../buhgalt/functions.php';
+require_once '../../includes/security.php';
 
 // Обработка уведомлений
 $notifications = [];
@@ -24,6 +25,7 @@ if (isset($_SESSION['notifications'])) {
 
 // Обработка формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  verify_csrf();
   $client_name = trim($_POST['client_name']);
   $email = trim($_POST['email']);
   $phone = trim($_POST['phone']);
@@ -160,6 +162,7 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Форма -->
     <div class="bg-white rounded-3xl shadow-xl p-8">
       <form method="POST" class="space-y-10">
+        <?php echo csrf_field(); ?>
         <!-- Клиент -->
         <section>
           <h2 class="text-2xl font-bold text-gray-800 mb-6">Информация о клиенте</h2>

@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 require_once '../../includes/db.php';
-require_once '../../includes/telegram.php';
+require_once '../../includes/security.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -48,6 +48,7 @@ if ($message['status'] === 'sent') {
 
 // Обработка запуска отправки
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send') {
+    verify_csrf();
     try {
         // Обновляем статус на "отправляется"
         $stmt = $pdo->prepare("UPDATE mass_messages SET status = 'sending' WHERE id = ?");
@@ -328,13 +329,19 @@ foreach ($recipients as $recipient) {
                     <div class="bg-white rounded-3xl shadow-xl p-6">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Управление</h3>
 
-                        <form method="POST" id="send-form">
+                        <form method="POST" class="space-y-6">
+                            <?php echo csrf_field(); ?>
                             <input type="hidden" name="action" value="send">
-                            <button type="submit"
-                                class="w-full py-3 bg-gradient-to-r from-[#118568] to-[#0f755a] text-white rounded-lg hover:scale-105 transition font-medium"
-                                onclick="return confirm('Вы уверены, что хотите начать отправку рассылки?')">
-                                🚀 Начать отправку
-                            </button>
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <button type="submit"
+                                    class="flex-1 px-6 py-3 bg-gradient-to-r from-[#118568] to-[#17B890] text-white rounded-xl hover:from-[#0f755a] hover:to-[#14a380] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
+                                    🚀 Начать отправку
+                                </button>
+                                <a href="/admin/messaging/"
+                                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors duration-300 font-bold text-lg text-center">
+                                    Отмена
+                                </a>
+                            </div>
                         </form>
 
                         <div class="mt-4 p-4 bg-blue-50 rounded-lg">

@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/security.php';
 $pageTitle = "Настройки аккаунта";
 
 // Подключение к базе данных
@@ -32,6 +33,7 @@ try {
 
 // Обработка изменения персональных данных
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    verify_csrf();
     $full_name = $_POST['full_name'];
     $phone = $_POST['phone'];
     // Fix for birthday issue - handle empty string properly
@@ -48,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
 // Обработка изменения пароля
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    verify_csrf();
     $password = $_POST['password'];
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
@@ -75,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
 
 // Обработка изменения настроек уведомлений
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_notifications'])) {
+    verify_csrf();
     if ($notifications_enabled) {
         $email_notifications = isset($_POST['email_notifications']) ? 1 : 0;
         $sms_notifications = isset($_POST['sms_notifications']) ? 1 : 0;
@@ -94,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_notifications'
 
 // Обработка запроса на корпоративный аккаунт
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_corporate'])) {
+    verify_csrf();
     $company_name = $_POST['company_name'];
     $inn = $_POST['inn'];
     $kpp = $_POST['kpp'] ?? '';
@@ -119,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_corporate'])) {
 
 // Обработка запроса на удаление аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_account'])) {
+    verify_csrf();
     $reason = $_POST['deletion_reason'] ?? '';
     
     // Check if user already has a pending deletion request
@@ -141,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_account'])) {
 
 // Обработка отключения Telegram
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disconnect_telegram'])) {
+    verify_csrf();
     try {
         $stmt = $pdo->prepare("UPDATE users SET telegram_chat_id = NULL, telegram_notifications = 0 WHERE id = ?");
         if ($stmt->execute([$user_id])) {
@@ -259,6 +266,7 @@ $has_pending_deletion_request = $stmt->fetch();
       </div>
 
       <form action="" method="POST" class="p-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="update_profile" value="1">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -322,6 +330,7 @@ $has_pending_deletion_request = $stmt->fetch();
       </div>
 
       <form action="" method="POST" class="p-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="change_password" value="1">
         <div class="mb-8">
           <div class="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-200">
@@ -411,6 +420,7 @@ $has_pending_deletion_request = $stmt->fetch();
       </div>
 
       <form action="" method="POST" class="p-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="update_notifications" value="1">
         <div class="space-y-6">
           <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow border border-gray-200">
@@ -503,6 +513,7 @@ $has_pending_deletion_request = $stmt->fetch();
       </div>
       <?php else: ?>
       <form action="" method="POST" class="p-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="make_corporate" value="1">
         <div class="mb-8">
           <div class="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-200">
@@ -607,6 +618,7 @@ $has_pending_deletion_request = $stmt->fetch();
               <p class="text-gray-600 text-sm">Вы больше не будете получать уведомления в Telegram</p>
             </div>
             <form method="POST">
+              <?php echo csrf_field(); ?>
               <input type="hidden" name="disconnect_telegram" value="1">
               <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 font-medium">
                 Отключить
@@ -714,6 +726,7 @@ $has_pending_deletion_request = $stmt->fetch();
         </div>
         <?php else: ?>
         <form method="POST">
+          <?php echo csrf_field(); ?>
           <input type="hidden" name="delete_account" value="1">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>

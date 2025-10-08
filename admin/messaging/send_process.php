@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 
 require_once '../../includes/db.php';
 require_once '../../includes/telegram.php';
-
+require_once '../../includes/security.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;

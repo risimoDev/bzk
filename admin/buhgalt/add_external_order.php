@@ -19,6 +19,7 @@ if (isset($_SESSION['notifications'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $client_name = trim($_POST['client_name'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $income = floatval($_POST['income'] ?? 0);
@@ -83,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="bg-white rounded-3xl shadow-2xl p-6">
       <form action="" method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <div>
           <label for="client_name" class="block text-gray-700 font-medium mb-2">Имя клиента *</label>
           <input type="text" id="client_name" name="client_name" 

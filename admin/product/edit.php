@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 
 // Подключение к базе данных
 include_once('../../includes/db.php');
+require_once '../../includes/security.php';
 
 $product_id = $_GET['id'] ?? null;
 
@@ -30,6 +31,7 @@ if (isset($_SESSION['notifications'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
     $base_price = $_POST['base_price'];
@@ -173,6 +175,7 @@ $orders_count = $stmt_orders->fetchColumn();
           <h2 class="text-2xl font-bold text-gray-800 mb-6">Основная информация</h2>
           
           <form action="" method="POST" class="space-y-6">
+            <?php echo csrf_field(); ?>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <label for="name" class="block text-gray-700 font-medium mb-2">Название товара *</label>
@@ -323,6 +326,7 @@ $orders_count = $stmt_orders->fetchColumn();
             </table>
                   
             <form method="post" action="add_price_range.php" class="flex flex-wrap gap-3 items-end">
+              <?php echo csrf_field(); ?>
               <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
               
               <div>

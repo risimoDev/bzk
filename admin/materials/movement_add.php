@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 include_once('../../includes/db.php');
-
+require_once '../../includes/security.php';
 $material_id = $_GET['material_id'] ?? null;
 $stmt = $pdo->prepare("SELECT * FROM materials WHERE id=?");
 $stmt->execute([$material_id]);
@@ -17,6 +17,7 @@ $material = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$material) { echo "Материал не найден"; exit(); }
 
 if ($_SERVER['REQUEST_METHOD']==='POST') {
+    verify_csrf();
     $type = $_POST['type'];
     $qty = floatval($_POST['quantity']);
     $comment = trim($_POST['comment']);
@@ -42,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
   <div class="container mx-auto max-w-3xl bg-white p-6 rounded-2xl shadow-lg">
     <h1 class="text-3xl font-bold mb-6">Движение: <?= htmlspecialchars($material['name']); ?></h1>
     <form method="post" class="space-y-4">
+      <?php echo csrf_field(); ?>
       <div>
         <label class="block mb-1">Тип движения</label>
         <select name="type" class="w-full border rounded px-3 py-2">

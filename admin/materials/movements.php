@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 include_once('../../includes/db.php');
-
+require_once '../../includes/security.php';
 $material_id = $_GET['material_id'] ?? null;
 $stmt = $pdo->prepare("SELECT * FROM materials WHERE id=?");
 $stmt->execute([$material_id]);

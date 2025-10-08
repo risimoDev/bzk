@@ -42,6 +42,7 @@ $stmt = $pdo->query("SELECT * FROM expenses_categories ORDER BY name");
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $category_id = !empty($_POST['category_id']) ? intval($_POST['category_id']) : null;
     $amount = floatval($_POST['amount'] ?? 0);
     $description = trim($_POST['description'] ?? '');
@@ -145,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
       <form action="" method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <div>
           <label for="category_id" class="block text-gray-700 font-medium mb-2">Категория расхода</label>
           <select id="category_id" name="category_id" 

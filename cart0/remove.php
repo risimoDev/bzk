@@ -1,5 +1,9 @@
 <?php
 session_start();
+require_once '../includes/security.php';
+
+// Verify CSRF token
+verify_csrf();
 
 include_once('../includes/db.php');
 

@@ -4,11 +4,14 @@ $pageTitle = "Сброс пароля";
 
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
+include_once __DIR__ . '/includes/security.php';
 
 $error_message = '';
 $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  verify_csrf();
+  
   $token = $_POST['token'] ?? '';
   $password = $_POST['password'] ?? '';
   $confirm_password = $_POST['confirm_password'] ?? '';
@@ -89,6 +92,7 @@ if (!$user && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     <!-- Форма -->
     <div class="bg-white rounded-3xl shadow-xl p-8">
       <form method="POST" class="space-y-6" id="reset-form">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
 
         <div>

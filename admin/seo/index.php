@@ -9,6 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 include_once('../../includes/db.php');
+include_once('../../includes/security.php');
 
 // Обработка уведомлений
 $notifications = [];
@@ -19,6 +20,7 @@ if (isset($_SESSION['notifications'])) {
 
 // Обработка формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $id = $_POST['id'] ?? null;
     $page = trim($_POST['page']);
     $title = trim($_POST['title']);
@@ -62,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Обработка удаления
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_seo'])) {
+    verify_csrf();
     $id = $_POST['delete_seo'];
     
     try {
@@ -214,6 +217,7 @@ $pages_with_og = array_filter($seo_list, function($seo) { return !empty($seo['og
                 </button>
                 
                 <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить SEO-настройки для страницы <?php echo htmlspecialchars($seo['page']); ?>?')" class="m-0">
+                  <?php echo csrf_field(); ?>
                   <input type="hidden" name="delete_seo" value="<?php echo $seo['id']; ?>">
                   <button type="submit" 
                           class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 text-sm font-medium">
@@ -232,6 +236,7 @@ $pages_with_og = array_filter($seo_list, function($seo) { return !empty($seo['og
       <h2 id="form-title" class="text-2xl font-bold text-gray-800 mb-6">Добавить SEO-настройки</h2>
       
       <form method="POST" class="space-y-8">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="id" id="seo-id">
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">

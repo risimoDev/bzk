@@ -46,6 +46,7 @@ $total_paid = $total_paid_result['total_paid'] ?? 0;
 $balance_due = $order['income'] - $total_paid; // Остаток к оплате
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $amount = floatval($_POST['amount'] ?? 0);
     $note = trim($_POST['note'] ?? '');
     // Можно добавить дату платежа, если нужно отличная от текущей
@@ -167,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
       <form action="" method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <div>
           <label for="amount" class="block text-gray-700 font-medium mb-2">Сумма платежа (руб.) *</label>
           <input type="number" step="0.01" id="amount" name="amount" 

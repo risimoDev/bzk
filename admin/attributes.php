@@ -34,6 +34,7 @@ if (isset($_SESSION['notifications'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     if (isset($_POST['action'])) {
         $action = $_POST['action'];
         
@@ -205,6 +206,7 @@ $choice_attributes = array_filter($attributes, function($attr) { return $attr['t
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Добавить новую характеристику</h2>
       
       <form action="" method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="add_attribute">
         <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
         
@@ -344,6 +346,7 @@ $choice_attributes = array_filter($attributes, function($attr) { return $attr['t
                   </a>
                   
                   <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить эту характеристику?')" class="m-0">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="action" value="delete_attribute">
                     <input type="hidden" name="attribute_id" value="<?php echo $attribute['id']; ?>">
                     <button type="submit" 

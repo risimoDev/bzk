@@ -34,6 +34,7 @@ if (!$product) {
 
 // Добавление / удаление материалов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $action = $_POST['action'] ?? null;
 
     if ($action === 'add_material') {
@@ -94,6 +95,7 @@ $product_materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="bg-white p-6 rounded-xl shadow mb-8">
       <h2 class="text-xl font-bold mb-4">Добавить материал</h2>
       <form method="POST">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="add_material">
         <div class="flex flex-wrap gap-4 items-end">
           <div>
@@ -139,6 +141,7 @@ $product_materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td class="p-2"><?= $pm['cost_per_unit'] ? number_format($pm['cost_per_unit'], 2, '.', ' ') . ' ₽' : '-'; ?></td>
                 <td class="p-2">
                   <form method="POST" onsubmit="return confirm('Удалить?')">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="action" value="delete_material">
                     <input type="hidden" name="id" value="<?= $pm['id']; ?>">
                     <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded">Удалить</button>

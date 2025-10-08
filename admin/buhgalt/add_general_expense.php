@@ -8,8 +8,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 include_once('../../includes/db.php');
-
+require_once '../../includes/security.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $category_id = intval($_POST['category_id'] ?? 0);
     $amount = floatval($_POST['amount'] ?? 0);
     $description = trim($_POST['description'] ?? '');
@@ -42,6 +43,7 @@ $categories = $pdo->query("SELECT * FROM expenses_categories ORDER BY name")->fe
       <h1 class="text-3xl font-bold text-gray-800 mb-6">Добавить общий расход</h1>
 
       <form method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <div>
           <label class="block text-gray-700 mb-2">Категория</label>
           <select name="category_id" class="w-full border rounded-lg px-3 py-2">

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/includes/security.php';
 $pageTitle = "Контакты";
 require_once __DIR__ . '/includes/db.php';
 
@@ -32,6 +33,7 @@ function verify_turnstile($token)
 
 // Обработка отправки формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
+  verify_csrf();
   $name = trim($_POST['name']);
   $email = trim($_POST['email']);
   $phone = trim($_POST['phone'] ?? '');
@@ -109,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
         <?php endif; ?>
 
         <form action="" method="POST" class="space-y-6">
+        <?php echo csrf_field(); ?>
           <div>
             <label for="name" class="block text-gray-700 font-medium mb-2 text-lg">Ваше имя *</label>
             <input type="text" id="name" name="name" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg"

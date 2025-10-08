@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 require_once '../../includes/db.php';
+require_once '../../includes/security.php';
 
 $message_id = intval($_GET['id'] ?? 0);
 
@@ -43,6 +44,7 @@ $notifications = [];
 
 // Обработка сохранения изменений
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
+    verify_csrf();
     $title = trim($_POST['title'] ?? '');
     $content = trim($_POST['content'] ?? '');
     $message_type = $_POST['message_type'] ?? 'both';
@@ -197,6 +199,7 @@ if (($message['target_audience'] ?? '') === 'specific') {
     <?php endforeach; ?>
 
     <form method="POST" class="space-y-8">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="update">
 
       <!-- Основная информация -->

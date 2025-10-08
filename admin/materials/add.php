@@ -8,8 +8,9 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 include_once('../../includes/db.php');
-
+require_once '../../includes/security.php';
 if ($_SERVER['REQUEST_METHOD']==='POST') {
+    verify_csrf();
     $name = trim($_POST['name']);
     $unit = trim($_POST['unit']);
     $desc = trim($_POST['description']);
@@ -31,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
   <div class="container mx-auto max-w-3xl bg-white p-6 rounded-2xl shadow-lg">
     <h1 class="text-3xl font-bold mb-6">Добавить материал</h1>
     <form method="post" class="space-y-4">
+      <?php echo csrf_field(); ?>
       <div>
         <label class="block mb-1">Название *</label>
         <input type="text" name="name" class="w-full border rounded px-3 py-2" required>

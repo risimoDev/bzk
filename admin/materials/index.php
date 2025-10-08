@@ -10,13 +10,14 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 include_once('../../includes/db.php');
-
+require_once '../../includes/security.php';
 // Уведомления
 $notifications = $_SESSION['notifications'] ?? [];
 unset($_SESSION['notifications']);
 
 // Добавление материала
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  verify_csrf();
   $action = $_POST['action'] ?? '';
 
   if ($action === 'add_material') {
@@ -91,6 +92,7 @@ $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="bg-white p-6 rounded-xl shadow mb-8">
       <h2 class="text-xl font-bold mb-4">Добавить материал</h2>
       <form method="POST" class="flex flex-wrap gap-4 items-end">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="add_material">
         <div>
           <label class="block mb-1">Название</label>
@@ -139,6 +141,7 @@ $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
               </div>
 
               <form method="POST" class="space-y-3">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="update_material">
                 <input type="hidden" name="id" value="<?= $m['id']; ?>">
 
@@ -177,6 +180,7 @@ $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
               </form>
 
               <form method="POST" onsubmit="return confirm('Удалить материал?')" class="inline">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete_material">
                 <input type="hidden" name="id" value="<?= $m['id']; ?>">
                 <button type="submit"

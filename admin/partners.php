@@ -19,6 +19,7 @@ if (isset($_SESSION['notifications'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     if (isset($_FILES['logo']) && isset($_POST['name'])) {
         $name = trim($_POST['name']);
         $logo = $_FILES['logo'];
@@ -197,6 +198,7 @@ $total_partners = count($partners);
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Добавить нового партнера</h2>
       
       <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <?php echo csrf_field(); ?>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <label for="name" class="block text-gray-700 font-medium mb-2">Название партнера *</label>
@@ -262,6 +264,7 @@ $total_partners = count($partners);
                 
                 <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <form action="" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этого партнера?')" class="m-0">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="delete_partner_id" value="<?php echo $partner['id']; ?>">
                     <button type="submit" 
                             class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 flex items-center"

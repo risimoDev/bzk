@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../../includes/security.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
@@ -12,6 +13,9 @@ include_once('../../includes/db.php');
 // Возможные сценарии:
 // - POST { all: 1 } пометить все новые заказы как прочитанные
 // - POST { order_id: 123 } пометить конкретный заказ
+
+// Verify CSRF token
+verify_csrf();
 
 try {
     if (isset($_POST['all']) && $_POST['all'] == '1') {

@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 
 require_once '../../includes/db.php';
 require_once '../../includes/telegram.php';
-
+require_once '../../includes/security.php';
 // Обработка уведомлений
 $notifications = [];
 if (isset($_SESSION['notifications'])) {
@@ -19,6 +19,7 @@ if (isset($_SESSION['notifications'])) {
 
 // Обработка формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $title = trim($_POST['title'] ?? '');
     $content = trim($_POST['content'] ?? '');
     $message_type = $_POST['message_type'] ?? 'both';
@@ -190,6 +191,7 @@ $users = $users_stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Форма -->
         <div class="bg-white rounded-3xl shadow-xl p-8">
             <form method="POST" class="space-y-8" id="message-form">
+                <?php echo csrf_field(); ?>
 
                 <!-- Основная информация -->
                 <section>
