@@ -9,10 +9,10 @@ $smtp_config = [
     'host' => 'mail.hosting.reg.ru',
     'port' => 465,
     'encryption' => 'STARTTLS',
-    'username' => 'mailer@bzkprint.ru',
+    'username' => 'admin@bzkprint.ru',
     'password' => '42Y-kPa-28M-sic',
-    'from_email' => 'mailer@bzkprint.ru',
-    'from_name' => 'BZK Print'
+    'from_email' => 'admin@bzkprint.ru',
+    'from_name' => 'BZK-PRINT'
 ];
 
 echo "Updating email configuration...\n";
