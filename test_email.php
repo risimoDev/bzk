@@ -34,7 +34,7 @@ try {
     $mail->SMTPAuth   = true;
     $mail->Username   = $smtp_username;
     $mail->Password   = $smtp_password;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port       = $smtp_port;
     $mail->CharSet    = 'UTF-8';
 
