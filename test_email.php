@@ -15,12 +15,12 @@ if (file_exists(__DIR__ . '/.env')) {
 }
 
 // Настройки из .env или по умолчанию
-$smtp_host     = $_ENV['SMTP_HOST'] ?? 'smtp.yandex.ru';
-$smtp_port     = $_ENV['SMTP_PORT'] ?? 587;
-$smtp_username = $_ENV['SMTP_USERNAME'] ?? 'risimo2014@yandex.ru'; // ваш ящик
-$smtp_password = $_ENV['SMTP_PASSWORD'] ?? ''; // ← ОБЯЗАТЕЛЬНО укажите в .env!
-$from_email    = $_ENV['SMTP_FROM_EMAIL'] ?? 'risimo2014@yandex.ru';
-$from_name     = $_ENV['SMTP_FROM_NAME'] ?? 'BZK Print — Тест';
+$smtp_host     = $_ENV['SMTP_HOST'];
+$smtp_port     = $_ENV['SMTP_PORT'];
+$smtp_username = $_ENV['SMTP_USERNAME']; // ваш ящик
+$smtp_password = $_ENV['SMTP_PASSWORD']; // ← ОБЯЗАТЕЛЬНО укажите в .env!
+$from_email    = $_ENV['SMTP_FROM_EMAIL'];
+$from_name     = $_ENV['SMTP_FROM_NAME'];
 
 $to_email = 'risimo2014@yandex.ru';
 $to_name  = 'Тестовый получатель';
@@ -34,7 +34,7 @@ try {
     $mail->SMTPAuth   = true;
     $mail->Username   = $smtp_username;
     $mail->Password   = $smtp_password;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    $mail->SMTPSecure = "ssl";
     $mail->Port       = $smtp_port;
     $mail->CharSet    = 'UTF-8';
 
