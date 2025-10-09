@@ -3,39 +3,39 @@ session_start();
 $pageTitle = "Добавить общий расход";
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: /login");
-    exit();
+  header("Location: /login");
+  exit();
 }
 
 include_once('../../includes/db.php');
 require_once '../../includes/security.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf();
-    $category_id = intval($_POST['category_id'] ?? 0);
-    $amount = floatval($_POST['amount'] ?? 0);
-    $description = trim($_POST['description'] ?? '');
-    $expense_date = $_POST['expense_date'] ?? date('Y-m-d H:i:s');
+  verify_csrf();
+  $category_id = intval($_POST['category_id'] ?? 0);
+  $amount = floatval($_POST['amount'] ?? 0);
+  $description = trim($_POST['description'] ?? '');
+  $expense_date = $_POST['expense_date'] ?? date('Y-m-d H:i:s');
 
-    if ($amount > 0) {
-        $stmt = $pdo->prepare("
+  if ($amount > 0) {
+    $stmt = $pdo->prepare("
             INSERT INTO general_expenses (category_id, amount, description, expense_date)
             VALUES (?, ?, ?, ?)
         ");
-        $stmt->execute([$category_id, $amount, $description, $expense_date]);
+    $stmt->execute([$category_id, $amount, $description, $expense_date]);
 
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Расход добавлен.'];
-        header("Location: index.php");
-        exit();
-    } else {
-        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Введите корректную сумму.'];
-    }
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Расход добавлен.'];
+    header("Location: index.php");
+    exit();
+  } else {
+    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Введите корректную сумму.'];
+  }
 }
 
 // категории
 $categories = $pdo->query("SELECT * FROM expenses_categories ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include_once('../../includes/header.php');?>
+<?php include_once('../../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-3xl">

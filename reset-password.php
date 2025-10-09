@@ -11,7 +11,7 @@ $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   verify_csrf();
-  
+
   $token = $_POST['token'] ?? '';
   $password = $_POST['password'] ?? '';
   $confirm_password = $_POST['confirm_password'] ?? '';

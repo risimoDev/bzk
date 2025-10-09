@@ -254,7 +254,8 @@ foreach ($recipients as $recipient) {
                                                 <div>
                                                     <p class="font-semibold"><?php echo htmlspecialchars($name); ?></p>
                                                     <p class="text-sm text-gray-600">
-                                                        <?php echo htmlspecialchars($email ?: 'Нет email'); ?></p>
+                                                        <?php echo htmlspecialchars($email ?: 'Нет email'); ?>
+                                                    </p>
                                                 </div>
                                             </td>
                                             <td class="py-4 px-4 text-center">

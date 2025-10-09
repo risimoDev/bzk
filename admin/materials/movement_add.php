@@ -4,7 +4,8 @@ session_start();
 $pageTitle = "Движение материала";
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
-    header("Location: /login"); exit();
+  header("Location: /login");
+  exit();
 }
 
 include_once('../../includes/db.php');
@@ -14,30 +15,34 @@ $stmt = $pdo->prepare("SELECT * FROM materials WHERE id=?");
 $stmt->execute([$material_id]);
 $material = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$material) { echo "Материал не найден"; exit(); }
+if (!$material) {
+  echo "Материал не найден";
+  exit();
+}
 
-if ($_SERVER['REQUEST_METHOD']==='POST') {
-    verify_csrf();
-    $type = $_POST['type'];
-    $qty = floatval($_POST['quantity']);
-    $comment = trim($_POST['comment']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  verify_csrf();
+  $type = $_POST['type'];
+  $qty = floatval($_POST['quantity']);
+  $comment = trim($_POST['comment']);
 
-    if ($qty>0) {
-        $stmt = $pdo->prepare("INSERT INTO materials_movements (material_id,type,quantity,reference_type,comment) VALUES (?,?,?,?,?)");
-        $stmt->execute([$material_id,$type,$qty,'manual',$comment]);
+  if ($qty > 0) {
+    $stmt = $pdo->prepare("INSERT INTO materials_movements (material_id,type,quantity,reference_type,comment) VALUES (?,?,?,?,?)");
+    $stmt->execute([$material_id, $type, $qty, 'manual', $comment]);
 
-        // Обновляем остаток
-        $stmtStock = $pdo->prepare("INSERT INTO materials_stock (material_id,quantity) VALUES (?,?)
-            ON DUPLICATE KEY UPDATE quantity = quantity " . ($type==='in'?'+':'-') . " VALUES(quantity)");
-        $stmtStock->execute([$material_id,$qty]);
+    // Обновляем остаток
+    $stmtStock = $pdo->prepare("INSERT INTO materials_stock (material_id,quantity) VALUES (?,?)
+            ON DUPLICATE KEY UPDATE quantity = quantity " . ($type === 'in' ? '+' : '-') . " VALUES(quantity)");
+    $stmtStock->execute([$material_id, $qty]);
 
-        $_SESSION['notifications'][]=['type'=>'success','message'=>'Движение записано'];
-        header("Location: index.php"); exit();
-    }
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Движение записано'];
+    header("Location: index.php");
+    exit();
+  }
 }
 ?>
 
-<?php include_once('../../includes/header.php');?>
+<?php include_once('../../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gray-100 py-8">
   <div class="container mx-auto max-w-3xl bg-white p-6 rounded-2xl shadow-lg">

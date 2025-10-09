@@ -31,19 +31,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_item'])) {
   $name = trim($_POST['name']);
   $description = trim($_POST['description']);
   $quantity = intval($_POST['quantity']);
-  
+
   if (!empty($name) && $quantity > 0) {
     $stmt = $pdo->prepare("INSERT INTO mini_warehouse_items (user_id, name, description, quantity) VALUES (?, ?, ?, ?)");
     $stmt->execute([$user_id, $name, $description, $quantity]);
-    
+
     // Отправляем уведомление
     $item_data = [
-        'name' => $name,
-        'description' => $description,
-        'quantity' => $quantity
+      'name' => $name,
+      'description' => $description,
+      'quantity' => $quantity
     ];
     sendMiniWarehouseItemAddedNotification($user_id, $item_data);
-    
+
     $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Товар успешно добавлен на склад.'];
     header("Location: mini_warehouse.php");
     exit();
@@ -56,24 +56,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_item'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_item'])) {
   verify_csrf();
   $item_id = intval($_POST['item_id']);
-  
+
   // Проверяем, что товар принадлежит текущему пользователю и получаем его данные
   $stmt = $pdo->prepare("SELECT * FROM mini_warehouse_items WHERE id = ? AND user_id = ?");
   $stmt->execute([$item_id, $user_id]);
   $item = $stmt->fetch(PDO::FETCH_ASSOC);
-  
+
   if ($item) {
     // Отправляем уведомление перед удалением
     sendMiniWarehouseItemRemovedNotification($user_id, $item);
-    
+
     $stmt = $pdo->prepare("DELETE FROM mini_warehouse_items WHERE id = ?");
     $stmt->execute([$item_id]);
-    
+
     $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Товар успешно удален со склада.'];
   } else {
     $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка удаления товара.'];
   }
-  
+
   header("Location: mini_warehouse.php");
   exit();
 }
@@ -213,7 +213,8 @@ if (isset($_SESSION['notifications'])) {
 
       <!-- Уведомления -->
       <?php foreach ($notifications as $notification): ?>
-        <div class="mb-6 p-4 rounded-xl animate-fade-up <?php echo $notification['type'] === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>"
+        <div
+          class="mb-6 p-4 rounded-xl animate-fade-up <?php echo $notification['type'] === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>"
           style="animation-delay: 0.3s">
           <?php echo htmlspecialchars($notification['message']); ?>
         </div>
@@ -233,7 +234,7 @@ if (isset($_SESSION['notifications'])) {
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300"
                 placeholder="Например: Футболка Nike белая">
             </div>
-            
+
             <div>
               <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">
                 Количество <span class="text-red-500">*</span>
@@ -242,7 +243,7 @@ if (isset($_SESSION['notifications'])) {
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300">
             </div>
           </div>
-          
+
           <div>
             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
               Описание
@@ -251,7 +252,7 @@ if (isset($_SESSION['notifications'])) {
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300"
               placeholder="Дополнительная информация о футболке..."></textarea>
           </div>
-          
+
           <div class="pt-4">
             <button type="submit" name="add_item"
               class="px-6 py-3 bg-gradient-to-r from-[#118568] to-[#0f755a] text-white rounded-lg hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-medium shadow-lg hover:shadow-xl">
@@ -264,7 +265,7 @@ if (isset($_SESSION['notifications'])) {
       <!-- Список товаров -->
       <div class="bg-white rounded-2xl shadow-xl p-6 animate-fade-up" style="animation-delay: 0.5s">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Мои футболки</h2>
-        
+
         <?php if (empty($items)): ?>
           <div class="text-center py-12">
             <i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i>
@@ -281,16 +282,16 @@ if (isset($_SESSION['notifications'])) {
                     <?php echo $item['quantity']; ?> шт.
                   </span>
                 </div>
-                
+
                 <?php if (!empty($item['description'])): ?>
                   <p class="text-gray-600 text-sm mb-4"><?php echo htmlspecialchars($item['description']); ?></p>
                 <?php endif; ?>
-                
+
                 <div class="flex justify-between items-center mt-4">
                   <span class="text-xs text-gray-500">
                     Добавлено: <?php echo date('d.m.Y', strtotime($item['created_at'])); ?>
                   </span>
-                  
+
                   <form method="post" class="inline">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">

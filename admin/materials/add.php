@@ -4,29 +4,31 @@ session_start();
 $pageTitle = "Добавить материал";
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
-    header("Location: /login"); exit();
+  header("Location: /login");
+  exit();
 }
 
 include_once('../../includes/db.php');
 require_once '../../includes/security.php';
-if ($_SERVER['REQUEST_METHOD']==='POST') {
-    verify_csrf();
-    $name = trim($_POST['name']);
-    $unit = trim($_POST['unit']);
-    $desc = trim($_POST['description']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  verify_csrf();
+  $name = trim($_POST['name']);
+  $unit = trim($_POST['unit']);
+  $desc = trim($_POST['description']);
 
-    if ($name && $unit) {
-        $stmt = $pdo->prepare("INSERT INTO materials (name,unit,description) VALUES (?,?,?)");
-        $stmt->execute([$name,$unit,$desc]);
-        $_SESSION['notifications'][] = ['type'=>'success','message'=>'Материал добавлен'];
-        header("Location: index.php"); exit();
-    } else {
-        $_SESSION['notifications'][] = ['type'=>'error','message'=>'Заполните обязательные поля'];
-    }
+  if ($name && $unit) {
+    $stmt = $pdo->prepare("INSERT INTO materials (name,unit,description) VALUES (?,?,?)");
+    $stmt->execute([$name, $unit, $desc]);
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Материал добавлен'];
+    header("Location: index.php");
+    exit();
+  } else {
+    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Заполните обязательные поля'];
+  }
 }
 ?>
 
-<?php include_once('../../includes/header.php');?>
+<?php include_once('../../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gray-100 py-8">
   <div class="container mx-auto max-w-3xl bg-white p-6 rounded-2xl shadow-lg">

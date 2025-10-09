@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
         <?php endif; ?>
 
         <form action="" method="POST" class="space-y-6">
-        <?php echo csrf_field(); ?>
+          <?php echo csrf_field(); ?>
           <div>
             <label for="name" class="block text-gray-700 font-medium mb-2 text-lg">Ваше имя *</label>
             <input type="text" id="name" name="name" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg"
@@ -126,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
           <div>
             <label for="phone" class="block text-gray-700 font-medium mb-2 text-lg">Телефон *</label>
-            <input type="tel" id="phone" name="phone" placeholder="+7 (___) ___-__-__"  required 
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+            <input type="tel" id="phone" name="phone" placeholder="+7 (___) ___-__-__" required
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
           </div>
 
           <div>
@@ -248,12 +248,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
   </div>
 </main>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener("DOMContentLoaded", function () {
     Inputmask({
-        mask: "+7 (999) 999-99-99",
-        showMaskOnHover: false,
-        clearIncomplete: true // убирает недописанные номера при потере фокуса
+      mask: "+7 (999) 999-99-99",
+      showMaskOnHover: false,
+      clearIncomplete: true // убирает недописанные номера при потере фокуса
     }).mask("#phone");
-});
+  });
 </script>
 <?php include_once __DIR__ . '/includes/footer.php'; ?>

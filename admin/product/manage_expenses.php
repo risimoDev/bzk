@@ -4,8 +4,8 @@ session_start();
 $pageTitle = "Управление расходниками";
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
-    header("Location: /login");
-    exit();
+  header("Location: /login");
+  exit();
 }
 
 include_once('../../includes/db.php');
@@ -16,9 +16,9 @@ unset($_SESSION['notifications']);
 
 $product_id = $_GET['product_id'] ?? null;
 if (!$product_id) {
-    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не указан товар.'];
-    header("Location: /admin/products");
-    exit;
+  $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не указан товар.'];
+  header("Location: /admin/products");
+  exit;
 }
 
 // Инфо о товаре
@@ -27,37 +27,37 @@ $stmt->execute([$product_id]);
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
-    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Товар не найден.'];
-    header("Location: /admin/products");
-    exit;
+  $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Товар не найден.'];
+  header("Location: /admin/products");
+  exit;
 }
 
 // Добавление / удаление материалов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf();
-    $action = $_POST['action'] ?? null;
+  verify_csrf();
+  $action = $_POST['action'] ?? null;
 
-    if ($action === 'add_material') {
-        $material_id = intval($_POST['material_id']);
-        $quantity_per_unit = floatval($_POST['quantity_per_unit']);
+  if ($action === 'add_material') {
+    $material_id = intval($_POST['material_id']);
+    $quantity_per_unit = floatval($_POST['quantity_per_unit']);
 
-        if ($material_id > 0 && $quantity_per_unit > 0) {
-            $stmt = $pdo->prepare("INSERT INTO product_materials (product_id, material_id, quantity_per_unit) VALUES (?, ?, ?)");
-            $stmt->execute([$product_id, $material_id, $quantity_per_unit]);
-            $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Материал добавлен к товару.'];
-        } else {
-            $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Выберите материал и укажите количество.'];
-        }
-
-    } elseif ($action === 'delete_material') {
-        $id = intval($_POST['id']);
-        $stmt = $pdo->prepare("DELETE FROM product_materials WHERE id = ? AND product_id = ?");
-        $stmt->execute([$id, $product_id]);
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Материал удалён.'];
+    if ($material_id > 0 && $quantity_per_unit > 0) {
+      $stmt = $pdo->prepare("INSERT INTO product_materials (product_id, material_id, quantity_per_unit) VALUES (?, ?, ?)");
+      $stmt->execute([$product_id, $material_id, $quantity_per_unit]);
+      $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Материал добавлен к товару.'];
+    } else {
+      $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Выберите материал и укажите количество.'];
     }
 
-    header("Location: ".$_SERVER['REQUEST_URI']);
-    exit;
+  } elseif ($action === 'delete_material') {
+    $id = intval($_POST['id']);
+    $stmt = $pdo->prepare("DELETE FROM product_materials WHERE id = ? AND product_id = ?");
+    $stmt->execute([$id, $product_id]);
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Материал удалён.'];
+  }
+
+  header("Location: " . $_SERVER['REQUEST_URI']);
+  exit;
 }
 
 // Все материалы (для выбора)
@@ -75,7 +75,7 @@ $stmt->execute([$product_id]);
 $product_materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include_once('../../includes/header.php');?>
+<?php include_once('../../includes/header.php'); ?>
 
 <main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-7xl">
@@ -138,7 +138,8 @@ $product_materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td class="p-2"><?= htmlspecialchars($pm['name']); ?></td>
                 <td class="p-2"><?= number_format($pm['quantity_per_unit'], 4, '.', ' '); ?></td>
                 <td class="p-2"><?= htmlspecialchars($pm['unit']); ?></td>
-                <td class="p-2"><?= $pm['cost_per_unit'] ? number_format($pm['cost_per_unit'], 2, '.', ' ') . ' ₽' : '-'; ?></td>
+                <td class="p-2"><?= $pm['cost_per_unit'] ? number_format($pm['cost_per_unit'], 2, '.', ' ') . ' ₽' : '-'; ?>
+                </td>
                 <td class="p-2">
                   <form method="POST" onsubmit="return confirm('Удалить?')">
                     <?php echo csrf_field(); ?>

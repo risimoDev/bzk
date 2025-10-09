@@ -5,8 +5,8 @@ $pageTitle = "Карточка клиента";
 
 // Проверка авторизации
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'manager')) {
-    header("Location: /login");
-    exit();
+  header("Location: /login");
+  exit();
 }
 
 // Подключение к базе данных
@@ -14,126 +14,126 @@ include_once('../includes/db.php');
 
 // Обработка одобрения корпоративного аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_corporate'])) {
-    verify_csrf();
-    $request_id = intval($_POST['request_id']);
-    $admin_notes = $_POST['admin_notes'] ?? '';
-    
-    // Получаем данные запроса
-    $stmt = $pdo->prepare("SELECT * FROM corporate_account_requests WHERE id = ?");
-    $stmt->execute([$request_id]);
-    $request = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($request) {
-        // Обновляем статус запроса
-        $stmt = $pdo->prepare("UPDATE corporate_account_requests SET status = 'approved', admin_notes = ? WHERE id = ?");
-        $stmt->execute([$admin_notes, $request_id]);
-        
-        // Обновляем пользователя как корпоративного
-        $stmt = $pdo->prepare("UPDATE users SET is_corporate = 1, company_name = ?, inn = ?, kpp = ?, legal_address = ? WHERE id = ?");
-        $stmt->execute([$request['company_name'], $request['inn'], $request['kpp'], $request['legal_address'], $request['user_id']]);
-        
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Корпоративный аккаунт одобрен.'];
-    }
-    header("Location: client_card.php?id=" . $request['user_id']);
-    exit();
+  verify_csrf();
+  $request_id = intval($_POST['request_id']);
+  $admin_notes = $_POST['admin_notes'] ?? '';
+
+  // Получаем данные запроса
+  $stmt = $pdo->prepare("SELECT * FROM corporate_account_requests WHERE id = ?");
+  $stmt->execute([$request_id]);
+  $request = $stmt->fetch(PDO::FETCH_ASSOC);
+
+  if ($request) {
+    // Обновляем статус запроса
+    $stmt = $pdo->prepare("UPDATE corporate_account_requests SET status = 'approved', admin_notes = ? WHERE id = ?");
+    $stmt->execute([$admin_notes, $request_id]);
+
+    // Обновляем пользователя как корпоративного
+    $stmt = $pdo->prepare("UPDATE users SET is_corporate = 1, company_name = ?, inn = ?, kpp = ?, legal_address = ? WHERE id = ?");
+    $stmt->execute([$request['company_name'], $request['inn'], $request['kpp'], $request['legal_address'], $request['user_id']]);
+
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Корпоративный аккаунт одобрен.'];
+  }
+  header("Location: client_card.php?id=" . $request['user_id']);
+  exit();
 }
 
 // Обработка отклонения корпоративного аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_corporate'])) {
-    verify_csrf();
-    $request_id = intval($_POST['request_id']);
-    $admin_notes = $_POST['admin_notes'] ?? '';
-    
-    // Обновляем статус запроса
-    $stmt = $pdo->prepare("UPDATE corporate_account_requests SET status = 'rejected', admin_notes = ? WHERE id = ?");
-    $stmt->execute([$admin_notes, $request_id]);
-    
-    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на корпоративный аккаунт отклонен.'];
-    header("Location: client_card.php?id=" . $_GET['id']);
-    exit();
+  verify_csrf();
+  $request_id = intval($_POST['request_id']);
+  $admin_notes = $_POST['admin_notes'] ?? '';
+
+  // Обновляем статус запроса
+  $stmt = $pdo->prepare("UPDATE corporate_account_requests SET status = 'rejected', admin_notes = ? WHERE id = ?");
+  $stmt->execute([$admin_notes, $request_id]);
+
+  $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на корпоративный аккаунт отклонен.'];
+  header("Location: client_card.php?id=" . $_GET['id']);
+  exit();
 }
 
 // -------------------- Обработка запросов на удаление аккаунта --------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deletion_request_id'])) {
-    verify_csrf();
-    $request_id = (int) $_POST['deletion_request_id'];
-    $admin_notes = trim($_POST['admin_notes'] ?? '');
+  verify_csrf();
+  $request_id = (int) $_POST['deletion_request_id'];
+  $admin_notes = trim($_POST['admin_notes'] ?? '');
 
-    // Получаем данные запроса
-    $stmt = $pdo->prepare("SELECT * FROM account_deletion_requests WHERE id = ?");
-    $stmt->execute([$request_id]);
-    $request = $stmt->fetch(PDO::FETCH_ASSOC);
+  // Получаем данные запроса
+  $stmt = $pdo->prepare("SELECT * FROM account_deletion_requests WHERE id = ?");
+  $stmt->execute([$request_id]);
+  $request = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$request) {
-        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Запрос не найден.'];
-        header("Location: client_card.php?id=" . htmlspecialchars($_GET['id'] ?? $client_id));
-        exit();
-    }
+  if (!$request) {
+    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Запрос не найден.'];
+    header("Location: client_card.php?id=" . htmlspecialchars($_GET['id'] ?? $client_id));
+    exit();
+  }
 
-    // Определяем действие
-    $action = isset($_POST['approve_deletion']) ? 'approved' :
-              (isset($_POST['reject_deletion']) ? 'rejected' : null);
+  // Определяем действие
+  $action = isset($_POST['approve_deletion']) ? 'approved' :
+    (isset($_POST['reject_deletion']) ? 'rejected' : null);
 
-    if (!$action) {
-        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не указано действие.'];
-        header("Location: client_card.php?id=" . htmlspecialchars($request['user_id']));
-        exit();
-    }
-
-    // Обновляем статус запроса
-    $stmt = $pdo->prepare("UPDATE account_deletion_requests SET status = ?, admin_notes = ? WHERE id = ?");
-    $stmt->execute([$action, $admin_notes, $request_id]);
-
-    if ($action === 'approved') {
-        // Мягкое удаление аккаунта
-        $stmt = $pdo->prepare("UPDATE users SET is_blocked = 1 WHERE id = ?");
-        $stmt->execute([$request['user_id']]);
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта одобрен. Аккаунт заблокирован.'];
-    } else {
-        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта отклонён.'];
-    }
-
+  if (!$action) {
+    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не указано действие.'];
     header("Location: client_card.php?id=" . htmlspecialchars($request['user_id']));
     exit();
+  }
+
+  // Обновляем статус запроса
+  $stmt = $pdo->prepare("UPDATE account_deletion_requests SET status = ?, admin_notes = ? WHERE id = ?");
+  $stmt->execute([$action, $admin_notes, $request_id]);
+
+  if ($action === 'approved') {
+    // Мягкое удаление аккаунта
+    $stmt = $pdo->prepare("UPDATE users SET is_blocked = 1 WHERE id = ?");
+    $stmt->execute([$request['user_id']]);
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта одобрен. Аккаунт заблокирован.'];
+  } else {
+    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта отклонён.'];
+  }
+
+  header("Location: client_card.php?id=" . htmlspecialchars($request['user_id']));
+  exit();
 }
 // -------------------------------------------------------------------------------
 
 // Обработка отклонения удаления аккаунта
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_deletion'])) {
-    verify_csrf();
-    $request_id = intval($_POST['deletion_request_id']);
-    $admin_notes = $_POST['admin_notes'] ?? '';
-    
-    // Обновляем статус запроса
-    $stmt = $pdo->prepare("UPDATE account_deletion_requests SET status = 'rejected', admin_notes = ? WHERE id = ?");
-    $stmt->execute([$admin_notes, $request_id]);
-    
-    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта отклонен.'];
-    header("Location: client_card.php?id=" . $_GET['id']);
-    exit();
+  verify_csrf();
+  $request_id = intval($_POST['deletion_request_id']);
+  $admin_notes = $_POST['admin_notes'] ?? '';
+
+  // Обновляем статус запроса
+  $stmt = $pdo->prepare("UPDATE account_deletion_requests SET status = 'rejected', admin_notes = ? WHERE id = ?");
+  $stmt->execute([$admin_notes, $request_id]);
+
+  $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Запрос на удаление аккаунта отклонен.'];
+  header("Location: client_card.php?id=" . $_GET['id']);
+  exit();
 }
 
 // Обработка включения/выключения мини-склада
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_mini_warehouse'])) {
-    verify_csrf();
-    $client_id = intval($_POST['client_id']);
-    $enabled = intval($_POST['enabled']);
-    
-    $stmt = $pdo->prepare("UPDATE users SET mini_warehouse_enabled = ? WHERE id = ?");
-    $stmt->execute([$enabled, $client_id]);
-    
-    $status = $enabled ? 'включен' : 'выключен';
-    $_SESSION['notifications'][] = ['type' => 'success', 'message' => "Мини-склад для клиента {$status}."];
-    header("Location: client_card.php?id=" . $client_id);
-    exit();
+  verify_csrf();
+  $client_id = intval($_POST['client_id']);
+  $enabled = intval($_POST['enabled']);
+
+  $stmt = $pdo->prepare("UPDATE users SET mini_warehouse_enabled = ? WHERE id = ?");
+  $stmt->execute([$enabled, $client_id]);
+
+  $status = $enabled ? 'включен' : 'выключен';
+  $_SESSION['notifications'][] = ['type' => 'success', 'message' => "Мини-склад для клиента {$status}."];
+  header("Location: client_card.php?id=" . $client_id);
+  exit();
 }
 
 // Получение ID клиента из параметров
 $client_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($client_id <= 0) {
-    header("Location: /admin/users");
-    exit();
+  header("Location: /admin/users");
+  exit();
 }
 
 // Получение данных клиента
@@ -142,8 +142,8 @@ $stmt->execute([$client_id]);
 $client = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$client) {
-    header("Location: /admin/users");
-    exit();
+  header("Location: /admin/users");
+  exit();
 }
 
 // Получение всех заказов клиента
@@ -165,15 +165,15 @@ $contact_messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $order_ids = array_column($orders, 'id');
 $chat_messages = [];
 if (!empty($order_ids)) {
-    $placeholders = str_repeat('?,', count($order_ids) - 1) . '?';
-    $stmt = $pdo->prepare("SELECT cm.*, u.name as sender_name, oc.order_id 
+  $placeholders = str_repeat('?,', count($order_ids) - 1) . '?';
+  $stmt = $pdo->prepare("SELECT cm.*, u.name as sender_name, oc.order_id 
                           FROM chat_messages cm 
                           JOIN users u ON cm.user_id = u.id 
                           JOIN order_chats oc ON cm.chat_id = oc.id 
                           WHERE oc.order_id IN ($placeholders) 
                           ORDER BY cm.created_at DESC");
-    $stmt->execute($order_ids);
-    $chat_messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $stmt->execute($order_ids);
+  $chat_messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Получение запросов на корпоративный аккаунт
@@ -220,7 +220,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
           <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">Активен</span>
         <?php endif; ?>
         <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm ml-2">
-          <?php 
+          <?php
           $roles = [
             'admin' => 'Администратор',
             'manager' => 'Менеджер',
@@ -237,11 +237,12 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <h3 class="text-lg font-semibold text-gray-800 mb-3">Контактная информация</h3>
         <div class="space-y-2">
           <p><span class="font-medium">Email:</span> <?php echo htmlspecialchars($client['email']); ?></p>
-          <p><span class="font-medium">Телефон:</span> <?php echo htmlspecialchars($client['phone'] ?? 'Не указан'); ?></p>
-          <p><span class="font-medium">Дата рождения:</span> 
+          <p><span class="font-medium">Телефон:</span> <?php echo htmlspecialchars($client['phone'] ?? 'Не указан'); ?>
+          </p>
+          <p><span class="font-medium">Дата рождения:</span>
             <?php echo !empty($client['birthday']) ? date('d.m.Y', strtotime($client['birthday'])) : 'Не указана'; ?>
           </p>
-          <p><span class="font-medium">Адрес доставки:</span> 
+          <p><span class="font-medium">Адрес доставки:</span>
             <?php echo htmlspecialchars($client['shipping_address'] ?? 'Не указан'); ?>
           </p>
         </div>
@@ -258,7 +259,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-sm">Выключен</span>
             <?php endif; ?>
           </div>
-          
+
           <form method="post" class="mt-3">
             <input type="hidden" name="client_id" value="<?php echo $client['id']; ?>">
             <?php if ($client['mini_warehouse_enabled']): ?>
@@ -289,7 +290,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <div class="bg-green-50 rounded-xl p-4">
           <div class="text-2xl font-bold text-green-800">
-            <?php 
+            <?php
             $total_spent = array_sum(array_column($orders, 'total'));
             echo number_format($total_spent, 2, '.', ' ');
             ?> ₽
@@ -319,17 +320,17 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php echo $item['quantity']; ?> шт.
               </span>
             </div>
-            
+
             <?php if (!empty($item['description'])): ?>
               <p class="text-gray-600 text-sm mb-4"><?php echo htmlspecialchars($item['description']); ?></p>
             <?php endif; ?>
-            
+
             <div class="flex justify-between items-center mt-4">
               <span class="text-xs text-gray-500">
                 Добавлено: <?php echo date('d.m.Y', strtotime($item['created_at'])); ?>
               </span>
               <span class="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
-                <?php 
+                <?php
                 $status_labels = [
                   'in_stock' => 'На складе',
                   'in_production' => 'В производстве',
@@ -378,8 +379,8 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <a href="order/details.php?id=<?php echo $order['id']; ?>" 
-                     class="text-[#118568] hover:text-[#0f755a]">Просмотр</a>
+                  <a href="order/details.php?id=<?php echo $order['id']; ?>"
+                    class="text-[#118568] hover:text-[#0f755a]">Просмотр</a>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -393,7 +394,8 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- Сообщения из формы контактов -->
   <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Сообщения из формы контактов (<?php echo count($contact_messages); ?>)</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Сообщения из формы контактов
+      (<?php echo count($contact_messages); ?>)</h2>
     <?php if (!empty($contact_messages)): ?>
       <div class="space-y-4">
         <?php foreach ($contact_messages as $message): ?>
@@ -403,7 +405,8 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p class="font-medium"><?php echo htmlspecialchars($message['name']); ?></p>
                 <p class="text-gray-600 text-sm"><?php echo date('d.m.Y H:i', strtotime($message['created_at'])); ?></p>
               </div>
-              <span class="px-2 py-1 rounded-full text-xs 
+              <span
+                class="px-2 py-1 rounded-full text-xs 
                 <?php echo $message['status'] === 'read' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>">
                 <?php echo $message['status'] === 'read' ? 'Прочитано' : 'Новое'; ?>
               </span>
@@ -429,7 +432,8 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- Сообщения в чатах по заказам -->
   <div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Сообщения в чатах по заказам (<?php echo count($chat_messages); ?>)</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Сообщения в чатах по заказам
+      (<?php echo count($chat_messages); ?>)</h2>
     <?php if (!empty($chat_messages)): ?>
       <div class="space-y-4 max-h-96 overflow-y-auto">
         <?php foreach ($chat_messages as $msg): ?>
@@ -437,7 +441,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="flex justify-between items-start">
               <div>
                 <p class="font-medium">
-                  <?php echo htmlspecialchars($msg['sender_name']); ?> 
+                  <?php echo htmlspecialchars($msg['sender_name']); ?>
                   <span class="text-gray-600 text-sm">(Заказ #<?php echo $msg['order_id']; ?>)</span>
                 </p>
                 <p class="text-gray-600 text-sm"><?php echo date('d.m.Y H:i', strtotime($msg['created_at'])); ?></p>
@@ -454,7 +458,8 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- Запросы на корпоративный аккаунт -->
   <div class="bg-white rounded-2xl shadow-xl p-6 mt-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Запросы на корпоративный аккаунт (<?php echo count($corporate_requests); ?>)</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Запросы на корпоративный аккаунт
+      (<?php echo count($corporate_requests); ?>)</h2>
     <?php if (!empty($corporate_requests)): ?>
       <div class="space-y-6">
         <?php foreach ($corporate_requests as $request): ?>
@@ -488,10 +493,10 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p><?php echo htmlspecialchars($request['inn']); ?></p>
               </div>
               <?php if (!empty($request['kpp'])): ?>
-              <div>
-                <p class="font-medium">КПП:</p>
-                <p><?php echo htmlspecialchars($request['kpp']); ?></p>
-              </div>
+                <div>
+                  <p class="font-medium">КПП:</p>
+                  <p><?php echo htmlspecialchars($request['kpp']); ?></p>
+                </div>
               <?php endif; ?>
             </div>
 
@@ -501,34 +506,34 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <?php if (!empty($request['admin_notes'])): ?>
-            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-              <p class="font-medium">Комментарий администратора:</p>
-              <p><?php echo htmlspecialchars($request['admin_notes']); ?></p>
-            </div>
+              <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p class="font-medium">Комментарий администратора:</p>
+                <p><?php echo htmlspecialchars($request['admin_notes']); ?></p>
+              </div>
             <?php endif; ?>
 
             <?php if ($request['status'] === 'pending'): ?>
-            <div class="border-t border-gray-200 pt-4">
-              <form method="POST" class="space-y-4">
-                <input type="hidden" name="request_id" value="<?php echo $request['id']; ?>">
-                <div>
-                  <label class="block text-gray-700 font-medium mb-2">Комментарий администратора</label>
-                  <textarea name="admin_notes" rows="3" 
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
-                            placeholder="Добавьте комментарий к решению"></textarea>
-                </div>
-                <div class="flex gap-3">
-                  <button type="submit" name="approve_corporate"
-                          class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 font-medium">
-                    Одобрить
-                  </button>
-                  <button type="submit" name="reject_corporate"
-                          class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 font-medium">
-                    Отклонить
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div class="border-t border-gray-200 pt-4">
+                <form method="POST" class="space-y-4">
+                  <input type="hidden" name="request_id" value="<?php echo $request['id']; ?>">
+                  <div>
+                    <label class="block text-gray-700 font-medium mb-2">Комментарий администратора</label>
+                    <textarea name="admin_notes" rows="3"
+                      class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                      placeholder="Добавьте комментарий к решению"></textarea>
+                  </div>
+                  <div class="flex gap-3">
+                    <button type="submit" name="approve_corporate"
+                      class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 font-medium">
+                      Одобрить
+                    </button>
+                    <button type="submit" name="reject_corporate"
+                      class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 font-medium">
+                      Отклонить
+                    </button>
+                  </div>
+                </form>
+              </div>
             <?php endif; ?>
           </div>
         <?php endforeach; ?>
@@ -540,7 +545,8 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- Запросы на удаление аккаунта -->
   <div class="bg-white rounded-2xl shadow-xl p-6 mt-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Запросы на удаление аккаунта (<?php echo count($account_deletion_requests); ?>)</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Запросы на удаление аккаунта
+      (<?php echo count($account_deletion_requests); ?>)</h2>
     <?php if (!empty($account_deletion_requests)): ?>
       <div class="space-y-6">
         <?php foreach ($account_deletion_requests as $request): ?>
@@ -569,41 +575,41 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <?php if (!empty($request['reason'])): ?>
-            <div class="mb-4">
-              <p class="font-medium">Причина удаления:</p>
-              <p><?php echo htmlspecialchars($request['reason']); ?></p>
-            </div>
+              <div class="mb-4">
+                <p class="font-medium">Причина удаления:</p>
+                <p><?php echo htmlspecialchars($request['reason']); ?></p>
+              </div>
             <?php endif; ?>
 
             <?php if (!empty($request['admin_notes'])): ?>
-            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-              <p class="font-medium">Комментарий администратора:</p>
-              <p><?php echo htmlspecialchars($request['admin_notes']); ?></p>
-            </div>
+              <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p class="font-medium">Комментарий администратора:</p>
+                <p><?php echo htmlspecialchars($request['admin_notes']); ?></p>
+              </div>
             <?php endif; ?>
 
             <?php if ($request['status'] === 'pending'): ?>
-            <div class="border-t border-gray-200 pt-4">
-              <form method="POST" class="space-y-4">
-                <input type="hidden" name="deletion_request_id" value="<?php echo $request['id']; ?>">
-                <div>
-                  <label class="block text-gray-700 font-medium mb-2">Комментарий администратора</label>
-                  <textarea name="admin_notes" rows="3" 
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
-                            placeholder="Добавьте комментарий к решению"></textarea>
-                </div>
-                <div class="flex gap-3">
-                  <button type="submit" name="approve_deletion"
-                          class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 font-medium">
-                    Одобрить удаление
-                  </button>
-                  <button type="submit" name="reject_deletion"
-                          class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 font-medium">
-                    Отклонить
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div class="border-t border-gray-200 pt-4">
+                <form method="POST" class="space-y-4">
+                  <input type="hidden" name="deletion_request_id" value="<?php echo $request['id']; ?>">
+                  <div>
+                    <label class="block text-gray-700 font-medium mb-2">Комментарий администратора</label>
+                    <textarea name="admin_notes" rows="3"
+                      class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB] transition-all duration-300"
+                      placeholder="Добавьте комментарий к решению"></textarea>
+                  </div>
+                  <div class="flex gap-3">
+                    <button type="submit" name="approve_deletion"
+                      class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 font-medium">
+                      Одобрить удаление
+                    </button>
+                    <button type="submit" name="reject_deletion"
+                      class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 font-medium">
+                      Отклонить
+                    </button>
+                  </div>
+                </form>
+              </div>
             <?php endif; ?>
           </div>
         <?php endforeach; ?>

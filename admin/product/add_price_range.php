@@ -10,10 +10,10 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $product_id = (int)$_POST['product_id'];
-    $min_qty = (int)$_POST['min_qty'];
-    $max_qty = $_POST['max_qty'] !== '' ? (int)$_POST['max_qty'] : null;
-    $price = (float)$_POST['price'];
+    $product_id = (int) $_POST['product_id'];
+    $min_qty = (int) $_POST['min_qty'];
+    $max_qty = $_POST['max_qty'] !== '' ? (int) $_POST['max_qty'] : null;
+    $price = (float) $_POST['price'];
 
     if ($product_id && $min_qty && $price) {
         $stmt = $pdo->prepare("

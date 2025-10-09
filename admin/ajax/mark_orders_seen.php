@@ -22,7 +22,7 @@ try {
         $stmt = $pdo->prepare("UPDATE orders SET is_new = 0 WHERE is_new = 1");
         $stmt->execute();
     } elseif (isset($_POST['order_id'])) {
-        $order_id = (int)$_POST['order_id'];
+        $order_id = (int) $_POST['order_id'];
         $stmt = $pdo->prepare("UPDATE orders SET is_new = 0 WHERE id = ?");
         $stmt->execute([$order_id]);
     } else {
