@@ -46,16 +46,16 @@ function sendWelcomeEmail($userEmail, $userName) {
     try {
         // SMTP settings
         $mail->isSMTP();
-        $mail->Host = $_ENV['SMTP_HOST'] ?? 'localhost';
+        $mail->Host = $_ENV['SMTP_HOST'];
         $mail->SMTPAuth = true;
-        $mail->Username = $_ENV['SMTP_USERNAME'] ?? 'mailer@bzkprint.ru';
-        $mail->Password = $_ENV['SMTP_PASSWORD'] ?? 'jezGFC3tHLhIajpZYYSq';
+        $mail->Username = $_ENV['SMTP_USERNAME'];
+        $mail->Password = $_ENV['SMTP_PASSWORD'];
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = $_ENV['SMTP_PORT'] ?? 587;
+        $mail->Port = $_ENV['SMTP_PORT'];
         $mail->CharSet = 'UTF-8';
         
         // Sender and recipient
-        $mail->setFrom($_ENV['SMTP_FROM_EMAIL'] ?? 'mailer@bzkprint.ru', $_ENV['SMTP_FROM_NAME'] ?? 'BZK Print');
+        $mail->setFrom($_ENV['SMTP_FROM_EMAIL'], $_ENV['SMTP_FROM_NAME']);
         $mail->addAddress($userEmail, $userName);
         
         // Email content

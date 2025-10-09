@@ -76,16 +76,19 @@ try {
     }
 
     // Настройка PHPMailer
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host = 'localhost';
-    $mail->SMTPAuth = true;
-    $mail->Username = 'mailer@bzkprint.ru';
-    $mail->Password = 'jezGFC3tHLhIajpZYYSq';
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = 587;
-    $mail->CharSet = 'UTF-8';
-    $mail->setFrom('mailer@bzkprint.ru', 'BZK Print');
+        // SMTP settings
+        $mail->isSMTP();
+        $mail->Host = $_ENV['SMTP_HOST'];
+        $mail->SMTPAuth = true;
+        $mail->Username = $_ENV['SMTP_USERNAME'];
+        $mail->Password = $_ENV['SMTP_PASSWORD'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = $_ENV['SMTP_PORT'];
+        $mail->CharSet = 'UTF-8';
+        
+        // Sender and recipient
+        $mail->setFrom($_ENV['SMTP_FROM_EMAIL'], $_ENV['SMTP_FROM_NAME']);
+        $mail->addAddress($userEmail, $userName);
 
     // Инициализация Telegram бота
     $telegram = getTelegramBot();
