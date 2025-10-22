@@ -257,7 +257,7 @@ unset($_SESSION['checkout_errors'], $_SESSION['checkout_data']);
               </div>
               <div>
                 <h4 class="font-bold text-gray-800">Сроки</h4>
-                <p class="text-gray-600 text-sm">1-3 рабочих дня</p>
+                <p class="text-gray-600 text-sm">Уточняйте у менеджера</p>
               </div>
             </div>
             
@@ -280,8 +280,8 @@ unset($_SESSION['checkout_errors'], $_SESSION['checkout_data']);
                 </svg>
               </div>
               <div>
-                <h4 class="font-bold text-white">Бесплатно</h4>
-                <p class="text-white text-sm">Доставка по городу</p>
+                <h4 class="font-bold text-white">Онлайн чат</h4>
+                <p class="text-white text-sm">Встроен в страницу заказа</p>
               </div>
             </div>
           </div>
@@ -419,7 +419,7 @@ unset($_SESSION['checkout_errors'], $_SESSION['checkout_data']);
             </div>
 
             <!-- Методы оплаты -->
-            <div class="pt-6 border-t border-[#DEE5E5]">
+           <!-- <div class="pt-6 border-t border-[#DEE5E5]">
               <h3 class="font-bold text-gray-800 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -444,7 +444,7 @@ unset($_SESSION['checkout_errors'], $_SESSION['checkout_data']);
                   <span class="text-gray-600">Электронный кошелек</span>
                 </div>
               </div>
-            </div>
+            </div> -->
           </form>
         </div>
       </div>
