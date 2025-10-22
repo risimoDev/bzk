@@ -261,6 +261,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
           </div>
 
           <form method="post" class="mt-3">
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="client_id" value="<?php echo $client['id']; ?>">
             <?php if ($client['mini_warehouse_enabled']): ?>
               <input type="hidden" name="enabled" value="0">
@@ -515,6 +516,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php if ($request['status'] === 'pending'): ?>
               <div class="border-t border-gray-200 pt-4">
                 <form method="POST" class="space-y-4">
+                  <?php echo csrf_field(); ?>
                   <input type="hidden" name="request_id" value="<?php echo $request['id']; ?>">
                   <div>
                     <label class="block text-gray-700 font-medium mb-2">Комментарий администратора</label>
@@ -591,6 +593,7 @@ $mini_warehouse_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php if ($request['status'] === 'pending'): ?>
               <div class="border-t border-gray-200 pt-4">
                 <form method="POST" class="space-y-4">
+                  <?php echo csrf_field(); ?>
                   <input type="hidden" name="deletion_request_id" value="<?php echo $request['id']; ?>">
                   <div>
                     <label class="block text-gray-700 font-medium mb-2">Комментарий администратора</label>
