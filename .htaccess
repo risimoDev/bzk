@@ -196,6 +196,7 @@ RewriteRule ^admin/suppliers$ admin/suppliers/index.php [L,QSA]
 RewriteRule ^admin/suppliers/add$ admin/suppliers/add.php [L,QSA]
 RewriteRule ^admin/suppliers/edit$ admin/suppliers/edit.php [L,QSA]
 RewriteRule ^admin/suppliers/details$ admin/suppliers/details.php [L,QSA]
+RewriteRule ^admin/reviews$ admin/reviews.php [L,QSA]
 
 # Личный кабинет
 RewriteRule ^client/dashboard$ client/dashboard.php [L,QSA]

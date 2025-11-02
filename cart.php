@@ -138,7 +138,7 @@ if (!empty($cart)) {
 $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
 ?>
 <?php include_once __DIR__ . '/includes/header.php';?>
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
+<main class="min-h-screen bg-pattern from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-6xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -150,18 +150,18 @@ $total_cart_price = array_sum(array_column($cart_items, 'total_price'));
       </div>
     </div>
 
-    <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Ваша корзина</h1>
-      <p class="text-xl text-gray-700 max-w-2xl mx-auto">
-        <?php echo empty($cart) ? 'Ваша корзина пуста' : 'Проверьте выбранные товары перед оформлением заказа'; ?>
-      </p>
-      <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Ваша корзина</h1>
+        <p class="text-gray-600 mt-2"><?php echo empty($cart) ? 'Ваша корзина пуста' : 'Проверьте выбранные товары перед оформлением заказа'; ?></p>
+        <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mt-4"></div>
+      </div>
     </div>
 
     <!-- Уведомления -->
     <?php if (isset($_SESSION['notifications'])): ?>
       <?php foreach ($_SESSION['notifications'] as $notification): ?>
-        <div class="mb-6 p-4 rounded-xl <?php echo $notification['type'] === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'; ?>">
+        <div class="mb-6 p-4 rounded-xl <?php echo $notification['type'] === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'; ?>">
           <?php echo e($notification['message']); ?>
         </div>
       <?php endforeach; ?>

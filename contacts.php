@@ -85,10 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
       </div>
     </div>
 
-    <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Свяжитесь с нами</h1>
-      <p class="text-xl text-gray-700 max-w-2xl mx-auto">У вас есть вопросы? Мы всегда рады помочь! Заполните форму ниже
-        или свяжитесь с нами удобным для вас способом.</p>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Свяжитесь с нами</h1>
+        <p class="text-gray-600 mt-2">У вас есть вопросы? Мы всегда рады помочь! Заполните форму ниже<br>или свяжитесь с нами удобным для вас способом.</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mt-4"></div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">

@@ -5,7 +5,7 @@ $pageTitle = "Требования к макетам";
 
 <?php include_once __DIR__ . '/includes/header.php'; ?>
 
-<main class="bg-pattern min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
+<main class="bg-pattern min-h-screen  from-[#DEE5E5] to-[#9DC5BB] py-8">
   <div class="container mx-auto px-4 max-w-6xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
     <div class="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -20,11 +20,13 @@ $pageTitle = "Требования к макетам";
       </div>
     </div>
 
-    <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Требования к макетам</h1>
-      <p class="text-xl text-gray-700 max-w-3xl mx-auto">Для обеспечения высокого качества печати и безупречного
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Требования к макетам</h1>
+        <p class="text-gray-600 mt-2">Для обеспечения высокого качества печати и <br>безупречного
         результата, пожалуйста, внимательно ознакомьтесь с нашими требованиями к макетам.</p>
-      <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
+        <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mt-4"></div>
+      </div>
     </div>
 
     <!-- Введение -->

@@ -4,7 +4,7 @@ $pageTitle = "Страница не найдена";
 include_once __DIR__ . '/includes/header.php';
 ?>
 
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8 flex items-center">
+<main class="min-h-screen bg-pattern from-[#DEE5E5] to-[#9DC5BB] py-8 flex items-center">
   <div class="container mx-auto px-4 max-w-4xl">
     <!-- Вставка breadcrumbs и кнопки "Назад" -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

@@ -5,7 +5,7 @@ $pageTitle = "Оплата и доставка";
 
 <?php include_once __DIR__ . '/includes/header.php';?>
 
-<main class="min-h-screen bg-gradient-to-br from-[#DEE5E5] to-[#9DC5BB] py-8">
+<main class="min-h-screen bg-pattern from-[#DEE5E5] to-[#9DC5BB] py-8">
     <div class="container mx-auto px-4 max-w-7xl">
         <!-- Вставка breadcrumbs и кнопки "Назад" -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -17,13 +17,13 @@ $pageTitle = "Оплата и доставка";
             </div>
         </div>
 
-        <div class="text-center mb-12">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Оплата и доставка</h1>
-            <p class="text-xl text-gray-700 max-w-3xl mx-auto">
-                Узнайте все о способах оплаты и условиях доставки наших товаров и услуг
-            </p>
-            <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
-        </div>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Оплата и доставка</h1>
+        <p class="text-gray-600 mt-2">Узнайте все о способах оплаты и условиях доставки наших товаров и услуг</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mt-4"></div>
+      </div>
+    </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <!-- Оплата -->

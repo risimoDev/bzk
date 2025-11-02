@@ -131,12 +131,12 @@ unset($_SESSION['checkout_errors'], $_SESSION['checkout_data']);
       </div>
     </div>
 
-    <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Оформление заказа</h1>
-      <p class="text-xl text-gray-700 max-w-3xl mx-auto">
-        Заполните контактные данные и адрес доставки для завершения покупки
-      </p>
-      <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mx-auto mt-4"></div>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Оформление заказа</h1>
+        <p class="text-gray-600 mt-2">Заполните контактные данные и адрес доставки для завершения покупки</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mt-4"></div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

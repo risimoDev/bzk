@@ -125,14 +125,21 @@ include_once __DIR__ . '/includes/header.php';
 ?>
 <main class="min-h-screen from-[#DEE5E5] to-[#9DC5BB] bg-pattern py-8 relative overflow-hidden">
   <div class="container mx-auto px-4 max-w-7xl relative z-10">
-
+<!-- Вставка breadcrumbs и кнопки "Назад" -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div class="w-full md:w-auto">
+                <?php echo generateBreadcrumbs($pageTitle ?? ''); ?>
+            </div>
+            <div class="w-full md:w-auto">
+                <?php echo backButton(); ?>
+            </div>
+        </div>
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
       <div>
         <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Каталог</h1>
         <p class="text-gray-600 mt-2">Фильтры, быстрый доступ к избранному и плавная загрузка товаров.</p>
+        <div class="w-24 h-1 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-full mt-4"></div>
       </div>
-
-
     </div>
 
     <!-- Categories chips + reset button -->

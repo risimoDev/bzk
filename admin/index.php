@@ -647,6 +647,14 @@ if (isset($pdo)) {
             <h4 class="font-bold text-gray-800 text-lg mb-1">Telegram</h4>
             <p class="text-sm text-gray-600">Настройки уведомлений</p>
           </a>
+
+          <a href="/admin/reviews" class="category-button p-5 rounded-xl block text-center">
+            <div class="category-icon w-14 h-14 bg-[#9DC5BB] rounded-xl flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-bell text-white text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 text-lg mb-1">Отзывы</h4>
+            <p class="text-sm text-gray-600">Модерация отзывов</p>
+          </a>
         </div>
       </div>
 

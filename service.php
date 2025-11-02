@@ -28,9 +28,13 @@ $stmt->execute([$product_id]);
 $price_ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Получение изображений товара
-$stmt = $pdo->prepare("SELECT image_url FROM product_images WHERE product_id = ? ORDER BY is_main DESC, id ASC");
+$stmt = $pdo->prepare("SELECT image_url, is_main FROM product_images WHERE product_id = ? ORDER BY is_main DESC, id ASC");
 $stmt->execute([$product_id]);
-$images = $stmt->fetchAll(PDO::FETCH_COLUMN);
+$allImages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// убираем главное изображение (is_main = 1)
+$images = array_values(array_filter($allImages, fn($img) => empty($img['is_main'])));
+$images = array_column($images, 'image_url');
 
 // Получение характеристик товара
 $stmt = $pdo->prepare("
@@ -297,8 +301,8 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 class="text-lg font-bold text-gray-800 mb-2">Гарантия качества</h3>
-        <p class="text-gray-600 text-sm">Все товары проходят строгий контроль качества перед отправкой</p>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">После заказа</h3>
+        <p class="text-gray-600 text-sm">Менеджер учточнит ваш заказ в чате на странице заказа</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
@@ -310,7 +314,7 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
           </svg>
         </div>
         <h3 class="text-lg font-bold text-gray-800 mb-2">Скорость выполнения</h3>
-        <p class="text-gray-600 text-sm">Быстрое выполнение заказов без потери качества</p>
+        <p class="text-gray-600 text-sm">На странице заказа можно будет узнать готовность заказа</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
