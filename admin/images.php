@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../includes/security.php';
+require_once '../includes/common.php'; // Подключаем common.php для вспомогательных функций, если нужно
 $pageTitle = "Управление изображениями";
 
 // Проверка авторизации
@@ -42,57 +43,194 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
     
     if ($action === 'upload_image' && isset($_FILES['image'])) {
-        $image = $_FILES['image'];
-        
-        // Use secure file upload
-        $upload_result = secure_file_upload($image, [
-            'allowed_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-            'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-            'max_size' => 10 * 1024 * 1024, // 10MB
-            'upload_dir' => __DIR__ . '/../storage/uploads/',
-            'public_dir' => '/storage/uploads/',
-            'filename_prefix' => 'product_' . $product_id . '_'
-        ]);
-        
-        if ($upload_result['success']) {
-            $imageUrl = $upload_result['public_url'];
-            
-            // Проверяем, есть ли уже главное изображение
-            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM product_images WHERE product_id = ? AND is_main = 1");
-            $stmt_check->execute([$product_id]);
-            $has_main = $stmt_check->fetchColumn();
-            
-            $is_main = $has_main ? 0 : 1; // Первое изображение становится главным
-            
-            // Сохранение пути к изображению в базу данных
-            $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_url, is_main) VALUES (?, ?, ?)");
-            $result = $stmt->execute([$product_id, $imageUrl, $is_main]);
-            
-            if ($result) {
-                $_SESSION['notifications'][] = [
-                    'type' => 'success',
-                    'message' => 'Изображение успешно загружено.'
-                ];
-            } else {
-                $_SESSION['notifications'][] = [
-                    'type' => 'error',
-                    'message' => 'Ошибка при сохранении изображения в базу данных.'
-                ];
-                // Удаляем файл в случае ошибки базы данных
-                if (file_exists($upload_result['full_path'])) {
-                    unlink($upload_result['full_path']);
-                }
-            }
-        } else {
+        $uploaded_files = $_FILES['image'];
+
+        // Проверяем, был ли загружен хотя бы один файл
+        if (empty($uploaded_files['name'][0])) {
             $_SESSION['notifications'][] = [
                 'type' => 'error',
-                'message' => 'Ошибка загрузки: ' . $upload_result['error']
+                'message' => 'Пожалуйста, выберите хотя бы одно изображение для загрузки.'
+            ];
+            header("Location: /admin/images?product_id=$product_id");
+            exit();
+        }
+
+        $upload_errors = [];
+        $upload_success_count = 0;
+        $is_first_upload_overall = false; // Флаг для определения первого загруженного изображения (всего для товара)
+
+        // Проверяем, есть ли уже *какие-либо* изображения для этого товара в БД перед началом цикла
+        $stmt_check_any = $pdo->prepare("SELECT COUNT(*) FROM product_images WHERE product_id = ?");
+        $stmt_check_any->execute([$product_id]);
+        $has_any_images = $stmt_check_any->fetchColumn() > 0;
+
+        // Проходим по каждому загруженному файлу
+        $file_count = count($uploaded_files['name']);
+        for ($i = 0; $i < $file_count; $i++) {
+            // Создаем временный массив для текущего файла
+            $current_file = [
+                'name' => $uploaded_files['name'][$i],
+                'type' => $uploaded_files['type'][$i],
+                'tmp_name' => $uploaded_files['tmp_name'][$i],
+                'error' => $uploaded_files['error'][$i],
+                'size' => $uploaded_files['size'][$i],
+            ];
+
+            // Используем secure_file_upload для каждого файла
+            $upload_result = secure_file_upload($current_file, [
+                'allowed_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+                'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+                'max_size' => 10 * 1024 * 1024, // 10MB
+                'upload_dir' => __DIR__ . '/../storage/uploads/',
+                'public_dir' => '/storage/uploads/',
+                'filename_prefix' => 'product_' . $product_id . '_'
+            ]);
+
+            if ($upload_result['success']) {
+                $original_file_path = $upload_result['full_path'];
+                $original_public_url = $upload_result['public_url'];
+
+                // --- НОВОЕ: Конвертация в WebP ---
+                $webp_file_path = preg_replace('/\.(jpe?g|png|gif)$/i', '.webp', $original_file_path);
+                $webp_public_url = preg_replace('/\.(jpe?g|png|gif)$/i', '.webp', $original_public_url);
+
+                $image_info = getimagesize($original_file_path);
+                if ($image_info === false) {
+                    $upload_errors[] = 'Файл ' . htmlspecialchars($current_file['name']) . ' не является изображением (getimagesize).';
+                    if (file_exists($original_file_path)) {
+                        unlink($original_file_path);
+                    }
+                    continue; // Переходим к следующему файлу в цикле for (continue 1)
+                }
+
+                $image_type = $image_info[2];
+                $image = null;
+                $image_creation_failed = false; // Флаг для обозначения ошибки создания ресурса
+
+                switch ($image_type) {
+                    case IMAGETYPE_JPEG:
+                        $image = imagecreatefromjpeg($original_file_path);
+                        if ($image === false) {
+                            $upload_errors[] = 'Файл ' . htmlspecialchars($current_file['name']) . ' не является корректным JPEG изображением.';
+                            $image_creation_failed = true;
+                        }
+                        break; // Важно: break, чтобы не проваливаться дальше
+                    case IMAGETYPE_PNG:
+                        $image = imagecreatefrompng($original_file_path);
+                        if ($image === false) {
+                            $upload_errors[] = 'Файл ' . htmlspecialchars($current_file['name']) . ' не является корректным PNG изображением.';
+                            $image_creation_failed = true;
+                        } else {
+                            // Preserve transparency for PNG
+                            imagepalettetotruecolor($image);
+                            imagealphablending($image, false);
+                            imagesavealpha($image, true);
+                        }
+                        break; // Важно: break
+                    case IMAGETYPE_GIF:
+                        $image = imagecreatefromgif($original_file_path);
+                        if ($image === false) {
+                            $upload_errors[] = 'Файл ' . htmlspecialchars($current_file['name']) . ' не является корректным GIF изображением.';
+                            $image_creation_failed = true;
+                        } else {
+                            // Preserve transparency for GIF
+                            imagepalettetotruecolor($image);
+                            imagealphablending($image, false);
+                            imagesavealpha($image, true);
+                        }
+                        break; // Важно: break
+                    default:
+                        $upload_errors[] = 'Неподдерживаемый или неопознанный формат изображения для конвертации в WebP: ' . htmlspecialchars($current_file['name']);
+                        $image_creation_failed = true; // Отмечаем ошибку
+                        break; // break для default также важен
+                }
+
+                // Проверяем, была ли ошибка создания ресурса или тип не поддерживается
+                if ($image_creation_failed) {
+                     if (file_exists($original_file_path)) {
+                         unlink($original_file_path);
+                     }
+                     continue; // Переходим к следующему файлу в цикле for
+                }
+
+                // Если $image не создан успешно, $image_creation_failed должен быть true, и мы выше ушли на continue.
+                // Если $image создан, продолжаем конвертацию.
+                if ($image !== false) {
+                    $success = imagewebp($image, $webp_file_path, 80);
+                    imagedestroy($image); // Уничтожаем ресурс после использования
+
+                    if ($success) {
+                        if (file_exists($original_file_path)) {
+                            unlink($original_file_path);
+                        }
+                        $imageUrl = $webp_public_url;
+                    } else {
+                        $upload_errors[] = 'Ошибка конвертации в WebP для файла: ' . htmlspecialchars($current_file['name']);
+                        if (file_exists($original_file_path)) {
+                            unlink($original_file_path);
+                        }
+                        continue; // Переходим к следующему файлу в цикле for
+                    }
+                } else {
+                     // Этот else理论上 не должен сработать, если логика выше верна
+                     // Но на всякий случай, если $image как-то стал false не через $image_creation_failed
+                     $upload_errors[] = 'Ошибка обработки изображения (неизвестная ошибка): ' . htmlspecialchars($current_file['name']);
+                     if (file_exists($original_file_path)) {
+                         unlink($original_file_path);
+                     }
+                     continue; // Переходим к следующему файлу в цикле for
+                }
+                // --- КОНЕЦ НОВОГО: Конвертация в WebP ---
+
+                // Определяем, нужно ли установить is_main
+                // Первое изображение *вообще* для товара становится главным.
+                // Если при начале загрузки уже были изображения, ни одно из новых не станет главным.
+                // Если при начале загрузки не было изображений, первое успешно обработанное станет главным.
+                $is_main = 0;
+                if (!$has_any_images && $upload_success_count === 0) {
+                     $is_main = 1; // Первое изображение из пакета, если до этого не было изображений
+                     $upload_success_count++; // Увеличиваем счетчик только после успешного сохранения
+                }
+
+                // Сохранение пути к WebP изображению в базу данных
+                $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_url, is_main) VALUES (?, ?, ?)");
+                $result = $stmt->execute([$product_id, $imageUrl, $is_main]);
+
+                if ($result) {
+                    if ($has_any_images || $is_main !== 1) { // Если уже были изображения ИЛИ текущее не стало главным
+                        $upload_success_count++; // Увеличиваем счетчик успешных загрузок
+                    }
+                    // (Если $is_main === 1, то $upload_success_count уже увеличен выше)
+                } else {
+                    $upload_errors[] = 'Ошибка при сохранении изображения в базу данных: ' . htmlspecialchars($current_file['name']);
+                    // Удаляем WebP файл в случае ошибки базы данных
+                    if (file_exists($webp_file_path)) {
+                        unlink($webp_file_path);
+                    }
+                }
+            } else {
+                $upload_errors[] = 'Ошибка загрузки файла ' . htmlspecialchars($current_file['name']) . ': ' . $upload_result['error'];
+            }
+        } // Конец цикла for
+
+        // Формируем итоговое уведомление
+        if ($upload_success_count > 0) {
+            $_SESSION['notifications'][] = [
+                'type' => 'success',
+                'message' => "Успешно загружено и сконвертировано {$upload_success_count} изображений(е) в WebP."
             ];
         }
-        
+        if (!empty($upload_errors)) {
+            foreach ($upload_errors as $error) {
+                $_SESSION['notifications'][] = [
+                    'type' => 'error',
+                    'message' => $error
+                ];
+            }
+        }
+
         header("Location: /admin/images?product_id=$product_id");
         exit();
-        
     } elseif ($action === 'delete_image') {
         $image_id = $_POST['image_id'];
         
@@ -248,7 +386,7 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
       </div>
     </div>
 
-    <!-- Форма добавления изображения -->
+      <!-- Форма добавления изображения -->
     <div class="bg-white rounded-3xl shadow-2xl p-6 mb-12">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Загрузить новое изображение</h2>
       
@@ -256,25 +394,30 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
         <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="upload_image">
         
-        <div class="border-2 border-dashed border-[#118568] rounded-2xl p-8 text-center hover:bg-[#f8fafa] transition-colors duration-300">
+        <div id="upload-area" class="border-2 border-dashed border-[#118568] rounded-2xl p-8 text-center hover:bg-[#f8fafa] transition-colors duration-300 relative">
+          <!-- Контейнер для предварительного просмотра -->
+          <div id="preview-container" class="mb-4 flex flex-wrap gap-2 justify-center">
+            <!-- Превью изображений будут добавляться сюда -->
+          </div>
+          
           <div class="w-16 h-16 bg-[#DEE5E5] rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
-          <p class="text-gray-600 mb-4">Перетащите изображение сюда или нажмите для выбора</p>
-          <input type="file" name="image" accept="image/*" 
-                 class="hidden" id="image-upload" required>
+          <p class="text-gray-600 mb-4">Перетащите изображения сюда или нажмите для выбора</p>
+          <input type="file" name="image[]" accept="image/*"
+                 class="hidden" id="image-upload" required multiple> <!-- Добавлен multiple -->
           <label for="image-upload" 
                  class="inline-block px-6 py-3 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 cursor-pointer">
-            Выбрать файл
+            Выбрать файл(ы)
           </label>
           <p class="text-sm text-gray-500 mt-2">Поддерживаемые форматы: JPG, PNG, GIF, WEBP</p>
         </div>
         
         <button type="submit" 
                 class="w-full bg-gradient-to-r from-[#118568] to-[#0f755a] text-white py-4 rounded-xl hover:from-[#0f755a] hover:to-[#0d654a] transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg hover:shadow-xl">
-          Загрузить изображение
+          Загрузить
         </button>
       </form>
     </div>
@@ -301,7 +444,7 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <?php foreach ($images as $image): ?>
-            <div class="bg-gray-50 rounded-2xl overflow-hidden hover:bg-white hover:shadow-xl transition-all duration-300 group">
+            <div class="bg-gray-50 rounded-2xl overflow-hidden hover:bg-white hover:shadow-xl transition-all duration-300 group <?php echo $image['is_main'] ? 'ring-4 ring-[#17B890]' : ''; ?>"> <!-- Добавлен стиль для главного изображения -->
               <div class="relative">
                 <img src="<?php echo htmlspecialchars($image['image_url']); ?>" 
                      alt="Изображение товара" 
@@ -368,5 +511,97 @@ $main_images = array_filter($images, function($img) { return $img['is_main'] == 
     <?php endif; ?>
   </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('image-upload');
+    const uploadArea = document.getElementById('upload-area');
+    const previewContainer = document.getElementById('preview-container');
+
+    // Функция для отображения превью
+    function showPreview(files) {
+        previewContainer.innerHTML = ''; // Очистить предыдущие превью
+        previewContainer.classList.remove('hidden');
+        uploadArea.classList.add('border-[#17B890]', 'bg-[#f0f9f7]');
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = "Превью " + (i+1);
+                    img.className = "w-16 h-16 object-cover rounded-lg border border-gray-300 shadow-sm"; // Компактное превью
+                    previewContainer.appendChild(img);
+                }
+
+                reader.readAsDataURL(file);
+            }
+        }
+    }
+
+    // Функция для скрытия превью
+    function hidePreview() {
+        previewContainer.innerHTML = ''; // Очистить контейнер
+        previewContainer.classList.add('hidden');
+        uploadArea.classList.remove('border-[#17B890]', 'bg-[#f0f9f7]');
+    }
+
+    // Слушатель на изменение input (выбор файла через диалог)
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files.length > 0) {
+            showPreview(e.target.files);
+        } else {
+            hidePreview();
+        }
+    });
+
+    // Слушатель для drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        uploadArea.classList.add('border-[#17B890]', 'bg-[#f0f9f7]');
+    }
+
+    function unhighlight(e) {
+        // Не убираем подсветку, если файлы уже выбраны
+        if (!fileInput.files.length) {
+            uploadArea.classList.remove('border-[#17B890]', 'bg-[#f0f9f7]');
+        }
+    }
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        if (dt.files.length > 0 && Array.from(dt.files).every(f => f.type.startsWith('image/'))) {
+            fileInput.files = dt.files; // Обновляем файлы в input
+            showPreview(dt.files);
+        } else {
+            // Показать сообщение об ошибке или скрыть превью
+            alert('Пожалуйста, перетащите только изображения.');
+            hidePreview();
+        }
+    }
+
+});
+</script>
 
 <?php include_once('../includes/footer.php'); ?>
