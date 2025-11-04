@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'error' => $uploaded_files['error'][$i],
                 'size' => $uploaded_files['size'][$i],
             ];
-
+            error_log("Debug message...");
             // Используем secure_file_upload для каждого файла
             $upload_result = secure_file_upload($current_file, [
                 'allowed_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'public_dir' => '/storage/uploads/',
                 'filename_prefix' => 'product_' . $product_id . '_'
             ]);
-
+error_log("Upload result: " . print_r($upload_result, true));
             if ($upload_result['success']) {
                 $original_file_path = $upload_result['full_path'];
                 $original_public_url = $upload_result['public_url'];
