@@ -51,12 +51,15 @@ $filter_status = $_GET['status'] ?? 'all';
 $filter_priority = $_GET['priority'] ?? 'all';
 $filter_assigned = $_GET['assigned'] ?? 'all';
 
-$query = "SELECT t.*, 
-                 assigned.name as assigned_name, 
-                 creator.name as creator_name
+$query = "SELECT t.*,
+                 assigned.name as assigned_name,
+                 creator.name as creator_name,
+                 oa.order_id as related_order_number, -- или другое поле для отображения
+                 oa.client_name as related_client_name  -- или другое поле
           FROM tasks t
           LEFT JOIN users assigned ON t.assigned_to = assigned.id
           LEFT JOIN users creator ON t.created_by = creator.id
+          LEFT JOIN orders_accounting oa ON t.related_order_id = oa.id -- Замените orders_accounting на реальное имя
           WHERE 1=1";
 $params = [];
 
@@ -383,7 +386,24 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                         </p>
                                     </div>
                                 <?php endif; ?>
-
+                                                                <!-- НОВОЕ: Отображение связанного заказа -->
+                                <?php if (!empty($task['related_order_id'])): ?>
+                                    <div class="mb-3">
+                                        <p class="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Связанный заказ:
+                                        </p>
+                                        <a href="/admin/order/details.php?id=<?php echo (int)$task['related_order_id']; ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium" target="_blank">
+                                            #<?php echo htmlspecialchars($task['related_order_number'] ?? $task['related_order_id']); ?>
+                                        </a>
+                                        <?php if (!empty($task['related_client_name'])): ?>
+                                            <span class="text-sm text-gray-600"> (<?php echo htmlspecialchars($task['related_client_name']); ?>)</span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                                <!-- КОНЕЦ НОВОГО -->    
                                 <div class="flex flex-wrap gap-4 text-sm text-gray-500">
                                     <span class="flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">

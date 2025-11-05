@@ -20,6 +20,21 @@ if (isset($_SESSION['notifications'])) {
     unset($_SESSION['notifications']);
 }
 
+$order_options = [];
+try {
+    // Получаем последние N заказов, например, 50, отсортированные по дате создания (новые сверху)
+    // Выберите нужные поля для отображения в выпадающем списке
+    $order_query = "SELECT id, order_id, client_name, created_at FROM orders_accounting ORDER BY created_at DESC LIMIT 50";
+    $order_stmt = $pdo->prepare($order_query);
+    $order_stmt->execute();
+    $order_options = $order_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Ошибка получения списка заказов для задачи: " . $e->getMessage());
+    // Можно добавить сообщение в $notifications, если нужно
+    // $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не удалось загрузить список заказов.'];
+}
+// --- КОНЕЦ НОВОГО ---
+
 // Обработка создания задачи
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_task'])) {
     // Verify CSRF token
@@ -29,7 +44,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_task'])) {
     $priority = $_POST['priority'];
     $assigned_to = !empty($_POST['assigned_to']) ? intval($_POST['assigned_to']) : null;
     $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
-
+    // --- НОВОЕ: Обработка связанного заказа ---
+    $related_order_id = null;
+    if (!empty($_POST['related_order_id'])) {
+        $posted_order_id = (int)$_POST['related_order_id'];
+        // Проверим, существует ли такой заказ
+        $check_order_stmt = $pdo->prepare("SELECT id FROM orders_accounting WHERE id = ?");
+        $check_order_stmt->execute([$posted_order_id]);
+        if ($check_order_stmt->fetch()) {
+            $related_order_id = $posted_order_id;
+        } else {
+            $errors[] = 'Выбранный заказ не существует.';
+        }
+    }
+    // --- КОНЕЦ НОВОГО ---
     // Process task items
     $task_items = [];
     if (!empty($_POST['task_items'])) {
@@ -61,11 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_task'])) {
         try {
             // Создание задачи
             $stmt = $pdo->prepare("
-                INSERT INTO tasks (title, description, task_items, assigned_to, created_by, priority, due_date, status, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
+                INSERT INTO tasks (title, description, task_items, assigned_to, created_by, priority, due_date, related_order_id, status, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
             ");
 
-            if ($stmt->execute([$title, $description, $task_items_json, $assigned_to, $_SESSION['user_id'], $priority, $due_date])) {
+            if ($stmt->execute([$title, $description, $task_items_json, $assigned_to, $_SESSION['user_id'], $priority, $due_date, $related_order_id])) {
                 $task_id = $pdo->lastInsertId();
 
                 // Отправка уведомления в Telegram
@@ -212,7 +240,23 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300">
                 </div>
             </div>
-
+            <div>
+                <label for="related_order_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    Связать с заказом (опционально)
+                </label>
+                <select name="related_order_id" id="related_order_id"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300">
+                    <option value="">Не выбрано</option>
+                    <?php foreach ($order_options as $order): ?>
+                        <option value="<?php echo (int)$order['id']; ?>" <?php echo ($_POST['related_order_id'] ?? '') == $order['id'] ? 'selected' : ''; ?>>
+                            #<?php echo htmlspecialchars($order['order_number'] ?? $order['id']); ?> - <?php echo htmlspecialchars($order['client_name'] ?? 'Клиент'); ?> (<?php echo $order['created_at']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="mt-2 text-sm text-gray-500">
+                    Выберите заказ, с которым связана эта задача.
+                </p>
+            </div>
             <!-- Назначение исполнителя -->
             <div>
                 <label for="assigned_to" class="block text-sm font-medium text-gray-700 mb-2">

@@ -93,7 +93,7 @@ class TelegramBot
             'pending'     => '⏳ В ожидании',
             'in_progress' => '🔄 В работе',
             'completed'   => '✅ Завершено',
-            'cancelled'   => '❌ Отменено'
+            'cancelled'   => '❌ Отмено'
         ];
 
         $keyboard = [];
@@ -145,6 +145,20 @@ class TelegramBot
         if (!empty($task_data['description'])) {
             $message .= "📄 <b>Описание:</b>\n{$task_data['description']}\n\n";
         }
+
+        // --- НОВОЕ: Добавление информации о связанном заказе ---
+        if (!empty($task_data['related_order_id'])) {
+            $message .= "📦 <b>Связанный заказ:</b> #{$task_data['related_order_number']} ";
+            if (!empty($task_data['related_client_name'])) {
+                $message .= "(Клиент: {$task_data['related_client_name']}) ";
+            }
+            // Добавляем ссылку на заказ (если Telegram поддерживает ссылки в inline-клавиатуре, можно туда же добавить кнопку)
+            // Ссылка в тексте может не работать, если не включена опция parse_mode для ссылок, но HTML обычно поддерживает <a> теги для parse_mode 'HTML', если URL валидный.
+            // Для простоты, просто добавим URL как текст.
+            $order_link = "https://{$_SERVER['HTTP_HOST']}/admin/order/details.php?id={$task_data['related_order_id']}"; // Замените на реальный путь
+            $message .= "\n🔗 Подробнее о заказе: {$order_link}\n\n";
+        }
+        // --- КОНЕЦ НОВОГО ---
 
         if (!empty($task_data['due_date'])) {
             $due_date = date('d.m.Y H:i', strtotime($task_data['due_date']));
@@ -208,6 +222,17 @@ class TelegramBot
         if (!empty($task_data['description'])) {
             $message .= "📄 <b>Описание:</b>\n{$task_data['description']}\n\n";
         }
+
+        // --- НОВОЕ: Добавление информации о связанном заказе (дублируется из sendTaskAssignment) ---
+        if (!empty($task_data['related_order_id'])) {
+            $message .= "📦 <b>Связанный заказ:</b> #{$task_data['related_order_number']} ";
+            if (!empty($task_data['related_client_name'])) {
+                $message .= "(Клиент: {$task_data['related_client_name']}) ";
+            }
+            $order_link = "https://{$_SERVER['HTTP_HOST']}/admin/order/details.php?id={$task_data['related_order_id']}"; // Замените на реальный путь
+            $message .= "\n🔗 Подробнее о заказе: {$order_link}\n\n";
+        }
+        // --- КОНЕЦ НОВОГО ---
 
         if (!empty($task_data['due_date'])) {
             $due_date = date('d.m.Y H:i', strtotime($task_data['due_date']));
@@ -344,13 +369,17 @@ function sendTaskAssignmentNotification($task_id)
 {
     global $pdo;
 
+    // --- НОВОЕ: Изменен запрос для получения информации о заказе ---
     $stmt = $pdo->prepare("
         SELECT t.*, 
                assigned.name as assigned_name, assigned.telegram_chat_id as assigned_chat_id,
-               creator.name as creator_name
+               creator.name as creator_name,
+               oa.order_id as related_order_number, -- Предполагаемое имя поля
+               oa.client_name as related_client_name -- Предполагаемое имя поля
         FROM tasks t
         LEFT JOIN users assigned ON t.assigned_to = assigned.id
         LEFT JOIN users creator ON t.created_by = creator.id
+        LEFT JOIN orders_accounting oa ON t.related_order_id = oa.id -- Замените на реальное имя таблицы
         WHERE t.id = ?
     ");
     $stmt->execute([$task_id]);
@@ -377,3 +406,4 @@ function sendTaskAssignmentNotification($task_id)
         return $telegram->sendTaskAssignmentToAll($task, $creator_user);
     }
 }
+?>
