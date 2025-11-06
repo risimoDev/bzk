@@ -13,6 +13,7 @@ class TelegramBot
     {
         // Get bot token from environment variables
         $this->bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? '';
+        // Исправлено: убран лишний пробел между 'bot' и $this->bot_token
         $this->api_url = "https://api.telegram.org/bot{$this->bot_token}/";
     }
 
@@ -93,7 +94,7 @@ class TelegramBot
             'pending'     => '⏳ В ожидании',
             'in_progress' => '🔄 В работе',
             'completed'   => '✅ Завершено',
-            'cancelled'   => '❌ Отмено'
+            'cancelled'   => '❌ Отменено' // Исправлено: было '❌ Отмено'
         ];
 
         $keyboard = [];
@@ -146,17 +147,18 @@ class TelegramBot
             $message .= "📄 <b>Описание:</b>\n{$task_data['description']}\n\n";
         }
 
-        // --- НОВОЕ: Добавление информации о связанном заказе ---
-        if (!empty($task_data['related_order_id'])) {
-            $message .= "📦 <b>Связанный заказ:</b> #{$task_data['related_order_number']} ";
-            if (!empty($task_data['related_client_name'])) {
-                $message .= "(Клиент: {$task_data['related_client_name']}) ";
+        // --- НОВОЕ: Добавление информации о связанной бухгалтерской записи заказа ---
+        if (!empty($task_data['related_order_accounting_id'])) {
+            $order_type_text = ($task_data['related_order_source'] === 'site') ? 'заказа с сайта' : 'внешнего заказа';
+            $order_id_to_link = ($task_data['related_order_source'] === 'site') ? $task_data['related_site_order_id'] : $task_data['related_external_order_id'];
+            $order_details_url = ($task_data['related_order_source'] === 'site') ? "/admin/order/details.php?id={$task_data['related_site_order_id']}" : "/admin/order/external_details.php?id={$task_data['related_external_order_id']}";
+
+            $message .= "📦 <b>Связанный {$order_type_text}:</b> #{$order_id_to_link} ";
+            if (!empty($task_data['related_order_client_name'])) {
+                $message .= "(Клиент: {$task_data['related_order_client_name']}) ";
             }
-            // Добавляем ссылку на заказ (если Telegram поддерживает ссылки в inline-клавиатуре, можно туда же добавить кнопку)
-            // Ссылка в тексте может не работать, если не включена опция parse_mode для ссылок, но HTML обычно поддерживает <a> теги для parse_mode 'HTML', если URL валидный.
-            // Для простоты, просто добавим URL как текст.
-            $order_link = "https://{$_SERVER['HTTP_HOST']}/admin/order/details.php?id={$task_data['related_order_id']}"; // Замените на реальный путь
-            $message .= "\n🔗 Подробнее о заказе: {$order_link}\n\n";
+            $order_link = "https://{$_SERVER['HTTP_HOST']}{$order_details_url}";
+            $message .= "\n🔗 Подробнее: {$order_link}\n\n";
         }
         // --- КОНЕЦ НОВОГО ---
 
@@ -223,14 +225,18 @@ class TelegramBot
             $message .= "📄 <b>Описание:</b>\n{$task_data['description']}\n\n";
         }
 
-        // --- НОВОЕ: Добавление информации о связанном заказе (дублируется из sendTaskAssignment) ---
-        if (!empty($task_data['related_order_id'])) {
-            $message .= "📦 <b>Связанный заказ:</b> #{$task_data['related_order_number']} ";
-            if (!empty($task_data['related_client_name'])) {
-                $message .= "(Клиент: {$task_data['related_client_name']}) ";
+        // --- НОВОЕ: Добавление информации о связанной бухгалтерской записи заказа (дублируется из sendTaskAssignment) ---
+        if (!empty($task_data['related_order_accounting_id'])) {
+            $order_type_text = ($task_data['related_order_source'] === 'site') ? 'заказа с сайта' : 'внешнего заказа';
+            $order_id_to_link = ($task_data['related_order_source'] === 'site') ? $task_data['related_site_order_id'] : $task_data['related_external_order_id'];
+            $order_details_url = ($task_data['related_order_source'] === 'site') ? "/admin/order/details.php?id={$task_data['related_site_order_id']}" : "/admin/order/external_details.php?id={$task_data['related_external_order_id']}";
+
+            $message .= "📦 <b>Связанный {$order_type_text}:</b> #{$order_id_to_link} ";
+            if (!empty($task_data['related_order_client_name'])) {
+                $message .= "(Клиент: {$task_data['related_order_client_name']}) ";
             }
-            $order_link = "https://{$_SERVER['HTTP_HOST']}/admin/order/details.php?id={$task_data['related_order_id']}"; // Замените на реальный путь
-            $message .= "\n🔗 Подробнее о заказе: {$order_link}\n\n";
+            $order_link = "https://{$_SERVER['HTTP_HOST']}{$order_details_url}";
+            $message .= "\n🔗 Подробнее: {$order_link}\n\n";
         }
         // --- КОНЕЦ НОВОГО ---
 
@@ -363,23 +369,114 @@ function getTelegramBot()
 }
 
 /**
+ * Send task status change notification
+ * Эта функция отправляет уведомление в Telegram о смене статуса задачи.
+ * Уведомление отправляется исполнителю задачи (assigned_user) и в групповой чат (если настроен).
+ *
+ * @param int $task_id ID задачи
+ * @param string $old_status Старый статус задачи (например, 'pending', 'in_progress')
+ * @param string $new_status Новый статус задачи (например, 'in_progress', 'completed')
+ * @return array|bool Результат отправки или false в случае ошибки/отсутствия данных
+ */
+function sendTaskStatusNotification($task_id, $old_status, $new_status)
+{
+    global $pdo;
+
+    // Получаем данные задачи, исполнителя и создателя (для уведомления)
+    // Также получаем информацию о связанной бухгалтерской записи заказа
+    $stmt = $pdo->prepare("
+        SELECT t.*,
+               assigned.name as assigned_name, assigned.telegram_chat_id as assigned_chat_id,
+               creator.name as creator_name,
+               -- Информация из бухгалтерской записи
+               oa.client_name as related_order_client_name,
+               oa.source as related_order_source,
+               oa.order_id as related_site_order_id, -- ID связанного заказа с сайта
+               oa.external_order_id as related_external_order_id -- ID связанного внешнего заказа
+        FROM tasks t
+        LEFT JOIN users assigned ON t.assigned_to = assigned.id
+        LEFT JOIN users creator ON t.created_by = creator.id
+        LEFT JOIN orders_accounting oa ON t.related_order_accounting_id = oa.id -- Замените orders_accounting на реальное имя
+        WHERE t.id = ?
+    ");
+    $stmt->execute([$task_id]);
+    $task = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$task) {
+        error_log("sendTaskStatusNotification: Task with ID {$task_id} not found.");
+        return false;
+    }
+
+    // Не отправляем, если нет исполнителя или у него нет Telegram ID
+    if (!$task['assigned_chat_id']) {
+        // error_log("sendTaskStatusNotification: No Telegram chat ID for assigned user of task {$task_id}.");
+        return false;
+    }
+
+    $telegram = getTelegramBot();
+
+    $status_names = [
+        'pending'     => '⏳ В ожидании',
+        'in_progress' => '🔄 В работе',
+        'completed'   => '✅ Завершено',
+        'cancelled'   => '❌ Отменено'
+    ];
+
+    $old_status_name = $status_names[$old_status] ?? $old_status;
+    $new_status_name = $status_names[$new_status] ?? $new_status;
+
+    // Формируем сообщение
+    $message = "📋 <b>Статус задачи изменён!</b>\n\n";
+    $message .= "📝 <b>Заголовок:</b> {$task['title']}\n";
+    $message .= "🆔 <b>ID задачи:</b> #{$task['id']}\n";
+    $message .= "🔄 <b>Статус:</b> {$old_status_name} → {$new_status_name}\n\n";
+
+    // --- НОВОЕ: Добавление информации о связанной бухгалтерской записи заказа ---
+    if (!empty($task['related_order_accounting_id'])) {
+        $order_type_text = ($task['related_order_source'] === 'site') ? 'заказа с сайта' : 'внешнего заказа';
+        $order_id_to_link = ($task['related_order_source'] === 'site') ? $task['related_site_order_id'] : $task['related_external_order_id'];
+        $order_details_url = ($task['related_order_source'] === 'site') ? "/admin/order/details.php?id={$task['related_site_order_id']}" : "/admin/order/external_details.php?id={$task['related_external_order_id']}";
+
+        $message .= "📦 <b>Связанный {$order_type_text}:</b> #{$order_id_to_link} ";
+        if (!empty($task['related_order_client_name'])) {
+            $message .= "(Клиент: {$task['related_order_client_name']}) ";
+        }
+        $order_link = "https://{$_SERVER['HTTP_HOST']}{$order_details_url}";
+        $message .= "\n🔗 Подробнее: {$order_link}\n\n";
+    }
+    // --- КОНЕЦ НОВОГО ---
+
+    $message .= "👤 <b>Обновил:</b> {$task['creator_name']}\n";
+    $message .= "🎯 <b>Исполнитель:</b> {$task['assigned_name']}\n\n";
+    $message .= "🌐 Посмотреть задачу: https://{$_SERVER['HTTP_HOST']}/admin/tasks";
+
+    // Отправляем уведомление исполнителю и в группу (если настроено)
+    $result = $telegram->sendToGroupAndUser($task['assigned_chat_id'], $message, 'HTML');
+
+    return $result;
+}
+
+/**
  * Send task assignment notification
  */
 function sendTaskAssignmentNotification($task_id)
 {
     global $pdo;
 
-    // --- НОВОЕ: Изменен запрос для получения информации о заказе ---
+    // --- НОВОЕ: Изменен запрос для получения информации о связанной бухгалтерской записи заказа ---
     $stmt = $pdo->prepare("
-        SELECT t.*, 
+        SELECT t.*,
                assigned.name as assigned_name, assigned.telegram_chat_id as assigned_chat_id,
                creator.name as creator_name,
-               oa.order_id as related_order_number, -- Предполагаемое имя поля
-               oa.client_name as related_client_name -- Предполагаемое имя поля
+               -- Информация из бухгалтерской записи
+               oa.client_name as related_order_client_name,
+               oa.source as related_order_source,
+               oa.order_id as related_site_order_id, -- ID связанного заказа с сайта
+               oa.external_order_id as related_external_order_id -- ID связанного внешнего заказа
         FROM tasks t
         LEFT JOIN users assigned ON t.assigned_to = assigned.id
         LEFT JOIN users creator ON t.created_by = creator.id
-        LEFT JOIN orders_accounting oa ON t.related_order_id = oa.id -- Замените на реальное имя таблицы
+        LEFT JOIN orders_accounting oa ON t.related_order_accounting_id = oa.id -- Замените orders_accounting на реальное имя
         WHERE t.id = ?
     ");
     $stmt->execute([$task_id]);

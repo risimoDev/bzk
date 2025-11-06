@@ -54,12 +54,15 @@ $filter_assigned = $_GET['assigned'] ?? 'all';
 $query = "SELECT t.*,
                  assigned.name as assigned_name,
                  creator.name as creator_name,
-                 oa.order_id as related_order_number, -- или другое поле для отображения
-                 oa.client_name as related_client_name  -- или другое поле
+                 -- Информация из бухгалтерской записи
+                 oa.client_name as related_order_client_name,
+                 oa.source as related_order_source,
+                 oa.order_id as related_site_order_id, -- ID связанного заказа с сайта
+                 oa.external_order_id as related_external_order_id -- ID связанного внешнего заказа
           FROM tasks t
           LEFT JOIN users assigned ON t.assigned_to = assigned.id
           LEFT JOIN users creator ON t.created_by = creator.id
-          LEFT JOIN orders_accounting oa ON t.related_order_id = oa.id -- Замените orders_accounting на реальное имя
+          LEFT JOIN orders_accounting oa ON t.related_order_accounting_id = oa.id -- Замените orders_accounting на реальное имя, если отличается
           WHERE 1=1";
 $params = [];
 
@@ -386,24 +389,30 @@ $my_tasks_count = $my_tasks->fetchColumn();
                                         </p>
                                     </div>
                                 <?php endif; ?>
-                                                                <!-- НОВОЕ: Отображение связанного заказа -->
-                                <?php if (!empty($task['related_order_id'])): ?>
+                                <!-- НОВОЕ: Отображение связанного заказа (из orders_accounting) -->
+                                <?php if (!empty($task['related_order_accounting_id'])): ?>
                                     <div class="mb-3">
                                         <p class="text-sm font-medium text-gray-700 mb-1 flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            Связанный заказ:
+                                            Связанный заказ (бухгалтерия #<?php echo $task['related_order_accounting_id']; ?>):
                                         </p>
-                                        <a href="/admin/order/details.php?id=<?php echo (int)$task['related_order_id']; ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium" target="_blank">
-                                            #<?php echo htmlspecialchars($task['related_order_number'] ?? $task['related_order_id']); ?>
-                                        </a>
-                                        <?php if (!empty($task['related_client_name'])): ?>
-                                            <span class="text-sm text-gray-600"> (<?php echo htmlspecialchars($task['related_client_name']); ?>)</span>
+                                        <?php if ($task['related_order_source'] === 'site' && !empty($task['related_site_order_id'])): ?>
+                                            <a href="/admin/order/details.php?id=<?php echo (int)$task['related_site_order_id']; ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium" target="_blank">
+                                                #<?php echo $task['related_site_order_id']; ?> (сайт)
+                                            </a>
+                                        <?php elseif ($task['related_order_source'] === 'external' && !empty($task['related_external_order_id'])): ?>
+                                            <a href="/admin/order/external_details.php?id=<?php echo (int)$task['related_external_order_id']; ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium" target="_blank">
+                                                #<?php echo $task['related_external_order_id']; ?> (внешний)
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($task['related_order_client_name'])): ?>
+                                            <span class="text-sm text-gray-600"> (<?php echo htmlspecialchars($task['related_order_client_name']); ?>)</span>
                                         <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
-                                <!-- КОНЕЦ НОВОГО -->    
+                                <!-- КОНЕЦ НОВОГО -->
                                 <div class="flex flex-wrap gap-4 text-sm text-gray-500">
                                     <span class="flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-[#118568]" fill="none" viewBox="0 0 24 24" stroke="currentColor">

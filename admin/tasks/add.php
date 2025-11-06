@@ -20,18 +20,30 @@ if (isset($_SESSION['notifications'])) {
     unset($_SESSION['notifications']);
 }
 
-$order_options = [];
+// --- НОВОЕ: Получение списка заказов из orders_accounting ---
+$accounting_orders = [];
 try {
-    // Получаем последние N заказов, например, 50, отсортированные по дате создания (новые сверху)
-    // Выберите нужные поля для отображения в выпадающем списке
-    $order_query = "SELECT id, order_id, client_name, created_at FROM orders_accounting ORDER BY created_at DESC LIMIT 50";
+    // Получаем последние N бухгалтерских записей заказов, отсортированные по дате создания (новые сверху)
+    // Включаем client_name, source, order_id, external_order_id для отображения
+    $order_query = "
+        SELECT
+            oa.id,
+            oa.client_name,
+            oa.source,
+            -- oa.order_id, -- Может понадобиться для отображения ID связанного заказа
+            -- oa.external_order_id -- Может понадобиться для отображения ID связанного внешнего заказа
+            o.id AS site_order_id, -- Используем id из orders
+            eo.client_name AS external_client_name -- Или другое поле для отображения из external_orders
+        FROM orders_accounting oa
+        LEFT JOIN orders o ON (oa.source = 'site' AND oa.order_id = o.id)
+        LEFT JOIN external_orders eo ON (oa.source = 'external' AND oa.external_order_id = eo.id)
+        ORDER BY oa.created_at DESC LIMIT 100"; // Увеличим лимит, если нужно больше
     $order_stmt = $pdo->prepare($order_query);
     $order_stmt->execute();
-    $order_options = $order_stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    error_log("Ошибка получения списка заказов для задачи: " . $e->getMessage());
-    // Можно добавить сообщение в $notifications, если нужно
-    // $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не удалось загрузить список заказов.'];
+    $accounting_orders = $order_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) { // Убедитесь, что ловим PDOException
+    error_log("Ошибка получения списка заказов для задачи: " . $e->getMessage()); // Логируем ошибку
+    $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не удалось загрузить список заказов. Подробности в логах.'];
 }
 // --- КОНЕЦ НОВОГО ---
 
@@ -44,17 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_task'])) {
     $priority = $_POST['priority'];
     $assigned_to = !empty($_POST['assigned_to']) ? intval($_POST['assigned_to']) : null;
     $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
-    // --- НОВОЕ: Обработка связанного заказа ---
-    $related_order_id = null;
-    if (!empty($_POST['related_order_id'])) {
-        $posted_order_id = (int)$_POST['related_order_id'];
-        // Проверим, существует ли такой заказ
-        $check_order_stmt = $pdo->prepare("SELECT id FROM orders_accounting WHERE id = ?");
-        $check_order_stmt->execute([$posted_order_id]);
-        if ($check_order_stmt->fetch()) {
-            $related_order_id = $posted_order_id;
+    // --- НОВОЕ: Обработка связанного заказа из orders_accounting ---
+    $related_order_accounting_id = null;
+    if (!empty($_POST['related_order_accounting_id'])) {
+        $posted_oa_id = (int)$_POST['related_order_accounting_id'];
+        // Проверим, существует ли такая запись в orders_accounting
+        $check_oa_stmt = $pdo->prepare("SELECT id FROM orders_accounting WHERE id = ?");
+        $check_oa_stmt->execute([$posted_oa_id]);
+        if ($check_oa_stmt->fetch()) {
+            $related_order_accounting_id = $posted_oa_id;
         } else {
-            $errors[] = 'Выбранный заказ не существует.';
+            $errors[] = 'Выбранная запись заказа не существует.';
         }
     }
     // --- КОНЕЦ НОВОГО ---
@@ -89,11 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_task'])) {
         try {
             // Создание задачи
             $stmt = $pdo->prepare("
-                INSERT INTO tasks (title, description, task_items, assigned_to, created_by, priority, due_date, related_order_id, status, created_at, updated_at) 
+                INSERT INTO tasks (title, description, task_items, assigned_to, created_by, priority, due_date, related_order_accounting_id, status, created_at, updated_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())
             ");
 
-            if ($stmt->execute([$title, $description, $task_items_json, $assigned_to, $_SESSION['user_id'], $priority, $due_date, $related_order_id])) {
+            if ($stmt->execute([$title, $description, $task_items_json, $assigned_to, $_SESSION['user_id'], $priority, $due_date, $related_order_accounting_id])) {
                 $task_id = $pdo->lastInsertId();
 
                 // Отправка уведомления в Telegram
@@ -240,21 +252,27 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300">
                 </div>
             </div>
+            <!-- Связанный заказ (Новое поле - выбор из orders_accounting) -->
             <div>
-                <label for="related_order_id" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="related_order_accounting_id" class="block text-sm font-medium text-gray-700 mb-2">
                     Связать с заказом (опционально)
                 </label>
-                <select name="related_order_id" id="related_order_id"
+                <select name="related_order_accounting_id" id="related_order_accounting_id"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent transition-colors duration-300">
                     <option value="">Не выбрано</option>
-                    <?php foreach ($order_options as $order): ?>
-                        <option value="<?php echo (int)$order['id']; ?>" <?php echo ($_POST['related_order_id'] ?? '') == $order['id'] ? 'selected' : ''; ?>>
-                            #<?php echo htmlspecialchars($order['order_number'] ?? $order['id']); ?> - <?php echo htmlspecialchars($order['client_name'] ?? 'Клиент'); ?> (<?php echo $order['created_at']; ?>)
+                    <?php foreach ($accounting_orders as $oa): ?>
+                        <option value="<?php echo (int)$oa['id']; ?>" <?php echo ($_POST['related_order_accounting_id'] ?? '') == $oa['id'] ? 'selected' : ''; ?>>
+                            #<?php echo $oa['id']; ?> (<?php echo $oa['source'] == 'site' ? 'Сайт' : 'Внешний'; ?>) - <?php echo htmlspecialchars($oa['client_name']); ?>
+                            <?php if ($oa['source'] == 'site' && !empty($oa['site_order_id'])): ?>
+                                (ID заказа: <?php echo $oa['site_order_id']; ?>)
+                            <?php elseif ($oa['source'] == 'external' && !empty($oa['external_order_id'])): ?>
+                                (ID внешнего: <?php echo $oa['external_order_id']; ?>)
+                            <?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
                 <p class="mt-2 text-sm text-gray-500">
-                    Выберите заказ, с которым связана эта задача.
+                    Выберите заказ из бухгалтерии, с которым связана эта задача.
                 </p>
             </div>
             <!-- Назначение исполнителя -->
