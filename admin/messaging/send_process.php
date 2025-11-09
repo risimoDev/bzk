@@ -74,7 +74,7 @@ try {
         header("Location: /admin/messaging/details.php?id=$message_id");
         exit();
     }
-
+$mail = new PHPMailer(true);
     // Настройка PHPMailer
         // SMTP settings
         $mail->isSMTP();
