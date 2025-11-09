@@ -470,9 +470,11 @@ $telegram_success_rate = $total_recipients > 0 ? round(($telegram_stats['sent'] 
                                                 ?>
                                             </td>
                                             <td class="py-4 px-4 text-center">
-                                                <?php if ($recipient['sent_at']): ?>
+                                                <?php 
+                                                $sent_at = $recipient['email_sent_at'] ?? $recipient['telegram_sent_at'] ?? null;
+                                                if ($sent_at): ?>
                                                     <span class="text-xs text-gray-500">
-                                                        <?php echo date('d.m.Y H:i', strtotime($recipient['sent_at'])); ?>
+                                                        <?php echo date('d.m.Y H:i', strtotime($sent_at)); ?>
                                                     </span>
                                                 <?php else: ?>
                                                     <span class="text-xs text-gray-400">Не отправлено</span>
