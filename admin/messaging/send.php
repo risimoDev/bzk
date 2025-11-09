@@ -14,7 +14,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/autoload.php'; // если через Composer
+require '../../vendor/autoload.php'; // если через Composer
 
 $message_id = intval($_GET['id'] ?? 0);
 
