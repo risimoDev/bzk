@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user) {
       // Проверка на существующий активный токен
       if ($user['reset_token'] && $user['reset_token_expires'] > date('Y-m-d H:i:s')) {
-        $success_message = 'Инструкции по сбросу пароля уже отправлены на ваш email. Проверьте почту.';
+        $success_message = 'Инструкции по сбросу пароля уже отправлены на ваш email. Проверьте почту. Если письмо не пришло, проверьте папку спам';
       } else {
         // Генерация нового токена
         $token = bin2hex(random_bytes(32)); // Увеличили длину токена
@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Содержимое письма
             $mail->isHTML(true);
-            $mail->Subject = 'Восстановление пароля - BZK Print';
+            $mail->Subject = 'Восстановление пароля - BZK PRINT';
             $mail->Body = "
                             <html>
                             <head>
@@ -186,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                                 <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
                                     <div style='text-align: center; margin-bottom: 30px;'>
-                                        <h1 style='color: #118568;'>BZK Print</h1>
+                                        <h1 style='color: #118568;'>BZK PRINT</h1>
                                         <h2 style='color: #666;'>Восстановление пароля</h2>
                                     </div>
                                     
@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </p>
                                     
                                     <div style='text-align: center; margin-top: 30px; color: #999; font-size: 12px;'>
-                                        © 2025 BZK Print. Все права защищены.
+                                        © 2025 BZK PRINT. Все права защищены.
                                     </div>
                                 </div>
                             </body>

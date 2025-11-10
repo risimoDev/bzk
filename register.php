@@ -60,7 +60,7 @@ function sendWelcomeEmail($userEmail, $userName) {
         
         // Email content
         $mail->isHTML(true);
-        $mail->Subject = 'Добро пожаловать в BZK Print!';
+        $mail->Subject = 'Добро пожаловать в BZK PRINT!';
         $mail->Body = "
             <html>
             <head>
@@ -70,12 +70,12 @@ function sendWelcomeEmail($userEmail, $userName) {
                 <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
                     <div style='background: linear-gradient(135deg, #118568 0%, #17B890 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center;'>
                         <h1 style='margin: 0; font-size: 28px;'>🎉 Добро пожаловать!</h1>
-                        <p style='margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;'>Спасибо за регистрацию в BZK Print</p>
+                        <p style='margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;'>Спасибо за регистрацию в BZK PRINT</p>
                     </div>
                     <div style='background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd; border-top: none;'>
                         <p style='margin-top: 0; font-size: 16px;'>Здравствуйте, <strong>" . htmlspecialchars($userName) . "</strong>!</p>
                         
-                        <p>Поздравляем! Ваш аккаунт в типографии BZK Print успешно создан. Теперь вы можете:</p>
+                        <p>Поздравляем! Ваш аккаунт в типографии BZK PRINT успешно создан. Теперь вы можете:</p>
                         
                         <div style='background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #118568;'>
                             <ul style='margin: 0; padding-left: 20px;'>
@@ -100,7 +100,7 @@ function sendWelcomeEmail($userEmail, $userName) {
                         <p style='font-size: 12px; color: #666; margin-bottom: 0; text-align: center;'>
                             С уважением,<br>
                             Команда типографии BZK PRINT<br>
-                            <a href='https://" . $_SERVER['HTTP_HOST'] . "' style='color: #118568;'>bzkprint.ru</a> • <a href='tel:+71234567890' style='color: #118568;'>+7 (922) 304-04-65</a>
+                            <a href='https://" . $_SERVER['HTTP_HOST'] . "' style='color: #118568;'>bzkprint.ru</a> • <a href='tel:+79223040465' style='color: #118568;'>+7 (922) 304-04-65</a><br>
                             Автоматическое письмо, отвечать на него не нужно!
                         </p>
                     </div>

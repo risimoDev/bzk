@@ -98,7 +98,7 @@ try {
             try {
                 $mail->clearAddresses();
                 $mail->addAddress($user_email, $user_name);
-                $mail->Subject = $message['title'] ?? 'Уведомление от BZK Print';
+                $mail->Subject = $message['title'] ?? 'Уведомление от BZK PRINT';
 
                 $html_content = "
                 <html><body style='font-family:Arial,sans-serif;line-height:1.6;color:#333;'>
@@ -111,8 +111,8 @@ try {
                             <div style='margin:20px 0;'>".nl2br(htmlspecialchars($message['content'] ?? ''))."</div>
                             <hr style='border:none;border-top:1px solid #ddd;margin:30px 0;'>
                             <p style='font-size:12px;color:#666;margin-bottom:0;'>
-                                С уважением,<br>Команда BZK Print<br>
-                                <a href='https://".$_SERVER['HTTP_HOST']."' style='color:#118568;'>Перейти на сайт</a>
+                                С уважением,<br>Команда BZK PRINT<br>
+                                <a href='https://".$_SERVER['HTTP_HOST']."' style='color:#118568;'>Перейти на сайт</a><br>
                                 Автоматическое письмо, отвечать на него не нужно!
                             </p>
                         </div>
