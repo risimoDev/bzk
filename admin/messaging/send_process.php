@@ -113,6 +113,7 @@ try {
                             <p style='font-size:12px;color:#666;margin-bottom:0;'>
                                 С уважением,<br>Команда BZK Print<br>
                                 <a href='https://".$_SERVER['HTTP_HOST']."' style='color:#118568;'>Перейти на сайт</a>
+                                Автоматическое письмо, отвечать на него не нужно!
                             </p>
                         </div>
                     </div>

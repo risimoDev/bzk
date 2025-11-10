@@ -193,6 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <p>Здравствуйте, <strong>{$user['name']}</strong>!</p>
                                     
                                     <p>Мы получили запрос на восстановление пароля для вашей учетной записи.</p>
+                                    <p>Автоматическое письмо, отвечать на него не нужно!</p>
                                     
                                     <div style='text-align: center; margin: 30px 0;'>
                                         <a href='{$reset_link}' 
@@ -214,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </p>
                                     
                                     <div style='text-align: center; margin-top: 30px; color: #999; font-size: 12px;'>
-                                        © 2024 BZK Print. Все права защищены.
+                                        © 2025 BZK Print. Все права защищены.
                                     </div>
                                 </div>
                             </body>

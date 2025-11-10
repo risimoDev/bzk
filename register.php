@@ -82,7 +82,6 @@ function sendWelcomeEmail($userEmail, $userName) {
                                 <li style='margin-bottom: 8px;'>📋 Оформлять заказы онлайн</li>
                                 <li style='margin-bottom: 8px;'>📊 Отслеживать статус ваших заказов</li>
                                 <li style='margin-bottom: 8px;'>💰 Получать персональные скидки</li>
-                                <li style='margin-bottom: 8px;'>📱 Управлять профилем и настройками</li>
                                 <li style='margin-bottom: 8px;'>💬 Связываться с нашей службой поддержки</li>
                             </ul>
                         </div>
@@ -100,8 +99,9 @@ function sendWelcomeEmail($userEmail, $userName) {
                         <hr style='border: none; border-top: 1px solid #ddd; margin: 30px 0;'>
                         <p style='font-size: 12px; color: #666; margin-bottom: 0; text-align: center;'>
                             С уважением,<br>
-                            Команда типографии BZK Print<br>
-                            <a href='https://" . $_SERVER['HTTP_HOST'] . "' style='color: #118568;'>bzkprint.ru</a> • <a href='tel:+71234567890' style='color: #118568;'>+7 (123) 456-78-90</a>
+                            Команда типографии BZK PRINT<br>
+                            <a href='https://" . $_SERVER['HTTP_HOST'] . "' style='color: #118568;'>bzkprint.ru</a> • <a href='tel:+71234567890' style='color: #118568;'>+7 (922) 304-04-65</a>
+                            Автоматическое письмо, отвечать на него не нужно!
                         </p>
                     </div>
                 </div>
