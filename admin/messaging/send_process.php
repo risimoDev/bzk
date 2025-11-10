@@ -76,7 +76,7 @@ try {
     $mail->SMTPAuth = true;
     $mail->Username = $_ENV['SMTP_USERNAME'];
     $mail->Password = $_ENV['SMTP_PASSWORD'];
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->SMTPSecure = "ssl";
     $mail->Port = $_ENV['SMTP_PORT'];
     $mail->CharSet = 'UTF-8';
     $mail->setFrom($_ENV['SMTP_FROM_EMAIL'], $_ENV['SMTP_FROM_NAME']);
