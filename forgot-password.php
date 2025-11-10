@@ -172,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Sender and recipient
         $mail->setFrom($_ENV['SMTP_FROM_EMAIL'], $_ENV['SMTP_FROM_NAME']);
-        $mail->addAddress($userEmail, $userName);
+        $mail->addAddress($user['email'], $user['name']); // Используем $user['email'] и $user['name']
 
             // Содержимое письма
             $mail->isHTML(true);
