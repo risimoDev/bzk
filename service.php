@@ -19,8 +19,15 @@ $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->execute([$product_id]);
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$product) {
-  die("Товар не найден.");
+if (!$product || (!empty($product['is_hidden']) && (int) $product['is_hidden'] === 1)) {
+  // Для публичного сайта скрытые товары недоступны
+  http_response_code(404);
+  if (file_exists(__DIR__ . '/404.php')) {
+    include __DIR__ . '/404.php';
+  } else {
+    die("Товар не найден.");
+  }
+  exit;
 }
 
 $stmt = $pdo->prepare("SELECT min_qty, max_qty, price FROM product_quantity_prices WHERE product_id = ? ORDER BY min_qty ASC");
@@ -149,8 +156,8 @@ $final_price = $discount_value ? $base_price * (1 - $discount_value / 100) : $ba
                     <button
                       class="thumbnail flex-shrink-0 <?php echo $index === 0 ? 'ring-2 ring-white' : 'opacity-60 hover:opacity-100'; ?> transition-all duration-300 rounded-lg overflow-hidden"
                       data-index="<?php echo $index; ?>">
-                      <img src="<?php echo e($image); ?>"
-                        alt="<?php echo e($product['name']); ?>" class="w-16 h-16 object-cover">
+                      <img src="<?php echo e($image); ?>" alt="<?php echo e($product['name']); ?>"
+                        class="w-16 h-16 object-cover">
                     </button>
                   <?php endforeach; ?>
                 </div>

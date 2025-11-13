@@ -36,8 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description']);
     $base_price = $_POST['base_price'];
     $category_id = !empty($_POST['category_id']) ? $_POST['category_id'] : null;
-    $type = $_POST['type'] ?? 'product';
-    $is_popular = isset($_POST['is_popular']) ? 1 : 0;
+  $type = $_POST['type'] ?? 'product';
+  $is_popular = isset($_POST['is_popular']) ? 1 : 0;
+  $is_hidden = isset($_POST['is_hidden']) ? 1 : 0; // мягкое скрытие товара на сайте
     
     // --- Добавлено: Получение данных о кратности и минимальном количестве ---
     $min_quantity = intval($_POST['min_quantity'] ?? 1);
@@ -45,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $unit = trim($_POST['unit'] ?? 'шт.');
     // --- Конец добавленного кода ---
 
-    if (!empty($name) && is_numeric($base_price) && $base_price >= 0) {
-        $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, base_price = ?, category_id = ?, type = ?, is_popular = ?, min_quantity = ?, multiplicity = ?, unit = ? WHERE id = ?");
-        $result = $stmt->execute([$name, $description, $base_price, $category_id, $type, $is_popular, $min_quantity, $multiplicity, $unit, $product_id]);
+  if (!empty($name) && is_numeric($base_price) && $base_price >= 0) {
+    $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, base_price = ?, category_id = ?, type = ?, is_popular = ?, is_hidden = ?, min_quantity = ?, multiplicity = ?, unit = ? WHERE id = ?");
+    $result = $stmt->execute([$name, $description, $base_price, $category_id, $type, $is_popular, $is_hidden, $min_quantity, $multiplicity, $unit, $product_id]);
         
         if ($result) {
             $_SESSION['notifications'][] = [
@@ -254,6 +255,15 @@ $orders_count = $stmt_orders->fetchColumn();
                   <label for="is_popular" class="ml-2 text-gray-700 font-medium">Популярный товар</label>
                 </div>
               </div>
+
+              <div class="flex items-end">
+                <div class="flex items-center h-full">
+                  <input type="checkbox" id="is_hidden" name="is_hidden" value="1"
+                         <?php echo !empty($product['is_hidden']) ? 'checked' : ''; ?>
+                         class="rounded border-gray-300 text-red-600 focus:ring-red-400 w-5 h-5">
+                  <label for="is_hidden" class="ml-2 text-gray-700 font-medium">Скрыть товар на сайте</label>
+                </div>
+              </div>
             </div>
             
             <div>
@@ -456,6 +466,13 @@ $orders_count = $stmt_orders->fetchColumn();
               <span class="text-gray-600">Популярный:</span>
               <span class="font-medium <?php echo $product['is_popular'] ? 'text-[#17B890]' : 'text-gray-500'; ?>">
                 <?php echo $product['is_popular'] ? 'Да' : 'Нет'; ?>
+              </span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-gray-600">Отображение на сайте:</span>
+              <span class="font-medium <?php echo !empty($product['is_hidden']) ? 'text-red-500' : 'text-[#17B890]'; ?>">
+                <?php echo !empty($product['is_hidden']) ? 'Скрыт' : 'Виден'; ?>
               </span>
             </div>
           </div>

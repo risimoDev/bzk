@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 verify_csrf();
 
-$product_id = (int)($_POST['product_id'] ?? 0);
-$quantity = max(1, (int)($_POST['quantity'] ?? 1));
+$product_id = (int) ($_POST['product_id'] ?? 0);
+$quantity = max(1, (int) ($_POST['quantity'] ?? 1));
 $attributes = $_POST['attributes'] ?? [];
 
 // Получаем товар
@@ -20,7 +20,7 @@ $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->execute([$product_id]);
 $product = $stmt->fetch();
 
-if (!$product) {
+if (!$product || (!empty($product['is_hidden']) && (int) $product['is_hidden'] === 1)) {
     header("Location: /catalog?error=product_not_found");
     exit();
 }

@@ -27,7 +27,7 @@ $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
 // --------------------
 // Подсчёт общего количества товаров (COUNT(*) вместо SQL_CALC_FOUND_ROWS)
 // --------------------
-$countQuery = "SELECT COUNT(*) FROM products WHERE type = :type";
+$countQuery = "SELECT COUNT(*) FROM products WHERE type = :type AND is_hidden = 0"; // скрываем выключенные товары
 $countParams = [':type' => $type];
 if ($category_id) {
   $countQuery .= " AND category_id = :category_id";
@@ -46,7 +46,7 @@ $totalPages = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
 $query = "SELECT p.*, c.name AS category_name
           FROM products p
           LEFT JOIN categories c ON p.category_id = c.id
-          WHERE p.type = :type";
+          WHERE p.type = :type AND p.is_hidden = 0"; // скрываем выключенные товары
 
 $params = [':type' => $type];
 if ($category_id) {
