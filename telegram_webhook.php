@@ -88,6 +88,18 @@ if (strpos($text, '/start') === 0) {
     handleHelpCommand($chat_id);
 } elseif (strpos($text, '/tasks') === 0) {
     handleTasksCommand($chat_id);
+} elseif (trim($text) === 'Задачи') {
+    // Кнопка reply "Задачи"
+    handleTasksCommand($chat_id);
+} elseif (trim($text) === 'Заказы') {
+    // Кнопка reply "Заказы"
+    $orders_link = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'bzkprint.ru') . '/admin/orders';
+    $kb = [
+        'inline_keyboard' => [
+            [['text' => '📦 Открыть заказы', 'url' => $orders_link]]
+        ]
+    ];
+    sendTelegramMessage($chat_id, "📦 Раздел заказов: {$orders_link}", 'HTML', $kb);
 } else {
     // Обработка обычных сообщений
     handleGeneralMessage($chat_id, $text, $first_name);
@@ -112,7 +124,7 @@ function handleStartCommand($chat_id, $first_name)
     $message .= "/help - помощь\n\n";
     $message .= "💡 После подключения вы будете получать уведомления о заказах, и рассылках акций и промокодов!";
 
-    sendTelegramMessage($chat_id, $message);
+    sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
 }
 
 /**
@@ -125,7 +137,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
     // Rate limiting for connect attempts
     $rate_limit = check_rate_limit($chat_id, 'telegram_connect', 5, 300);
     if (!$rate_limit['allowed']) {
-        sendTelegramMessage($chat_id, "⏳ Слишком много попыток подключения. Попробуйте через 5 минут.");
+        sendTelegramMessage($chat_id, "⏳ Слишком много попыток подключения. Попробуйте через 5 минут.", 'HTML', buildMainReplyKeyboard());
         return;
     }
     record_rate_limit_attempt($chat_id, 'telegram_connect');
@@ -136,7 +148,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
         $message = "❌ Неверный формат команды!\n\n";
         $message .= "Используйте: /connect your@email.ru\n";
         $message .= "Например: /connect bzkprint@yandex.ru";
-        sendTelegramMessage($chat_id, $message);
+        sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
         return;
     }
 
@@ -144,7 +156,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
 
     // Enhanced email validation
     if (!validate_email($email)) {
-        sendTelegramMessage($chat_id, "❌ Неверный формат email адреса!");
+        sendTelegramMessage($chat_id, "❌ Неверный формат email адреса!", 'HTML', buildMainReplyKeyboard());
         return;
     }
 
@@ -160,7 +172,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
             $message .= "• Email указан правильно\n";
             $message .= "• У вас есть аккаунт на сайте\n";
             $message .= "• Аккаунт не заблокирован";
-            sendTelegramMessage($chat_id, $message);
+            sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
             return;
         }
 
@@ -185,7 +197,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
 
             // Отправляем тестовое уведомление
             $test_message = "🎉 Тестовое уведомление!\n\nВаш Telegram успешно подключен к системе BZK PRINT.";
-            sendTelegramMessage($chat_id, $test_message);
+            sendTelegramMessage($chat_id, $test_message, 'HTML', buildMainReplyKeyboard());
 
             // Log successful connection
             error_log("Telegram account connected: user_id={$user['id']}, chat_id=$chat_id");
@@ -193,12 +205,12 @@ function handleConnectCommand($chat_id, $text, $first_name)
             // Получаем информацию об ошибке
             $error_info = $stmt->errorInfo();
             error_log("Telegram connect database error: " . print_r($error_info, true));
-            sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже. Код ошибки: " . $error_info[0]);
+            sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже. Код ошибки: " . $error_info[0], 'HTML', buildMainReplyKeyboard());
         }
 
     } catch (Exception $e) {
         error_log("Telegram connect exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
-        sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору. Детали: " . $e->getMessage());
+        sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору. Детали: " . $e->getMessage(), 'HTML', buildMainReplyKeyboard());
     }
 }
 
@@ -222,7 +234,7 @@ function handleHelpCommand($chat_id)
     $message .= "• Обновления статусов\n\n";
     $message .= "❓ Нужна помощь? Обратитесь к администратору сайта.";
 
-    sendTelegramMessage($chat_id, $message);
+    sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
 }
 
 /**
@@ -250,12 +262,12 @@ function handleGeneralMessage($chat_id, $text, $first_name)
             $message .= "Введите /help для получения дополнительной информации.";
         }
 
-        sendTelegramMessage($chat_id, $message);
+        sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
 
     } catch (Exception $e) {
         error_log("Telegram general message error: " . $e->getMessage());
         $message = "Используйте /start для начала работы с ботом.";
-        sendTelegramMessage($chat_id, $message);
+        sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
     }
 }
 
@@ -281,7 +293,7 @@ function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML', $reply_marku
 
     // Добавляем клавиатуру, если она передана
     if ($reply_markup) {
-        $data['reply_markup'] = json_encode($reply_markup);
+        $data['reply_markup'] = json_encode($reply_markup, JSON_UNESCAPED_UNICODE);
     }
 
     $ch = curl_init();
@@ -343,4 +355,22 @@ function handleTasksCommand($chat_id)
 
     // По умолчанию — мои задачи
     $telegram->sendTaskList($chat_id, $user['id'], 'my');
+}
+
+/**
+ * Построение главной reply-клавиатуры бота
+ */
+function buildMainReplyKeyboard()
+{
+    return [
+        'keyboard' => [
+            [
+                ['text' => 'Заказы'],
+                ['text' => 'Задачи']
+            ]
+        ],
+        'resize_keyboard' => true,
+        'one_time_keyboard' => false,
+        'is_persistent' => true
+    ];
 }
