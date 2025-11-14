@@ -11,34 +11,67 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 // Подключение к базе данных
 include_once('../includes/db.php');
 
-// Получение статистики
-$total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-$pending_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn();
-$completed_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn();
-$canceled_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'cancelled'")->fetchColumn();
-$shipped_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'shipped'")->fetchColumn();
-$delivered_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'delivered'")->fetchColumn();
-$processing_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'processing'")->fetchColumn();
+// Получение статистики (объединяем внутренние и внешние заказы)
+// Внутренние: orders.status, Внешние: external_orders.production_status
+$status_keys = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'];
+$internal_counts = array_fill_keys($status_keys, 0);
+$external_counts = array_fill_keys($status_keys, 0);
+
+$rows = $pdo->query("SELECT status, COUNT(*) cnt FROM orders GROUP BY status")->fetchAll(PDO::FETCH_ASSOC);
+foreach ($rows as $r) {
+  if (isset($internal_counts[$r['status']])) {
+    $internal_counts[$r['status']] = (int) $r['cnt'];
+  }
+}
+$rows = $pdo->query("SELECT production_status, COUNT(*) cnt FROM external_orders GROUP BY production_status")->fetchAll(PDO::FETCH_ASSOC);
+foreach ($rows as $r) {
+  if (isset($external_counts[$r['production_status']])) {
+    $external_counts[$r['production_status']] = (int) $r['cnt'];
+  }
+}
+
+$pending_orders = $internal_counts['pending'] + $external_counts['pending'];
+$processing_orders = $internal_counts['processing'] + $external_counts['processing'];
+$shipped_orders = $internal_counts['shipped'] + $external_counts['shipped'];
+$delivered_orders = $internal_counts['delivered'] + $external_counts['delivered'];
+$canceled_orders = $internal_counts['cancelled'] + $external_counts['cancelled'];
+$completed_orders = $internal_counts['completed'] + $external_counts['completed'];
+$total_orders = array_sum($internal_counts) + array_sum($external_counts);
 
 // Получение статистики по пользователям
 $total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $total_products = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
 $total_revenue = $pdo->query("SELECT SUM(total_price) FROM orders WHERE status = 'completed'")->fetchColumn() ?: 0;
 
-// Получение последних заказов
-$stmt = $pdo->prepare("SELECT o.*, u.name as user_name FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5");
-$stmt->execute();
-$recent_orders = $stmt->fetchAll();
+// Получение последних заказов (объединяем внутренние и внешние)
+$recent_internal = $pdo->query("SELECT o.id, o.created_at, o.status, o.total_price, u.name AS client_name, 'internal' AS src FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+$recent_external = $pdo->query("SELECT eo.id, eo.created_at, eo.production_status AS status, eo.total_price, eo.client_name, 'external' AS src FROM external_orders eo ORDER BY eo.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+$recent_all = array_merge($recent_internal, $recent_external);
+usort($recent_all, function ($a, $b) {
+  return strtotime($b['created_at']) <=> strtotime($a['created_at']); });
+$recent_orders = array_slice($recent_all, 0, 5);
 
 // Получение популярных товаров
 $stmt = $pdo->prepare("SELECT p.name, COUNT(oi.product_id) as order_count FROM order_items oi JOIN products p ON oi.product_id = p.id GROUP BY oi.product_id, p.name ORDER BY order_count DESC LIMIT 5");
 $stmt->execute();
 $popular_products = $stmt->fetchAll();
 
-// Получение данных для графика (заказы по месяцам)
-$stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count FROM orders GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month DESC LIMIT 6");
-$stmt->execute();
-$monthly_orders = array_reverse($stmt->fetchAll());
+// Данные для графика: объединяем по месяцам внутренние и внешние заказы
+$internal_months = [];
+foreach ($pdo->query("SELECT DATE_FORMAT(created_at,'%Y-%m') m, COUNT(*) c FROM orders GROUP BY DATE_FORMAT(created_at,'%Y-%m')")->fetchAll(PDO::FETCH_ASSOC) as $r) {
+  $internal_months[$r['m']] = (int) $r['c'];
+}
+$external_months = [];
+foreach ($pdo->query("SELECT DATE_FORMAT(created_at,'%Y-%m') m, COUNT(*) c FROM external_orders GROUP BY DATE_FORMAT(created_at,'%Y-%m')")->fetchAll(PDO::FETCH_ASSOC) as $r) {
+  $external_months[$r['m']] = (int) $r['c'];
+}
+$all_months = array_unique(array_merge(array_keys($internal_months), array_keys($external_months)));
+sort($all_months);
+$combined_months = [];
+foreach ($all_months as $m) {
+  $combined_months[] = ['month' => $m, 'count' => ($internal_months[$m] ?? 0) + ($external_months[$m] ?? 0)];
+}
+$monthly_orders = array_slice($combined_months, -6);
 
 // Количество непрочитанных сообщений
 $new_messages = $pdo->query("SELECT COUNT(*) FROM contact_messages WHERE status = 'new'")->fetchColumn();
@@ -436,7 +469,9 @@ if (isset($pdo)) {
                     <div class="font-medium text-sm">#<?php echo $order['id']; ?></div>
                     <div class="text-xs text-gray-500"><?php echo date('d.m.Y', strtotime($order['created_at'])); ?></div>
                   </td>
-                  <td class="py-2 px-2 text-sm"><?php echo htmlspecialchars($order['user_name']); ?></td>
+                  <td class="py-2 px-2 text-sm"><?php echo htmlspecialchars($order['client_name']); ?> <span
+                      class="text-xs text-gray-500">(<?php echo $order['src'] === 'external' ? 'внешний' : 'сайт'; ?>)</span>
+                  </td>
                   <td class="py-2 px-2">
                     <span class="px-2 py-1 text-xs rounded-full 
                   <?php

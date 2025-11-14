@@ -288,6 +288,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Обработка смены производственного статуса (production_status)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_production_status') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!isset($_SESSION['csrf_token']) || !is_string($token) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка безопасности (CSRF).'];
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+    $new_pstatus = $_POST['production_status'] ?? '';
+    $allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'];
+    if (in_array($new_pstatus, $allowed, true)) {
+        try {
+            $stmt = $pdo->prepare("UPDATE external_orders SET production_status = ? WHERE id = ?");
+            $stmt->execute([$new_pstatus, $order_id]);
+            $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Производственный статус обновлён.'];
+        } catch (Exception $e) {
+            $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка: ' . $e->getMessage()];
+        }
+    } else {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Недопустимый производственный статус.'];
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 // Статистика по позициям
 $catalog_items = array_filter($order_items, fn($item) => !$item['is_custom']);
 $custom_items = array_filter($order_items, fn($item) => $item['is_custom']);
@@ -388,6 +413,33 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                                 <p class="text-lg"><?php echo htmlspecialchars($order['email']); ?></p>
                             </div>
                         <?php endif; ?>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-600 text-sm font-medium mb-1">Производственный статус</label>
+                            <?php
+                            $pstatus = $order['production_status'] ?? 'pending';
+                            $pcolor = [
+                                'pending' => 'bg-yellow-100 text-yellow-800',
+                                'processing' => 'bg-blue-100 text-blue-800',
+                                'shipped' => 'bg-purple-100 text-purple-800',
+                                'delivered' => 'bg-indigo-100 text-indigo-800',
+                                'cancelled' => 'bg-red-100 text-red-800',
+                                'completed' => 'bg-green-100 text-green-800'
+                            ][$pstatus] ?? 'bg-gray-100 text-gray-800';
+                            $pname = [
+                                'pending' => 'В ожидании',
+                                'processing' => 'В обработке',
+                                'shipped' => 'Отправлен',
+                                'delivered' => 'Доставлен',
+                                'cancelled' => 'Отменен',
+                                'completed' => 'Полностью готов'
+                            ][$pstatus] ?? $pstatus;
+                            ?>
+                            <span
+                                class="inline-block px-3 py-1 text-sm font-medium rounded-full <?php echo $pcolor; ?>">
+                                <?php echo htmlspecialchars($pname); ?>
+                            </span>
+                        </div>
                         <?php if ($order['phone']): ?>
                             <div>
                                 <label class="block text-gray-600 text-sm font-medium mb-1">Телефон</label>
@@ -823,6 +875,35 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                             class="w-full py-3 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition font-medium">
                             Обновить статус
                         </button>
+                    </form>
+
+                    <hr class="my-6 border-gray-200">
+                    <form method="POST" class="space-y-4">
+                        <input type="hidden" name="action" value="update_production_status">
+                        <input type="hidden" name="csrf_token"
+                            value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Производственный статус</label>
+                            <?php $pstatus = $order['production_status'] ?? 'pending'; ?>
+                            <select name="production_status"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB]">
+                                <option value="pending" <?php echo $pstatus === 'pending' ? 'selected' : ''; ?>>В ожидании
+                                </option>
+                                <option value="processing" <?php echo $pstatus === 'processing' ? 'selected' : ''; ?>>В
+                                    обработке</option>
+                                <option value="shipped" <?php echo $pstatus === 'shipped' ? 'selected' : ''; ?>>Отправлен
+                                </option>
+                                <option value="delivered" <?php echo $pstatus === 'delivered' ? 'selected' : ''; ?>>
+                                    Доставлен</option>
+                                <option value="completed" <?php echo $pstatus === 'completed' ? 'selected' : ''; ?>>
+                                    Полностью готов</option>
+                                <option value="cancelled" <?php echo $pstatus === 'cancelled' ? 'selected' : ''; ?>>
+                                    Отменен</option>
+                            </select>
+                        </div>
+                        <button type="submit"
+                            class="w-full py-3 bg-[#17B890] text-white rounded-lg hover:bg-[#14a380] transition font-medium">Сохранить
+                            производственный статус</button>
                     </form>
                 </div>
 
