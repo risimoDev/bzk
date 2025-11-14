@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "poopetti": "^1.2.0"
   }
 }

@@ -10,6 +10,12 @@ if (!isset($_SESSION['user_id'])) {
   exit();
 }
 
+// Одноразовый флаг для анимации после успешной регистрации
+$justRegistered = !empty($_SESSION['just_registered']);
+if ($justRegistered) {
+  unset($_SESSION['just_registered']);
+}
+
 $user_id = $_SESSION['user_id'];
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
@@ -384,7 +390,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
                 <div>
                   <h4 class="font-bold text-gray-800 text-lg">История заказов</h4>
-                 
+
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
               </a>
@@ -397,24 +403,24 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
                 <div>
                   <h4 class="font-bold text-gray-800 text-lg">Настройки</h4>
-                  
+
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
               </a>
-             <?php if ($user['mini_warehouse_enabled']): ?>
-              <a href="/client/mini_warehouse"
-                class="nav-item flex items-center p-5 bg-gradient-to-r from-[#DEE5E5] to-[#9DC5BB] rounded-xl hover:from-[#9DC5BB] hover:to-[#5E807F] transition-all duration-300 group shadow-md hover:shadow-lg">
-                <div
-                  class="w-14 h-14 bg-gradient-to-br from-[#3f7769] to-[#17B890] rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <i class="fas fa-warehouse text-white text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="font-bold text-gray-800 text-lg">Мини склад</h4>
-                  
-                </div>
-                <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
-              </a>
-            <?php endif; ?>
+              <?php if ($user['mini_warehouse_enabled']): ?>
+                <a href="/client/mini_warehouse"
+                  class="nav-item flex items-center p-5 bg-gradient-to-r from-[#DEE5E5] to-[#9DC5BB] rounded-xl hover:from-[#9DC5BB] hover:to-[#5E807F] transition-all duration-300 group shadow-md hover:shadow-lg">
+                  <div
+                    class="w-14 h-14 bg-gradient-to-br from-[#3f7769] to-[#17B890] rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <i class="fas fa-warehouse text-white text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-gray-800 text-lg">Мини склад</h4>
+
+                  </div>
+                  <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-gray-600 transition-colors"></i>
+                </a>
+              <?php endif; ?>
 
 
               <a href="/logout"
@@ -486,6 +492,21 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
   </main>
 
   <?php include_once('../includes/footer.php'); ?>
+
+  <?php if ($justRegistered): ?>
+    <script type="module">
+      import { poopetti, rainPoop } from '/assets/js/poopetti/index.js';
+      window.addEventListener('DOMContentLoaded', () => {
+        try {
+          // Мягкий салют и лёгкий дождь эмодзи для приветствия
+          poopetti({ content: ['🎉', '💫', '💚', '⭐️'], duration: 1200, density: 120 });
+          setTimeout(() => {
+            rainPoop({ emoji: ['🎉', '✨', '💚'], duration: 2000, density: 120 });
+          }, 400);
+        } catch (e) { /* no-op */ }
+      });
+    </script>
+  <?php endif; ?>
 
   <script>
     // Добавляем интерактивность
