@@ -1,7 +1,9 @@
-<?php 
+<?php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/telegram.php';
+require_once __DIR__ . '/../includes/chat_functions.php';
 
 $functions_path = __DIR__ . '/../admin/buhgalt/functions.php';
 if (file_exists($functions_path)) {
@@ -98,11 +100,11 @@ foreach ($cart as $item) {
     // 5. Собираем новый массив
     $cart_items[] = [
         'product_id' => $item['product_id'],
-        'quantity'   => $item['quantity'],
+        'quantity' => $item['quantity'],
         'attributes' => $item['attributes'],
         'unit_price' => $unit_price,
         'attr_price' => $total_attributes_price,
-        'total_price'=> $item_total_price
+        'total_price' => $item_total_price
     ];
 }
 
@@ -137,7 +139,7 @@ try {
         ]),
         $is_urgent ? 1 : 0,
         1
-        
+
     ]);
 
     $order_id = $pdo->lastInsertId();
@@ -225,6 +227,20 @@ try {
 
 // Очистка
 unset($_SESSION['cart'], $_SESSION['is_urgent_order'], $_SESSION['promo_data']);
+
+// Уведомления: создаём чат (если его ещё нет) и рассылаем уведомление админам/менеджерам
+try {
+    // Создание чата с назначением менеджера (один раз)
+    create_chat_for_order($pdo, (int) $order_id);
+} catch (Exception $e) {
+    error_log('create_chat_for_order error: ' . $e->getMessage());
+}
+
+try {
+    sendNewSiteOrderNotification((int) $order_id);
+} catch (Exception $e) {
+    error_log('sendNewSiteOrderNotification error: ' . $e->getMessage());
+}
 
 header("Location: /checkoutshopcart/confirmation?order_id=" . $order_id);
 exit();

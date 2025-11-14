@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 
 // Подключение к базе данных
 include_once('../includes/db.php');
+include_once('../includes/security.php');
 
 // Обработка уведомлений
 $notifications = [];
@@ -46,11 +47,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_chat_id'])) {
     exit();
 }
 
+// Обработка сохранения предпочтений уведомлений
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_prefs'])) {
+    verify_csrf();
+
+    $receive_task_created = isset($_POST['receive_task_created']) ? 1 : 0;
+    $receive_new_order = isset($_POST['receive_new_order']) ? 1 : 0;
+    $receive_task_status = isset($_POST['receive_task_status']) ? 1 : 0;
+    $pref_channel = in_array($_POST['pref_channel'] ?? 'both', ['telegram', 'email', 'both'], true) ? $_POST['pref_channel'] : 'both';
+    $show_task_buttons = isset($_POST['show_task_buttons']) ? 1 : 0;
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO notification_prefs (user_id, receive_task_created, receive_new_order, receive_task_status, pref_channel, show_task_buttons)
+                               VALUES (?, ?, ?, ?, ?, ?)
+                               ON DUPLICATE KEY UPDATE
+                                 receive_task_created=VALUES(receive_task_created),
+                                 receive_new_order=VALUES(receive_new_order),
+                                 receive_task_status=VALUES(receive_task_status),
+                                 pref_channel=VALUES(pref_channel),
+                                 show_task_buttons=VALUES(show_task_buttons)");
+        $stmt->execute([$_SESSION['user_id'], $receive_task_created, $receive_new_order, $receive_task_status, $pref_channel, $show_task_buttons]);
+        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Настройки уведомлений сохранены.'];
+    } catch (Exception $e) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка сохранения настроек: ' . $e->getMessage()];
+    }
+
+    header("Location: /admin/telegram_setup");
+    exit();
+}
+
 // Получение текущих настроек пользователя
 $stmt = $pdo->prepare("SELECT telegram_chat_id FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
 $current_chat_id = $user_data['telegram_chat_id'] ?? '';
+
+// Текущие предпочтения уведомлений
+$prefs = [
+    'receive_task_created' => 1,
+    'receive_new_order' => 1,
+    'receive_task_status' => 1,
+    'pref_channel' => 'both',
+    'show_task_buttons' => 1,
+];
+try {
+    $stmt = $pdo->prepare("SELECT receive_task_created, receive_new_order, receive_task_status, pref_channel, show_task_buttons FROM notification_prefs WHERE user_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $prefs = array_merge($prefs, $row);
+    }
+} catch (Exception $e) { /* ignore */
+}
 
 // Получение токена бота для инструкций
 $bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? 'НЕ_НАСТРОЕН';
@@ -226,6 +273,61 @@ $bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? 'НЕ_НАСТРОЕН';
             <?php endif; ?>
         </div>
 
+        <!-- Настройки уведомлений -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <div class="flex items-center mb-6">
+                <div
+                    class="w-12 h-12 bg-gradient-to-r from-[#118568] to-[#17B890] rounded-xl flex items-center justify-center mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24"
+                        fill="currentColor">
+                        <path
+                            d="M12 6a9 9 0 100 18 9 9 0 000-18zm.75 4.5a.75.75 0 00-1.5 0V15a.75.75 0 001.5 0v-4.5zm-.75 7.5a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">⚙️ Настройки уведомлений</h2>
+            </div>
+            <form method="post" class="space-y-6">
+                <?php echo csrf_field(); ?>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" name="receive_task_created" class="w-5 h-5" <?php echo $prefs['receive_task_created'] ? 'checked' : ''; ?>>
+                            <span>Получать уведомления о новых задачах</span>
+                        </label>
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" name="receive_new_order" class="w-5 h-5" <?php echo $prefs['receive_new_order'] ? 'checked' : ''; ?>>
+                            <span>Получать уведомления о новых заказах</span>
+                        </label>
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" name="receive_task_status" class="w-5 h-5" <?php echo $prefs['receive_task_status'] ? 'checked' : ''; ?>>
+                            <span>Получать уведомления об изменении статусов задач</span>
+                        </label>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="block text-sm font-medium text-gray-700">Предпочтительный канал</label>
+                        <select name="pref_channel"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                            <option value="both" <?php echo $prefs['pref_channel'] === 'both' ? 'selected' : ''; ?>>Telegram и
+                                Email</option>
+                            <option value="telegram" <?php echo $prefs['pref_channel'] === 'telegram' ? 'selected' : ''; ?>>
+                                Только Telegram</option>
+                            <option value="email" <?php echo $prefs['pref_channel'] === 'email' ? 'selected' : ''; ?>>Только
+                                Email</option>
+                        </select>
+                        <label class="flex items-center gap-3 mt-3">
+                            <input type="checkbox" name="show_task_buttons" class="w-5 h-5" <?php echo $prefs['show_task_buttons'] ? 'checked' : ''; ?>>
+                            <span>Показывать кнопки задач в Telegram</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" name="save_prefs"
+                        class="w-full px-6 py-3 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a] transition-colors duration-300 font-medium">💾
+                        Сохранить уведомления</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Инструкция -->
         <div class="bg-white rounded-2xl shadow-xl p-8">
             <h2 class="text-xl font-bold text-gray-800 mb-6">📋 Пошаговая инструкция</h2>
@@ -351,7 +453,7 @@ $bot_token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? 'НЕ_НАСТРОЕН';
     function showNotification(message, type) {
         const notification = document.createElement('div');
         notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-100 text-green-700 border border-green-400' :
-                'bg-red-100 text-red-700 border border-red-400'
+            'bg-red-100 text-red-700 border border-red-400'
             }`;
         notification.textContent = message;
 

@@ -9,9 +9,10 @@ require_once 'includes/security.php';
 require_once 'includes/telegram.php';
 
 // Security: Verify Telegram secret token if configured
-function verifyTelegramWebhook() {
+function verifyTelegramWebhook()
+{
     $secret_token = $_ENV['TELEGRAM_WEBHOOK_SECRET'] ?? null;
-    
+
     if ($secret_token) {
         $received_token = $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '';
         if (!hash_equals($secret_token, $received_token)) {
@@ -65,8 +66,8 @@ if (!isset($update['message'])) {
 }
 
 $message = $update['message'];
-$chat_id = (int)($message['chat']['id'] ?? 0);
-$user_id = (int)($message['from']['id'] ?? 0);
+$chat_id = (int) ($message['chat']['id'] ?? 0);
+$user_id = (int) ($message['from']['id'] ?? 0);
 $first_name = sanitize_text($message['from']['first_name'] ?? '', 50);
 $last_name = sanitize_text($message['from']['last_name'] ?? '', 50);
 $username = sanitize_text($message['from']['username'] ?? '', 50);
@@ -85,6 +86,8 @@ if (strpos($text, '/start') === 0) {
     handleConnectCommand($chat_id, $text, $first_name);
 } elseif (strpos($text, '/help') === 0) {
     handleHelpCommand($chat_id);
+} elseif (strpos($text, '/tasks') === 0) {
+    handleTasksCommand($chat_id);
 } else {
     // Обработка обычных сообщений
     handleGeneralMessage($chat_id, $text, $first_name);
@@ -183,7 +186,7 @@ function handleConnectCommand($chat_id, $text, $first_name)
             // Отправляем тестовое уведомление
             $test_message = "🎉 Тестовое уведомление!\n\nВаш Telegram успешно подключен к системе BZK PRINT.";
             sendTelegramMessage($chat_id, $test_message);
-            
+
             // Log successful connection
             error_log("Telegram account connected: user_id={$user['id']}, chat_id=$chat_id");
         } else {
@@ -208,6 +211,7 @@ function handleHelpCommand($chat_id)
     $message .= "📋 <b>Доступные команды:</b>\n";
     $message .= "/start - начать работу с ботом\n";
     $message .= "/connect [email] - связать аккаунт с Telegram\n";
+    $message .= "/tasks - мои задачи (для админов/менеджеров)\n";
     $message .= "/help - показать эту справку\n\n";
     $message .= "🔗 <b>Подключение аккаунта:</b>\n";
     $message .= "1. Способ 1: Команда /connect your@email.com\n";
@@ -305,4 +309,38 @@ function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML', $reply_marku
     }
 
     return true;
+}
+
+/**
+ * Обработка команды /tasks — показывает задачи для админов/менеджеров
+ */
+function handleTasksCommand($chat_id)
+{
+    global $pdo;
+    $telegram = getTelegramBot();
+
+    // Определяем пользователя по chat_id
+    $stmt = $pdo->prepare("SELECT id, role FROM users WHERE telegram_chat_id = ? AND is_blocked = 0");
+    $stmt->execute([(string) $chat_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user || !in_array($user['role'], ['admin', 'manager'])) {
+        sendTelegramMessage($chat_id, "❌ Команда доступна только администраторам и менеджерам.");
+        return;
+    }
+
+    // Проверяем, не отключены ли кнопки задач настройками пользователя
+    try {
+        $stmt = $pdo->prepare("SELECT show_task_buttons FROM notification_prefs WHERE user_id = ?");
+        $stmt->execute([(int) $user['id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && (int) $row['show_task_buttons'] === 0) {
+            sendTelegramMessage($chat_id, "ℹ️ Кнопки задач отключены в ваших настройках уведомлений.");
+            return;
+        }
+    } catch (Exception $e) { /* ignore */
+    }
+
+    // По умолчанию — мои задачи
+    $telegram->sendTaskList($chat_id, $user['id'], 'my');
 }
