@@ -184,6 +184,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ext_action'])) {
     exit();
 }
 
+// Обработка: примерная дата готовности внешнего заказа
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ext_ready_action'])) {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!isset($_SESSION['csrf_token']) || !is_string($token) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка безопасности (CSRF).'];
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+    try {
+        $mode = $_POST['ready_mode'] ?? 'set';
+        $reason = trim($_POST['ready_reason'] ?? '');
+        $stmt = $pdo->prepare("SELECT estimated_ready_date FROM external_orders WHERE id = ?");
+        $stmt->execute([$order_id]);
+        $prev = $stmt->fetchColumn();
+        if ($mode === 'prolong') {
+            $days = (int) ($_POST['prolong_days'] ?? 0);
+            if ($days === 0)
+                throw new Exception('Укажите количество дней для продления.');
+            $base = !empty($prev) ? new DateTime($prev) : new DateTime();
+            $base->modify("+{$days} day");
+            $newDate = $base->format('Y-m-d H:i:s');
+        } else {
+            $input = trim($_POST['ready_date'] ?? '');
+            if ($input === '')
+                throw new Exception('Укажите дату.');
+            $dt = new DateTime($input);
+            $newDate = $dt->format('Y-m-d H:i:s');
+        }
+        $pdo->beginTransaction();
+        $pdo->prepare("UPDATE external_orders SET estimated_ready_date = ? WHERE id = ?")->execute([$newDate, $order_id]);
+        $ctype = $mode === 'prolong' ? 'prolong' : (!empty($prev) ? 'edit' : 'set');
+        $pdo->prepare("INSERT INTO external_order_ready_history (external_order_id, previous_date, new_date, change_type, reason, changed_by) VALUES (?, ?, ?, ?, ?, ?)")
+            ->execute([$order_id, $prev, $newDate, $ctype, $reason !== '' ? $reason : null, $_SESSION['user_id'] ?? null]);
+        $pdo->commit();
+        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Примерная дата готовности обновлена.'];
+    } catch (Exception $e) {
+        if ($pdo->inTransaction())
+            $pdo->rollBack();
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка: ' . $e->getMessage()];
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 // Получение позиций заказа (после возможных изменений)
 $items_sql = "
     SELECT 
@@ -362,6 +406,66 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                                 <p class="text-lg"><?php echo htmlspecialchars($order['description']); ?></p>
                             </div>
                         <?php endif; ?>
+
+                        <div class="md:col-span-2 bg-gray-50 rounded-2xl p-4">
+                            <h3 class="font-bold text-gray-800 mb-3">Примерная дата готовности</h3>
+                            <p class="text-gray-700 mb-3">Текущая: <span
+                                    class="font-medium"><?php echo !empty($order['estimated_ready_date']) ? date('d.m.Y H:i', strtotime($order['estimated_ready_date'])) : 'не установлена'; ?></span>
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <form method="POST" class="bg-white p-3 rounded-xl border">
+                                    <input type="hidden" name="csrf_token"
+                                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
+                                    <input type="hidden" name="ext_ready_action" value="1">
+                                    <input type="hidden" name="ready_mode" value="edit">
+                                    <label
+                                        class="block text-xs font-medium text-gray-700 mb-1">Установить/изменить</label>
+                                    <input type="datetime-local" name="ready_date"
+                                        class="w-full border rounded px-2 py-2 mb-2"
+                                        value="<?php echo !empty($order['estimated_ready_date']) ? date('Y-m-d\TH:i', strtotime($order['estimated_ready_date'])) : ''; ?>">
+                                    <input type="text" name="ready_reason" class="w-full border rounded px-2 py-2 mb-2"
+                                        placeholder="Причина (необязательно)">
+                                    <button type="submit"
+                                        class="w-full px-3 py-2 bg-[#118568] text-white rounded hover:bg-[#0f755a] text-sm">Сохранить</button>
+                                </form>
+                                <form method="POST" class="bg-white p-3 rounded-xl border">
+                                    <input type="hidden" name="csrf_token"
+                                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
+                                    <input type="hidden" name="ext_ready_action" value="1">
+                                    <input type="hidden" name="ready_mode" value="prolong">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Продлить (дней)</label>
+                                    <input type="number" min="1" name="prolong_days"
+                                        class="w-full border rounded px-2 py-2 mb-2" placeholder="Напр., 2">
+                                    <input type="text" name="ready_reason" class="w-full border rounded px-2 py-2 mb-2"
+                                        placeholder="Причина (необязательно)">
+                                    <button type="submit"
+                                        class="w-full px-3 py-2 bg-[#17B890] text-white rounded hover:bg-[#14a380] text-sm">Продлить</button>
+                                </form>
+                            </div>
+                            <?php
+                            $hstmt = $pdo->prepare("SELECT * FROM external_order_ready_history WHERE external_order_id = ? ORDER BY id DESC LIMIT 5");
+                            $hstmt->execute([$order_id]);
+                            $ext_history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
+                            ?>
+                            <?php if (!empty($ext_history)): ?>
+                                <div class="mt-2 text-sm text-gray-700">
+                                    <div class="font-medium mb-1">Последние изменения (до 5):</div>
+                                    <ul class="list-disc ml-5 space-y-1">
+                                        <?php foreach ($ext_history as $h): ?>
+                                            <li>
+                                                <?php echo date('d.m.Y H:i', strtotime($h['created_at'] ?? $h['new_date'])); ?>
+                                                —
+                                                <?php echo htmlspecialchars($h['change_type']); ?> →
+                                                <?php echo date('d.m.Y H:i', strtotime($h['new_date'])); ?>
+                                                <?php if (!empty($h['reason'])): ?>
+                                                    — <span class="italic"><?php echo htmlspecialchars($h['reason']); ?></span>
+                                                <?php endif; ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -398,7 +502,8 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                                         $products_all = $pdo->query("SELECT id, name FROM products ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
                                         foreach ($products_all as $p): ?>
                                             <option value="<?php echo (int) $p['id']; ?>">
-                                                <?php echo htmlspecialchars($p['name']); ?></option>
+                                                <?php echo htmlspecialchars($p['name']); ?>
+                                            </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -475,14 +580,17 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                                                         <?php if ($item['product_base_price']): ?>
                                                             <p class="text-xs text-gray-600">Базовая цена:
                                                                 <?php echo number_format($item['product_base_price'], 0, '', ' '); ?>
-                                                                ₽</p>
+                                                                ₽
+                                                            </p>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>
                                                 <td class="py-4 px-4 text-center font-medium">
-                                                    <?php echo (int) $item['quantity']; ?></td>
+                                                    <?php echo (int) $item['quantity']; ?>
+                                                </td>
                                                 <td class="py-4 px-4 text-right font-bold text-[#118568]">
-                                                    <?php echo number_format($item['price'], 0, '', ' '); ?> ₽</td>
+                                                    <?php echo number_format($item['price'], 0, '', ' '); ?> ₽
+                                                </td>
                                                 <td class="py-4 px-4 text-center">
                                                     <form method="POST" class="inline-block mb-2">
                                                         <input type="hidden" name="csrf_token"
@@ -534,15 +642,20 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                                         <?php foreach ($custom_items as $item): ?>
                                             <tr class="border-b border-gray-100 align-top">
                                                 <td class="py-4 px-4 font-semibold">
-                                                    <?php echo htmlspecialchars($item['item_name']); ?></td>
+                                                    <?php echo htmlspecialchars($item['item_name']); ?>
+                                                </td>
                                                 <td class="py-4 px-4 text-gray-600">
-                                                    <?php echo htmlspecialchars($item['item_description'] ?: '-'); ?></td>
+                                                    <?php echo htmlspecialchars($item['item_description'] ?: '-'); ?>
+                                                </td>
                                                 <td class="py-4 px-4 text-center font-medium">
-                                                    <?php echo (int) $item['quantity']; ?></td>
+                                                    <?php echo (int) $item['quantity']; ?>
+                                                </td>
                                                 <td class="py-4 px-4 text-right font-bold text-[#118568]">
-                                                    <?php echo number_format($item['price'], 0, '', ' '); ?> ₽</td>
+                                                    <?php echo number_format($item['price'], 0, '', ' '); ?> ₽
+                                                </td>
                                                 <td class="py-4 px-4 text-right font-bold text-red-600">
-                                                    <?php echo number_format($item['expense_amount'], 0, '', ' '); ?> ₽</td>
+                                                    <?php echo number_format($item['expense_amount'], 0, '', ' '); ?> ₽
+                                                </td>
                                                 <td class="py-4 px-4 text-center">
                                                     <form method="POST" class="inline-block mb-2 text-left w-40">
                                                         <input type="hidden" name="csrf_token"
