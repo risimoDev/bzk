@@ -93,13 +93,17 @@ if (strpos($text, '/start') === 0) {
     handleTasksCommand($chat_id);
 } elseif (trim($text) === 'Заказы') {
     // Кнопка reply "Заказы"
-    $orders_link = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'bzkprint.ru') . '/admin/orders';
-    $kb = [
-        'inline_keyboard' => [
-            [['text' => '📦 Открыть заказы', 'url' => $orders_link]]
-        ]
-    ];
-    sendTelegramMessage($chat_id, "📦 Раздел заказов: {$orders_link}", 'HTML', $kb);
+    if (isAdminOrManagerByChatId($chat_id)) {
+        $orders_link = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'bzkprint.ru') . '/admin/orders';
+        $kb = [
+            'inline_keyboard' => [
+                [['text' => '📦 Открыть заказы', 'url' => $orders_link]]
+            ]
+        ];
+        sendTelegramMessage($chat_id, "📦 Раздел заказов: {$orders_link}", 'HTML', $kb);
+    } else {
+        sendTelegramMessage($chat_id, "❌ Недоступно. Кнопка 'Заказы' только для администраторов и менеджеров.");
+    }
 } else {
     // Обработка обычных сообщений
     handleGeneralMessage($chat_id, $text, $first_name);
@@ -124,7 +128,8 @@ function handleStartCommand($chat_id, $first_name)
     $message .= "/help - помощь\n\n";
     $message .= "💡 После подключения вы будете получать уведомления о заказах, и рассылках акций и промокодов!";
 
-    sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
+    $kb = maybeGetMainReplyKeyboard($chat_id);
+    sendTelegramMessage($chat_id, $message, 'HTML', $kb);
 }
 
 /**
@@ -137,7 +142,8 @@ function handleConnectCommand($chat_id, $text, $first_name)
     // Rate limiting for connect attempts
     $rate_limit = check_rate_limit($chat_id, 'telegram_connect', 5, 300);
     if (!$rate_limit['allowed']) {
-        sendTelegramMessage($chat_id, "⏳ Слишком много попыток подключения. Попробуйте через 5 минут.", 'HTML', buildMainReplyKeyboard());
+        $kb = maybeGetMainReplyKeyboard($chat_id);
+        sendTelegramMessage($chat_id, "⏳ Слишком много попыток подключения. Попробуйте через 5 минут.", 'HTML', $kb);
         return;
     }
     record_rate_limit_attempt($chat_id, 'telegram_connect');
@@ -148,7 +154,8 @@ function handleConnectCommand($chat_id, $text, $first_name)
         $message = "❌ Неверный формат команды!\n\n";
         $message .= "Используйте: /connect your@email.ru\n";
         $message .= "Например: /connect bzkprint@yandex.ru";
-        sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
+        $kb = maybeGetMainReplyKeyboard($chat_id);
+        sendTelegramMessage($chat_id, $message, 'HTML', $kb);
         return;
     }
 
@@ -156,13 +163,14 @@ function handleConnectCommand($chat_id, $text, $first_name)
 
     // Enhanced email validation
     if (!validate_email($email)) {
-        sendTelegramMessage($chat_id, "❌ Неверный формат email адреса!", 'HTML', buildMainReplyKeyboard());
+        $kb = maybeGetMainReplyKeyboard($chat_id);
+        sendTelegramMessage($chat_id, "❌ Неверный формат email адреса!", 'HTML', $kb);
         return;
     }
 
     try {
         // Поиск пользователя по email с дополнительными проверками
-        $stmt = $pdo->prepare("SELECT id, name, telegram_chat_id FROM users WHERE email = ? AND is_blocked = 0");
+        $stmt = $pdo->prepare("SELECT id, name, telegram_chat_id, role FROM users WHERE email = ? AND is_blocked = 0");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -172,7 +180,9 @@ function handleConnectCommand($chat_id, $text, $first_name)
             $message .= "• Email указан правильно\n";
             $message .= "• У вас есть аккаунт на сайте\n";
             $message .= "• Аккаунт не заблокирован";
-            sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
+            // После успешной привязки проверим права, чтобы при необходимости показать клавиатуру
+            $kb = maybeGetMainReplyKeyboard($chat_id);
+            sendTelegramMessage($chat_id, $message, 'HTML', $kb);
             return;
         }
 
@@ -193,11 +203,13 @@ function handleConnectCommand($chat_id, $text, $first_name)
             $message .= "💬 Обновления статусов\n\n";
             $message .= "🔗 Chat ID: <code>" . e($chat_id) . "</code>";
 
-            sendTelegramMessage($chat_id, $message);
+            $kb = maybeGetMainReplyKeyboard($chat_id);
+            sendTelegramMessage($chat_id, $message, 'HTML', $kb);
 
             // Отправляем тестовое уведомление
             $test_message = "🎉 Тестовое уведомление!\n\nВаш Telegram успешно подключен к системе BZK PRINT.";
-            sendTelegramMessage($chat_id, $test_message, 'HTML', buildMainReplyKeyboard());
+            $kb = maybeGetMainReplyKeyboard($chat_id);
+            sendTelegramMessage($chat_id, $test_message, 'HTML', $kb);
 
             // Log successful connection
             error_log("Telegram account connected: user_id={$user['id']}, chat_id=$chat_id");
@@ -205,12 +217,14 @@ function handleConnectCommand($chat_id, $text, $first_name)
             // Получаем информацию об ошибке
             $error_info = $stmt->errorInfo();
             error_log("Telegram connect database error: " . print_r($error_info, true));
-            sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже. Код ошибки: " . $error_info[0], 'HTML', buildMainReplyKeyboard());
+            $kb = maybeGetMainReplyKeyboard($chat_id);
+            sendTelegramMessage($chat_id, "❌ Ошибка при обновлении данных. Попробуйте позже. Код ошибки: " . $error_info[0], 'HTML', $kb);
         }
 
     } catch (Exception $e) {
         error_log("Telegram connect exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
-        sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору. Детали: " . $e->getMessage(), 'HTML', buildMainReplyKeyboard());
+        $kb = maybeGetMainReplyKeyboard($chat_id);
+        sendTelegramMessage($chat_id, "❌ Произошла ошибка. Обратитесь к администратору. Детали: " . $e->getMessage(), 'HTML', $kb);
     }
 }
 
@@ -223,7 +237,9 @@ function handleHelpCommand($chat_id)
     $message .= "📋 <b>Доступные команды:</b>\n";
     $message .= "/start - начать работу с ботом\n";
     $message .= "/connect [email] - связать аккаунт с Telegram\n";
-    $message .= "/tasks - мои задачи (для админов/менеджеров)\n";
+    if (isAdminOrManagerByChatId($chat_id)) {
+        $message .= "/tasks - мои задачи (для админов/менеджеров)\n";
+    }
     $message .= "/help - показать эту справку\n\n";
     $message .= "🔗 <b>Подключение аккаунта:</b>\n";
     $message .= "1. Способ 1: Команда /connect your@email.com\n";
@@ -234,7 +250,8 @@ function handleHelpCommand($chat_id)
     $message .= "• Обновления статусов\n\n";
     $message .= "❓ Нужна помощь? Обратитесь к администратору сайта.";
 
-    sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
+    $kb = maybeGetMainReplyKeyboard($chat_id);
+    sendTelegramMessage($chat_id, $message, 'HTML', $kb);
 }
 
 /**
@@ -262,12 +279,14 @@ function handleGeneralMessage($chat_id, $text, $first_name)
             $message .= "Введите /help для получения дополнительной информации.";
         }
 
-        sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
+        $kb = maybeGetMainReplyKeyboard($chat_id);
+        sendTelegramMessage($chat_id, $message, 'HTML', $kb);
 
     } catch (Exception $e) {
         error_log("Telegram general message error: " . $e->getMessage());
         $message = "Используйте /start для начала работы с ботом.";
-        sendTelegramMessage($chat_id, $message, 'HTML', buildMainReplyKeyboard());
+        $kb = maybeGetMainReplyKeyboard($chat_id);
+        sendTelegramMessage($chat_id, $message, 'HTML', $kb);
     }
 }
 
@@ -373,4 +392,42 @@ function buildMainReplyKeyboard()
         'one_time_keyboard' => false,
         'is_persistent' => true
     ];
+}
+
+/**
+ * Возвращает клавиатуру только для админов/менеджеров с учётом prefs (show_task_buttons)
+ */
+function maybeGetMainReplyKeyboard($chat_id)
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT u.id, u.role, COALESCE(np.show_task_buttons, 1) AS show_task_buttons
+                                FROM users u
+                                LEFT JOIN notification_prefs np ON np.user_id = u.id
+                                WHERE u.telegram_chat_id = ? AND u.is_blocked = 0
+                                LIMIT 1");
+        $stmt->execute([(string) $chat_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && in_array($row['role'], ['admin', 'manager'], true) && (int) $row['show_task_buttons'] === 1) {
+            return buildMainReplyKeyboard();
+        }
+    } catch (Exception $e) { /* ignore */
+    }
+    return null;
+}
+
+/**
+ * Проверяет, является ли пользователь админом/менеджером по chat_id
+ */
+function isAdminOrManagerByChatId($chat_id)
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT role FROM users WHERE telegram_chat_id = ? AND is_blocked = 0 LIMIT 1");
+        $stmt->execute([(string) $chat_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row && in_array($row['role'], ['admin', 'manager'], true);
+    } catch (Exception $e) {
+        return false;
+    }
 }
