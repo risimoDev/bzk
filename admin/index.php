@@ -13,7 +13,7 @@ include_once('../includes/db.php');
 
 // Получение статистики (объединяем внутренние и внешние заказы)
 // Внутренние: orders.status, Внешние: external_orders.production_status
-$status_keys = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'];
+$status_keys = ['pending', 'processing', 'in_work', 'delayed', 'shipped', 'delivered', 'cancelled', 'completed']; // добавлены in_work, delayed
 $internal_counts = array_fill_keys($status_keys, 0);
 $external_counts = array_fill_keys($status_keys, 0);
 
@@ -32,6 +32,8 @@ foreach ($rows as $r) {
 
 $pending_orders = $internal_counts['pending'] + $external_counts['pending'];
 $processing_orders = $internal_counts['processing'] + $external_counts['processing'];
+$in_work_orders = $internal_counts['in_work'] + $external_counts['in_work'];
+$delayed_orders = $internal_counts['delayed'] + $external_counts['delayed'];
 $shipped_orders = $internal_counts['shipped'] + $external_counts['shipped'];
 $delivered_orders = $internal_counts['delivered'] + $external_counts['delivered'];
 $canceled_orders = $internal_counts['cancelled'] + $external_counts['cancelled'];
@@ -48,7 +50,8 @@ $recent_internal = $pdo->query("SELECT o.id, o.created_at, o.status, o.total_pri
 $recent_external = $pdo->query("SELECT eo.id, eo.created_at, eo.production_status AS status, eo.total_price, eo.client_name, 'external' AS src FROM external_orders eo ORDER BY eo.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
 $recent_all = array_merge($recent_internal, $recent_external);
 usort($recent_all, function ($a, $b) {
-  return strtotime($b['created_at']) <=> strtotime($a['created_at']); });
+  return strtotime($b['created_at']) <=> strtotime($a['created_at']);
+});
 $recent_orders = array_slice($recent_all, 0, 5);
 
 // Получение популярных товаров
@@ -294,6 +297,49 @@ if (isset($pdo)) {
             <div class="mt-2">
               <div class="font-bold text-lg text-blue-600"><?php echo $processing_orders; ?></div>
               <div class="text-sm text-gray-600">В обработке</div>
+            </div>
+          </div>
+
+          <!-- Стрелка -->
+          <div class="px-4">
+            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+
+          <!-- В работе -->
+          <div class="flex-1 text-center relative">
+            <div
+              class="relative inline-flex items-center justify-center w-12 h-12 bg-orange-100 text-orange-600 rounded-full border-4 border-orange-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-orange-600"><?php echo $in_work_orders; ?></div>
+              <div class="text-sm text-gray-600">В работе</div>
+            </div>
+          </div>
+
+          <!-- Стрелка -->
+          <div class="px-4">
+            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+
+          <!-- Задерживается -->
+          <div class="flex-1 text-center relative">
+            <div
+              class="relative inline-flex items-center justify-center w-12 h-12 bg-red-200 text-red-700 rounded-full border-4 border-red-300 shadow-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="font-bold text-lg text-red-700"><?php echo $delayed_orders; ?></div>
+              <div class="text-sm text-gray-600">Задерживается</div>
             </div>
           </div>
 

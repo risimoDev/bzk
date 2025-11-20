@@ -23,6 +23,8 @@ $csrf_token = $_SESSION['csrf_token'];
 $statuses = [
   'pending' => 'В ожидании',
   'processing' => 'В обработке',
+  'in_work' => 'В работе', // новый статус
+  'delayed' => 'Задерживается', // новый статус
   'shipped' => 'Отправлен',
   'delivered' => 'Доставлен',
   'cancelled' => 'Отменен',
@@ -32,11 +34,26 @@ $statuses = [
 $status_colors = [
   'pending' => 'bg-yellow-100 text-yellow-800',
   'processing' => 'bg-blue-100 text-blue-800',
+  'in_work' => 'bg-orange-100 text-orange-800',
+  'delayed' => 'bg-red-200 text-red-800',
   'shipped' => 'bg-purple-100 text-purple-800',
   'delivered' => 'bg-indigo-100 text-indigo-800',
   'cancelled' => 'bg-red-100 text-red-800',
   'completed' => 'bg-green-100 text-green-800'
 ];
+
+// Предупреждение если миграция ENUM не применена (проверяем структуру)
+try {
+  $col = $pdo->query("SHOW COLUMNS FROM orders LIKE 'status'")->fetch(PDO::FETCH_ASSOC);
+  if ($col && isset($col['Type']) && strpos($col['Type'], 'in_work') === false) {
+    $_SESSION['notifications'][] = [
+      'type' => 'warning',
+      'message' => 'Новые статусы (in_work, delayed) не поддерживаются текущей структурой таблицы orders. Примените миграцию из sql/migrations.'
+    ];
+  }
+} catch (Exception $e) {
+  // игнорируем
+}
 
 // ---------- Обработка изменения статуса ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
@@ -46,12 +63,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
   $status = $_POST['update_status'] ?? null;
 
   if ($order_id > 0 && isset($statuses[$status])) {
-    $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
-    $stmt->execute([$status, $order_id]);
-
-    add_notification('success', 'Статус заказа успешно изменен.');
-    header("Location: " . $_SERVER['REQUEST_URI']);
-    exit();
+    try {
+      $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+      $ok = $stmt->execute([$status, $order_id]);
+      // Если ENUM не обновлен - MySQL может записать '' или вернуть warning. Проверим фактическое значение.
+      $check = $pdo->prepare("SELECT status FROM orders WHERE id = ? LIMIT 1");
+      $check->execute([$order_id]);
+      $current = $check->fetchColumn();
+      if ($current === $status) {
+        add_notification('success', 'Статус заказа успешно изменен.');
+      } else {
+        add_notification('error', 'Не удалось применить новый статус. Возможно, не выполнена миграция ENUM таблицы orders.');
+      }
+      header("Location: " . $_SERVER['REQUEST_URI']);
+      exit();
+    } catch (Exception $e) {
+      add_notification('error', 'Ошибка изменения статуса: ' . e($e->getMessage()));
+    }
   } else {
     add_notification('error', 'Некорректные данные для изменения статуса.');
   }

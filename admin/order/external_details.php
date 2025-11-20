@@ -297,12 +297,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit();
     }
     $new_pstatus = $_POST['production_status'] ?? '';
-    $allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'];
+    $allowed = ['pending', 'processing', 'in_work', 'delayed', 'shipped', 'delivered', 'cancelled', 'completed'];
     if (in_array($new_pstatus, $allowed, true)) {
         try {
             $stmt = $pdo->prepare("UPDATE external_orders SET production_status = ? WHERE id = ?");
             $stmt->execute([$new_pstatus, $order_id]);
-            $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Производственный статус обновлён.'];
+            // верифицируем сохранённое значение для наглядной обратной связи
+            $chk = $pdo->prepare("SELECT production_status FROM external_orders WHERE id = ?");
+            $chk->execute([$order_id]);
+            $saved = (string) $chk->fetchColumn();
+            if ($saved !== $new_pstatus) {
+                $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не удалось применить новый производственный статус. Проверьте миграцию ENUM.'];
+            } else {
+                $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Производственный статус обновлён.'];
+            }
         } catch (Exception $e) {
             $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка: ' . $e->getMessage()];
         }
@@ -421,6 +429,8 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                             $pcolor = [
                                 'pending' => 'bg-yellow-100 text-yellow-800',
                                 'processing' => 'bg-blue-100 text-blue-800',
+                                'in_work' => 'bg-orange-100 text-orange-800',
+                                'delayed' => 'bg-red-100 text-red-800',
                                 'shipped' => 'bg-purple-100 text-purple-800',
                                 'delivered' => 'bg-indigo-100 text-indigo-800',
                                 'cancelled' => 'bg-red-100 text-red-800',
@@ -429,6 +439,8 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                             $pname = [
                                 'pending' => 'В ожидании',
                                 'processing' => 'В обработке',
+                                'in_work' => 'В работе',
+                                'delayed' => 'Задерживается',
                                 'shipped' => 'Отправлен',
                                 'delivered' => 'Доставлен',
                                 'cancelled' => 'Отменен',
@@ -891,6 +903,10 @@ $total_custom_expense = array_sum(array_column($custom_items, 'expense_amount'))
                                 </option>
                                 <option value="processing" <?php echo $pstatus === 'processing' ? 'selected' : ''; ?>>В
                                     обработке</option>
+                                <option value="in_work" <?php echo $pstatus === 'in_work' ? 'selected' : ''; ?>>В работе
+                                </option>
+                                <option value="delayed" <?php echo $pstatus === 'delayed' ? 'selected' : ''; ?>>
+                                    Задерживается</option>
                                 <option value="shipped" <?php echo $pstatus === 'shipped' ? 'selected' : ''; ?>>Отправлен
                                 </option>
                                 <option value="delivered" <?php echo $pstatus === 'delivered' ? 'selected' : ''; ?>>

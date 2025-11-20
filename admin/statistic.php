@@ -355,6 +355,8 @@ $top_products = $stmt_top_products->fetchAll(PDO::FETCH_ASSOC);
         $status_names = [
           'pending' => 'В ожидании',
           'processing' => 'В обработке',
+          'in_work' => 'В работе',
+          'delayed' => 'Задерживается',
           'shipped' => 'Отправлен',
           'delivered' => 'Доставлен',
           'cancelled' => 'Отменен',
@@ -363,6 +365,8 @@ $top_products = $stmt_top_products->fetchAll(PDO::FETCH_ASSOC);
         $status_colors = [
           'pending' => 'bg-yellow-100 text-yellow-800',
           'processing' => 'bg-blue-100 text-blue-800',
+          'in_work' => 'bg-orange-100 text-orange-800',
+          'delayed' => 'bg-red-200 text-red-800',
           'shipped' => 'bg-purple-100 text-purple-800',
           'delivered' => 'bg-indigo-100 text-indigo-800',
           'cancelled' => 'bg-red-100 text-red-800',
@@ -452,7 +456,8 @@ $top_products = $stmt_top_products->fetchAll(PDO::FETCH_ASSOC);
                       #<?php echo htmlspecialchars($order['id']); ?>
                     </a>
                     <div class="text-xs text-gray-500 mt-1">Источник:
-                      <?php echo $order['src'] === 'external' ? 'Внешний' : 'Сайт'; ?></div>
+                      <?php echo $order['src'] === 'external' ? 'Внешний' : 'Сайт'; ?>
+                    </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <?php echo htmlspecialchars($order['client_name'] ?? 'Не указан'); ?>

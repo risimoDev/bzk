@@ -27,6 +27,8 @@ $csrf_token = $_SESSION['csrf_token'];
 $statuses = [
   'pending' => 'В ожидании',
   'processing' => 'В обработке',
+  'in_work' => 'В работе',
+  'delayed' => 'Задерживается',
   'shipped' => 'Отправлен',
   'delivered' => 'Доставлен',
   'cancelled' => 'Отменен',
@@ -36,11 +38,22 @@ $statuses = [
 $status_colors = [
   'pending' => 'bg-yellow-100 text-yellow-800',
   'processing' => 'bg-blue-100 text-blue-800',
+  'in_work' => 'bg-orange-100 text-orange-800',
+  'delayed' => 'bg-red-200 text-red-800',
   'shipped' => 'bg-purple-100 text-purple-800',
   'delivered' => 'bg-indigo-100 text-indigo-800',
   'cancelled' => 'bg-red-100 text-red-800',
   'completed' => 'bg-green-100 text-green-800'
 ];
+
+// Предупреждение о не примененной миграции ENUM (orders.status)
+try {
+  $col = $pdo->query("SHOW COLUMNS FROM orders LIKE 'status'")->fetch(PDO::FETCH_ASSOC);
+  if ($col && isset($col['Type']) && strpos($col['Type'], 'in_work') === false) {
+    $_SESSION['notifications'][] = ['type' => 'warning', 'message' => 'Новые статусы (in_work, delayed) отсутствуют в ENUM таблицы orders. Примените миграцию в sql/migrations.'];
+  }
+} catch (Exception $e) { /* ignore */
+}
 
 $order_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 if ($order_id <= 0) {
@@ -164,10 +177,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
   }
   $new_status = $_POST['update_status'] ?? null;
   if ($new_status && isset($statuses[$new_status])) {
-    $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
-    $stmt->execute([$new_status, $order_id]);
-    $order['status'] = $new_status;
-    $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Статус заказа успешно изменен.'];
+    try {
+      $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+      $stmt->execute([$new_status, $order_id]);
+      $check = $pdo->prepare("SELECT status FROM orders WHERE id = ? LIMIT 1");
+      $check->execute([$order_id]);
+      $current = $check->fetchColumn();
+      if ($current === $new_status) {
+        $order['status'] = $new_status;
+        $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Статус заказа успешно изменен.'];
+      } else {
+        $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не удалось применить новый статус. Проверьте миграцию ENUM (orders.status).'];
+      }
+    } catch (Exception $e) {
+      $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Ошибка изменения статуса: ' . htmlspecialchars($e->getMessage())];
+    }
   } else {
     $_SESSION['notifications'][] = ['type' => 'error', 'message' => 'Не удалось изменить статус заказа.'];
   }
@@ -805,15 +829,18 @@ include_once('../../includes/header.php');
                       </h3>
                       <?php if (!$is_custom && !empty($item['attributes'])): ?>
                         <div class="text-sm text-gray-600">Характеристики:
-                          <?php echo htmlspecialchars(getAttributeNames($pdo, $item['attributes'])); ?></div>
+                          <?php echo htmlspecialchars(getAttributeNames($pdo, $item['attributes'])); ?>
+                        </div>
                       <?php endif; ?>
                       <?php if ($is_custom && !empty($item['item_note'])): ?>
                         <div class="text-sm text-gray-600">Примечание:
-                          <?php echo nl2br(htmlspecialchars($item['item_note'])); ?></div>
+                          <?php echo nl2br(htmlspecialchars($item['item_note'])); ?>
+                        </div>
                       <?php endif; ?>
                     </div>
                     <div class="text-lg font-bold text-[#118568]">
-                      <?php echo number_format((float) $item['price'], 2, '.', ' '); ?> ₽</div>
+                      <?php echo number_format((float) $item['price'], 2, '.', ' '); ?> ₽
+                    </div>
                   </div>
 
                   <div class="mt-2 text-sm text-gray-700">
@@ -885,7 +912,8 @@ include_once('../../includes/header.php');
               <div class="text-right">
                 <div class="text-gray-600">Итого:</div>
                 <div class="text-2xl font-bold text-[#118568]">
-                  <?php echo number_format($order['total_price'], 2, '.', ' '); ?> ₽</div>
+                  <?php echo number_format($order['total_price'], 2, '.', ' '); ?> ₽
+                </div>
               </div>
             </div>
           </div>

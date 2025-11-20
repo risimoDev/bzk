@@ -4,8 +4,80 @@ require_once __DIR__ . '/includes/security.php';
 $pageTitle = "Главная страница";
 include_once __DIR__ . '/includes/db.php';
 
-// Параметры Turnstile sitekey (из того что ты дал)
-$turnstile_sitekey = '0x4AAAAAABzFgQHD_KaZTnsZ';
+// Сообщения отправки отзыва (для не-JS фолбэка)
+$review_success_message = $review_error_message = null;
+
+// Проверка Cloudflare Turnstile (локальная, как в contacts.php)
+function verify_turnstile_token($token)
+{
+  $secret = getenv('CLOUDFLARE_TURNSTILE_SECRET_KEY') ?: ($_ENV['CLOUDFLARE_TURNSTILE_SECRET_KEY'] ?? '');
+  if (!$secret || !$token)
+    return ['success' => false];
+  $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+  $data = [
+    'secret' => $secret,
+    'response' => $token,
+    'remoteip' => $_SERVER['REMOTE_ADDR'] ?? null,
+  ];
+  $opts = [
+    'http' => [
+      'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+      'method' => 'POST',
+      'content' => http_build_query($data),
+      'timeout' => 10,
+    ],
+  ];
+  $ctx = stream_context_create($opts);
+  $res = @file_get_contents($url, false, $ctx);
+  if ($res === false)
+    return ['success' => false];
+  $json = json_decode($res, true);
+  return is_array($json) ? $json : ['success' => false];
+}
+
+// Обработка фолбэк-отправки формы (без JS)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['review_form'])) {
+  try {
+    verify_csrf();
+
+    if (empty($_SESSION['user_id'])) {
+      throw new Exception('Только авторизованные пользователи могут оставлять отзывы.');
+    }
+
+    $user_id = (int) $_SESSION['user_id'];
+    $user_name = trim($_POST['name'] ?? ($_SESSION['user_name'] ?? ''));
+    if ($user_name === '')
+      $user_name = 'Пользователь';
+
+    $rating = isset($_POST['rating']) ? (int) $_POST['rating'] : 0;
+    $message = trim($_POST['message'] ?? '');
+
+    if ($rating < 1 || $rating > 5) {
+      throw new Exception('Некорректный рейтинг.');
+    }
+    if (mb_strlen($message) < 5) {
+      throw new Exception('Текст отзыва слишком короткий.');
+    }
+
+    $cf_token = $_POST['cf-turnstile-response'] ?? $_POST['cf_turnstile_response'] ?? '';
+    $captcha = verify_turnstile_token($cf_token);
+    if (empty($captcha['success'])) {
+      throw new Exception('Проверка безопасности не пройдена.');
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO reviews (user_id, name, rating, review_text, status) VALUES (:user_id, :name, :rating, :review_text, 'pending')");
+    $stmt->execute([
+      ':user_id' => $user_id,
+      ':name' => mb_substr($user_name, 0, 255),
+      ':rating' => $rating,
+      ':review_text' => $message,
+    ]);
+
+    $review_success_message = 'Спасибо! Ваш отзыв отправлен и будет опубликован после модерации.';
+  } catch (Exception $e) {
+    $review_error_message = $e->getMessage() ?: 'Ошибка отправки. Попробуйте позже.';
+  }
+}
 
 // Популярные товары (исключая скрытые), лимит 6
 $stmt = $pdo->prepare("SELECT * FROM products WHERE is_popular = 1 AND is_hidden = 0 LIMIT 6");
@@ -90,7 +162,8 @@ function getProductMainImage($pdo, $product_id)
                 class="p-4 bg-[#F8FAF8] rounded-2xl flex flex-col items-center text-center transform transition hover:-translate-y-1"
                 data-animate>
                 <div class="w-12 h-12 rounded-full bg-[#118568] text-white flex items-center justify-center mb-3">
-                  <?php echo $s['icon']; ?></div>
+                  <?php echo $s['icon']; ?>
+                </div>
                 <div class="font-semibold text-gray-800"><?php echo $s['title']; ?></div>
               </div>
             <?php endforeach; ?>
@@ -207,7 +280,8 @@ function getProductMainImage($pdo, $product_id)
               </p>
               <div class="flex items-center justify-between">
                 <div class="text-lg font-bold text-[#118568]">от
-                  <?php echo number_format($product['base_price'], 0, '', ' '); ?> ₽</div>
+                  <?php echo number_format($product['base_price'], 0, '', ' '); ?> ₽
+                </div>
                 <div
                   class="text-white bg-[#118568] w-9 h-9 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                   ➜</div>
@@ -260,6 +334,17 @@ function getProductMainImage($pdo, $product_id)
       </div>
 
       <!-- reviews list -->
+      <?php if ($review_success_message): ?>
+        <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          <?php echo htmlspecialchars($review_success_message); ?>
+        </div>
+      <?php endif; ?>
+      <?php if ($review_error_message): ?>
+        <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <?php echo htmlspecialchars($review_error_message); ?>
+        </div>
+      <?php endif; ?>
+
       <div id="reviews-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <?php if (empty($reviews)): ?>
           <div class="text-gray-600">Пока нет одобренных отзывов.</div>
@@ -268,14 +353,16 @@ function getProductMainImage($pdo, $product_id)
             <div class="bg-white rounded-2xl shadow-md p-6" data-animate>
               <div class="flex items-start gap-4">
                 <div class="w-12 h-12 bg-[#DEE5E5] rounded-full flex items-center justify-center text-xl">
-                  <?php echo htmlspecialchars(mb_substr($r['name'] ?? $r['user_name'] ?? 'К', 0, 1)); ?></div>
+                  <?php echo htmlspecialchars(mb_substr($r['name'] ?? $r['user_name'] ?? 'К', 0, 1)); ?>
+                </div>
                 <div>
                   <div class="flex flex-wrap items-center gap-3">
                     <div class="font-semibold">
-                      <?php echo htmlspecialchars($r['name'] ?? $r['user_name'] ?? 'Пользователь'); ?></div>
+                      <?php echo htmlspecialchars($r['name'] ?? $r['user_name'] ?? 'Пользователь'); ?>
+                    </div>
                     <div class="text-sm text-gray-500"><?php echo date('d.m.Y', strtotime($r['created_at'])); ?></div>
                   </div>
-                  <div class="mt-3 text-gray-700"><?php echo nl2br(htmlspecialchars($r['message'])); ?></div>
+                  <div class="mt-3 text-gray-700"><?php echo nl2br(htmlspecialchars($r['review_text'])); ?></div>
                   <div class="mt-3 text-sm text-yellow-600">Рейтинг: <?php echo intval($r['rating']); ?>/5</div>
                 </div>
               </div>
@@ -340,8 +427,9 @@ function getProductMainImage($pdo, $product_id)
             аккаунт</a>.</p>
       </div>
     <?php else: ?>
-      <form id="review-form" class="space-y-4">
+      <form id="review-form" class="space-y-4" method="POST" action="">
         <?php echo csrf_field(); ?>
+        <input type="hidden" name="review_form" value="1">
         <input type="hidden" name="product_id" value="">
         <div>
           <label class="block text-sm font-medium text-gray-700">Ваше имя</label>
@@ -367,7 +455,7 @@ function getProductMainImage($pdo, $product_id)
         </div>
 
         <!-- Turnstile widget -->
-        <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>"></div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAABzFgQHD_KaZTnsZ"></div>
 
         <div id="review-error" class="text-red-600 hidden"></div>
         <div class="flex gap-3">

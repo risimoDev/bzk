@@ -248,6 +248,8 @@ try {
                   $status_display = [
                     'pending' => 'В ожидании',
                     'processing' => 'В обработке',
+                    'in_work' => 'В работе',
+                    'delayed' => 'Задерживается',
                     'shipped' => 'Отправлен',
                     'delivered' => 'Доставлен',
                     'cancelled' => 'Отменен',
@@ -256,6 +258,8 @@ try {
                   $status_cls = [
                     'pending' => 'bg-yellow-100 text-yellow-800',
                     'processing' => 'bg-blue-100 text-blue-800',
+                    'in_work' => 'bg-orange-100 text-orange-800',
+                    'delayed' => 'bg-red-200 text-red-800',
                     'shipped' => 'bg-purple-100 text-purple-800',
                     'delivered' => 'bg-indigo-100 text-indigo-800',
                     'cancelled' => 'bg-red-100 text-red-800',
@@ -367,7 +371,8 @@ try {
 
                     <?php if ($item['is_custom'] && !empty($item['item_note'])): ?>
                       <div class="text-sm text-gray-600 mb-2">Примечание:
-                        <?php echo nl2br(htmlspecialchars($item['item_note'])); ?></div>
+                        <?php echo nl2br(htmlspecialchars($item['item_note'])); ?>
+                      </div>
                     <?php endif; ?>
 
                     <div class="flex flex-wrap items-center gap-4 text-sm">

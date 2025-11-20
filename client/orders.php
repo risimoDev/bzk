@@ -52,6 +52,8 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $statuses = [
   'pending' => 'В ожидании',
   'processing' => 'В обработке',
+  'in_work' => 'В работе',
+  'delayed' => 'Задерживается',
   'shipped' => 'Отправлен',
   'delivered' => 'Доставлен',
   'cancelled' => 'Отменен',
@@ -61,6 +63,8 @@ $statuses = [
 $status_colors = [
   'pending' => 'bg-yellow-100 text-yellow-800',
   'processing' => 'bg-blue-100 text-blue-800',
+  'in_work' => 'bg-orange-100 text-orange-800',
+  'delayed' => 'bg-red-200 text-red-800',
   'shipped' => 'bg-purple-100 text-purple-800',
   'delivered' => 'bg-indigo-100 text-indigo-800',
   'cancelled' => 'bg-red-100 text-red-800',
@@ -220,6 +224,16 @@ $available_statuses = $stmt_statuses->fetchAll(PDO::FETCH_COLUMN);
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
             <div class="text-2xl font-bold text-blue-600 mb-2"><?php echo $status_counts['processing'] ?? 0; ?></div>
             <div class="text-gray-600 text-sm">В обработке</div>
+          </div>
+
+          <div class="bg-gray-50 rounded-2xl p-4 text-center">
+            <div class="text-2xl font-bold text-orange-600 mb-2"><?php echo $status_counts['in_work'] ?? 0; ?></div>
+            <div class="text-gray-600 text-sm">В работе</div>
+          </div>
+
+          <div class="bg-gray-50 rounded-2xl p-4 text-center">
+            <div class="text-2xl font-bold text-red-700 mb-2"><?php echo $status_counts['delayed'] ?? 0; ?></div>
+            <div class="text-gray-600 text-sm">Задерживается</div>
           </div>
 
           <div class="bg-gray-50 rounded-2xl p-4 text-center">
