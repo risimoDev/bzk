@@ -116,97 +116,133 @@ $materials = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <?php if (empty($materials)): ?>
         <p class="text-gray-500">Материалы не найдены.</p>
       <?php else: ?>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="materials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <?php foreach ($materials as $m): ?>
             <div
-              class="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center">
-                  <div class="w-10 h-10 bg-[#118568] rounded-full flex items-center justify-center mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
+              class="material-card rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 hover:shadow-md transition duration-300">
+              <div class="p-5 border-b border-gray-100">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 bg-[#118568] rounded-xl flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-gray-900 text-lg leading-tight"><?= htmlspecialchars($m['name']); ?></h3>
+                      <p class="text-xs text-gray-500">Ед. изм.: <span
+                          class="font-medium text-gray-700"><?= htmlspecialchars($m['unit']); ?></span></p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 class="font-bold text-gray-800 text-lg"><?= htmlspecialchars($m['name']); ?></h3>
-                    <p class="text-sm text-gray-600">Ед. изм.: <?= htmlspecialchars($m['unit']); ?></p>
-                  </div>
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-semibold <?php echo ($m['stock'] > 0) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+                    <?= $m['stock'] > 0 ? 'В наличии' : 'Нет в наличии'; ?>
+                  </span>
                 </div>
-                <span
-                  class="px-3 py-1 bg-<?= $m['stock'] > 0 ? '[#17B890]' : 'red-500'; ?> text-white rounded-full text-xs font-medium">
-                  <?= $m['stock'] > 0 ? 'В наличии' : 'Нет в наличии'; ?>
-                </span>
               </div>
 
-              <form method="POST" class="space-y-3">
+              <form method="POST" class="p-5 space-y-4">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="update_material">
                 <input type="hidden" name="id" value="<?= $m['id']; ?>">
-
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Название</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Название</label>
                     <input type="text" name="name" value="<?= htmlspecialchars($m['name']); ?>"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                      class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB]">
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Единица</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Единица</label>
                     <input type="text" name="unit" value="<?= htmlspecialchars($m['unit']); ?>"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                      class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB]">
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Себестоимость</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Себестоимость</label>
                     <input type="number" step="0.01" name="cost_per_unit" value="<?= $m['cost_per_unit']; ?>"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#118568] focus:border-transparent">
+                      class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#118568] focus:ring-2 focus:ring-[#9DC5BB]">
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Остаток</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Остаток</label>
                     <div class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">
                       <?= number_format($m['stock'], 2, '.', ' '); ?>
                     </div>
                   </div>
                 </div>
 
-                <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                <div class="flex flex-wrap gap-2 pt-2">
                   <button type="submit"
-                    class="flex-1 min-w-0 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors duration-300">
+                    class="flex-1 min-w-0 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
                     Сохранить
                   </button>
+                  <a href="movement_add?material_id=<?= $m['id']; ?>"
+                    class="flex-1 min-w-0 text-center px-3 py-2 bg-[#118568] text-white rounded-lg text-sm hover:bg-[#0f755a] transition">
+                    Движение
+                  </a>
+                  <a href="movements?material_id=<?= $m['id']; ?>"
+                    class="flex-1 min-w-0 text-center px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition">
+                    История
+                  </a>
+                </div>
               </form>
 
-              <form method="POST" onsubmit="return confirm('Удалить материал?')" class="inline">
+              <form method="POST" onsubmit="return confirm('Удалить материал?')" class="p-5 pt-0">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete_material">
                 <input type="hidden" name="id" value="<?= $m['id']; ?>">
                 <button type="submit"
-                  class="flex-1 min-w-0 px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors duration-300">
+                  class="w-full px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition">
                   Удалить
                 </button>
               </form>
-
-              <div class="flex gap-2 mt-2">
-                <a href="movement_add?material_id=<?= $m['id']; ?>"
-                  class="flex-1 text-center px-3 py-2 bg-[#118568] text-white rounded-lg text-sm hover:bg-[#0f755a] transition-colors duration-300">
-                  Движение
-                </a>
-                <a href="movements?material_id=<?= $m['id']; ?>"
-                  class="flex-1 text-center px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors duration-300">
-                  История
-                </a>
-              </div>
             </div>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </div>
-
-  </div>
+          <?php endforeach; ?>
+        </div>
+        <div id="materials-pagination" class="mt-6 flex items-center justify-center gap-2">
+          <button type="button" id="materials-prev"
+            class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">←</button>
+          <span id="materials-page-info" class="text-sm text-gray-700">Страница 1</span>
+          <button type="button" id="materials-next"
+            class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">→</button>
+        </div>
+      <?php endif; ?>
+    </div>
 </main>
 
 <?php include_once('../../includes/footer.php'); ?>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('materials-grid');
+    const prev = document.getElementById('materials-prev');
+    const next = document.getElementById('materials-next');
+    const info = document.getElementById('materials-page-info');
+    const pageSize = 9;
+    let currentPage = 1;
+
+    function renderPage() {
+      if (!grid) return;
+      const cards = grid.querySelectorAll('.material-card');
+      const total = cards.length;
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      if (currentPage > pages) currentPage = pages;
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      cards.forEach((card, idx) => {
+        card.style.display = (idx >= start && idx < end) ? '' : 'none';
+      });
+      if (info) info.textContent = `Страница ${currentPage} / ${pages}`;
+      if (prev) prev.disabled = currentPage <= 1;
+      if (next) next.disabled = currentPage >= pages;
+    }
+
+    if (prev) prev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
+    if (next) next.addEventListener('click', () => { currentPage++; renderPage(); });
+
+    renderPage();
+  });
+</script>

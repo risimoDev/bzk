@@ -43,7 +43,10 @@ $total_orders = array_sum($internal_counts) + array_sum($external_counts);
 // Получение статистики по пользователям
 $total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $total_products = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
-$total_revenue = $pdo->query("SELECT SUM(total_price) FROM orders WHERE status = 'completed'")->fetchColumn() ?: 0;
+// Выручка: объединяем внутренние и внешние заказы (production_status для внешних)
+$total_internal_revenue = $pdo->query("SELECT SUM(total_price) FROM orders WHERE status = 'completed'")->fetchColumn() ?: 0;
+$total_external_revenue = $pdo->query("SELECT SUM(total_price) FROM external_orders WHERE production_status = 'completed'")->fetchColumn() ?: 0;
+$total_revenue = $total_internal_revenue + $total_external_revenue;
 
 // Получение последних заказов (объединяем внутренние и внешние)
 $recent_internal = $pdo->query("SELECT o.id, o.created_at, o.status, o.total_price, u.name AS client_name, 'internal' AS src FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
@@ -917,8 +920,8 @@ if (isset($pdo)) {
     (function () {
       const badgeSelector = '#orders-badge';
       const linkSelector = '#admin-orders-link';
-      const fetchUrl = '/ajax/new_orders_count.php';
-      const markSeenUrl = '/ajax/mark_orders_seen.php';
+      const fetchUrl = '/admin/ajax/new_orders_count.php';
+      const markSeenUrl = '/admin/ajax/mark_orders_seen.php';
 
       async function fetchNewCount() {
         try {

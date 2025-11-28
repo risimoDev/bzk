@@ -137,17 +137,20 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
             <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
                 <h3 class="text-sm font-medium text-gray-600">Общая выручка</h3>
                 <p class="text-3xl font-bold text-[#118568] mt-2">
-                    <?php echo number_format($stats['total_revenue'], 0, '', ' '); ?> ₽</p>
+                    <?php echo number_format($stats['total_revenue'], 0, '', ' '); ?> ₽
+                </p>
             </div>
             <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
                 <h3 class="text-sm font-medium text-gray-600">Оплачено</h3>
                 <p class="text-3xl font-bold text-green-600 mt-2">
-                    <?php echo number_format($stats['paid_revenue'], 0, '', ' '); ?> ₽</p>
+                    <?php echo number_format($stats['paid_revenue'], 0, '', ' '); ?> ₽
+                </p>
             </div>
             <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
                 <h3 class="text-sm font-medium text-gray-600">Не оплачено</h3>
                 <p class="text-3xl font-bold text-red-600 mt-2">
-                    <?php echo number_format($stats['unpaid_revenue'], 0, '', ' '); ?> ₽</p>
+                    <?php echo number_format($stats['unpaid_revenue'], 0, '', ' '); ?> ₽
+                </p>
             </div>
         </div>
 
@@ -204,12 +207,14 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                 <?php foreach ($orders as $order): ?>
                     <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-6">
                         <!-- Заголовок карточки -->
-                        <div class="flex justify-between items-start mb-4">
+                        <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h3 class="text-lg font-bold text-gray-800">
-                                    <?php echo htmlspecialchars($order['client_name']); ?></h3>
+                                    <?php echo htmlspecialchars($order['client_name']); ?>
+                                </h3>
                                 <p class="text-sm text-gray-600">#<?php echo $order['id']; ?> •
-                                    <?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?></p>
+                                    <?php echo date('d.m.Y H:i', strtotime($order['created_at'])); ?>
+                                </p>
                             </div>
                             <span class="px-3 py-1 text-xs font-medium rounded-full
                 <?php
@@ -238,6 +243,36 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                                         break;
                                 }
                                 ?>
+                            </span>
+                        </div>
+
+                        <!-- Производственный статус -->
+                        <?php
+                        $pstatus = $order['production_status'] ?? 'pending';
+                        $pcolor = [
+                            'pending' => 'bg-yellow-100 text-yellow-800',
+                            'processing' => 'bg-blue-100 text-blue-800',
+                            'in_work' => 'bg-orange-100 text-orange-800',
+                            'delayed' => 'bg-red-100 text-red-800',
+                            'shipped' => 'bg-purple-100 text-purple-800',
+                            'delivered' => 'bg-indigo-100 text-indigo-800',
+                            'completed' => 'bg-green-100 text-green-800',
+                            'cancelled' => 'bg-red-100 text-red-800'
+                        ][$pstatus] ?? 'bg-gray-100 text-gray-800';
+                        $pname = [
+                            'pending' => 'В ожидании',
+                            'processing' => 'В обработке',
+                            'in_work' => 'В работе',
+                            'delayed' => 'Задерживается',
+                            'shipped' => 'Отправлен',
+                            'delivered' => 'Доставлен',
+                            'completed' => 'Полностью готов',
+                            'cancelled' => 'Отменен'
+                        ][$pstatus] ?? $pstatus;
+                        ?>
+                        <div class="mb-4">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full <?php echo $pcolor; ?>">
+                                <?php echo htmlspecialchars($pname); ?>
                             </span>
                         </div>
 
