@@ -7,7 +7,7 @@ include_once __DIR__ . '/includes/db.php';
 // Параметры
 // --------------------
 $category_id = $_GET['category'] ?? null;
-$type = $_GET['type'] ?? 'service';
+$type = $_GET['type'] ?? 'product'; // по умолчанию показываем товары
 $sort = $_GET['sort'] ?? 'default';
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $isAjax = isset($_GET['ajax']) && $_GET['ajax'] == '1';
@@ -600,7 +600,7 @@ include_once __DIR__ . '/includes/header.php';
     });
 
     resetBtn.addEventListener('click', () => {
-      state.type = 'service';
+      state.type = 'product'; // сброс: возвращаемся к товарам
       state.category = '';
       state.sort = 'default';
       state.page = 1;
