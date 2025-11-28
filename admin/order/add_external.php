@@ -106,7 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $pdo->commit();
 
       $_SESSION['notifications'][] = ['type' => 'success', 'message' => 'Внешний заказ успешно создан.'];
-      header("Location: " . $_SERVER['REQUEST_URI']);
+      // После успешного создания перенаправляем на список внешних заказов
+      header("Location: /admin/order/external_orders.php");
       exit;
     } catch (Exception $e) {
       $pdo->rollBack();
@@ -224,25 +225,43 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <p class="text-gray-600">Нет товаров в каталоге</p>
             </div>
           <?php else: ?>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <?php foreach ($products_list as $p): ?>
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-5 hover:shadow-lg transition">
-                  <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-gray-800"><?php echo htmlspecialchars($p['name']); ?></h3>
-                    <span class="text-[#118568] font-semibold"><?php echo number_format($p['base_price'], 0, '', ' '); ?>
-                      ₽</span>
+            <div class="flex items-center justify-between mb-4">
+              <button type="button" id="toggle-catalog"
+                class="px-4 py-2 bg-[#118568] text-white rounded-lg hover:bg-[#0f755a]">Показать/скрыть каталог</button>
+              <div class="text-sm text-gray-600 flex items-center gap-3">
+                <label class="inline-flex items-center gap-2"><input type="checkbox" id="auto-income" checked>
+                  Авто‑доход</label>
+              </div>
+            </div>
+            <div id="catalog-wrapper" class="hidden">
+              <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php foreach ($products_list as $p): ?>
+                  <div class="catalog-card bg-white border-2 border-gray-200 rounded-2xl p-5 hover:shadow-lg transition"
+                    data-price="<?php echo $p['base_price']; ?>">
+                    <div class="flex justify-between items-center mb-4">
+                      <h3 class="font-bold text-gray-800"><?php echo htmlspecialchars($p['name']); ?></h3>
+                      <span class="text-[#118568] font-semibold"><?php echo number_format($p['base_price'], 0, '', ' '); ?>
+                        ₽</span>
+                    </div>
+                    <div class="flex items-center">
+                      <button type="button" class="w-10 h-10 bg-[#118568] text-white rounded-l-lg decrease-quantity"
+                        data-product-id="<?php echo $p['id']; ?>">-</button>
+                      <input type="number" name="products[<?php echo $p['id']; ?>]" value="0" min="0"
+                        class="w-16 h-10 text-center border-y border-gray-200 font-bold product-quantity-input"
+                        data-product-id="<?php echo $p['id']; ?>" data-price="<?php echo $p['base_price']; ?>">
+                      <button type="button" class="w-10 h-10 bg-[#118568] text-white rounded-r-lg increase-quantity"
+                        data-product-id="<?php echo $p['id']; ?>">+</button>
+                    </div>
                   </div>
-                  <div class="flex items-center">
-                    <button type="button" class="w-10 h-10 bg-[#118568] text-white rounded-l-lg decrease-quantity"
-                      data-product-id="<?php echo $p['id']; ?>">-</button>
-                    <input type="number" name="products[<?php echo $p['id']; ?>]" value="0" min="0"
-                      class="w-16 h-10 text-center border-y border-gray-200 font-bold product-quantity-input"
-                      data-product-id="<?php echo $p['id']; ?>" data-price="<?php echo $p['base_price']; ?>">
-                    <button type="button" class="w-10 h-10 bg-[#118568] text-white rounded-r-lg increase-quantity"
-                      data-product-id="<?php echo $p['id']; ?>">+</button>
-                  </div>
-                </div>
-              <?php endforeach; ?>
+                <?php endforeach; ?>
+              </div>
+              <div id="catalog-pagination" class="mt-4 flex items-center justify-center gap-2">
+                <button type="button" id="catalog-prev"
+                  class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">←</button>
+                <span id="catalog-page-info" class="text-sm text-gray-700">Страница 1</span>
+                <button type="button" id="catalog-next"
+                  class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">→</button>
+              </div>
             </div>
           <?php endif; ?>
         </section>
@@ -336,9 +355,19 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     const statsQuantity = document.getElementById('stats-quantity');
     const statsSum = document.getElementById('stats-sum');
     const incomeInput = document.getElementById('income-input');
+    const autoIncomeCheckbox = document.getElementById('auto-income');
     const customItemsContainer = document.getElementById('custom-items-container');
     const addCustomItemBtn = document.getElementById('add-custom-item');
+    const toggleCatalogBtn = document.getElementById('toggle-catalog');
+    const catalogWrapper = document.getElementById('catalog-wrapper');
+    const catalogGrid = document.getElementById('catalog-grid');
+    const catalogPrev = document.getElementById('catalog-prev');
+    const catalogNext = document.getElementById('catalog-next');
+    const catalogPageInfo = document.getElementById('catalog-page-info');
     let customItemIndex = 1;
+    let manualIncome = false;
+    let pageSize = 9;
+    let currentPage = 1;
 
     function updateStats() {
       let products = 0, quantity = 0, sum = 0;
@@ -366,9 +395,14 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
       });
 
-      if (incomeInput && incomeInput.value) {
-        let manual = parseFloat(incomeInput.value) || 0;
-        if (manual > 0) sum = manual; // приоритет ручному вводу
+      // Автозаполнение дохода
+      if (incomeInput) {
+        if (autoIncomeCheckbox && autoIncomeCheckbox.checked && !manualIncome) {
+          incomeInput.value = sum.toFixed(2);
+        } else if (incomeInput.value) {
+          let manual = parseFloat(incomeInput.value) || 0;
+          if (manual > 0) sum = manual; // приоритет ручному вводу
+        }
       }
 
       statsProducts.textContent = products;
@@ -436,7 +470,8 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     });
 
     inputs.forEach(inp => inp.addEventListener('input', updateStats));
-    if (incomeInput) incomeInput.addEventListener('input', updateStats);
+    if (incomeInput) incomeInput.addEventListener('input', () => { manualIncome = true; updateStats(); });
+    if (autoIncomeCheckbox) autoIncomeCheckbox.addEventListener('change', () => { if (autoIncomeCheckbox.checked) manualIncome = false; updateStats(); });
 
     // Обработчик для первого пользовательского элемента
     addCustomItemHandlers(document.querySelector('.custom-item'));
@@ -487,6 +522,34 @@ $products_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
       });
     });
 
+    // Каталог: показать/скрыть
+    if (toggleCatalogBtn && catalogWrapper) {
+      toggleCatalogBtn.addEventListener('click', () => {
+        catalogWrapper.classList.toggle('hidden');
+      });
+    }
+
+    // Пагинация каталога
+    function renderCatalogPage() {
+      if (!catalogGrid) return;
+      const cards = catalogGrid.querySelectorAll('.catalog-card');
+      const total = cards.length;
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      if (currentPage > pages) currentPage = pages;
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      cards.forEach((card, idx) => {
+        card.style.display = (idx >= start && idx < end) ? '' : 'none';
+      });
+      if (catalogPageInfo) catalogPageInfo.textContent = `Страница ${currentPage} / ${pages}`;
+      if (catalogPrev) catalogPrev.disabled = currentPage <= 1;
+      if (catalogNext) catalogNext.disabled = currentPage >= pages;
+    }
+
+    if (catalogPrev) catalogPrev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderCatalogPage(); } });
+    if (catalogNext) catalogNext.addEventListener('click', () => { currentPage++; renderCatalogPage(); });
+
+    renderCatalogPage();
     updateStats();
   });
 </script>
