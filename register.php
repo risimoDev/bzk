@@ -4,6 +4,7 @@ session_start();
 $pageTitle = "Регистрация";
 // Подключение к базе данных
 include_once __DIR__ . '/includes/db.php';
+include_once __DIR__ . '/includes/security.php';
 include_once __DIR__ . '/includes/telegram.php';
 
 use PHPMailer\PHPMailer\PHPMailer;

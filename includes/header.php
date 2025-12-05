@@ -63,14 +63,14 @@ include_once __DIR__ . '/notifications.php';
   <meta property="og:type" content="website">
   <meta property="og:url"
     content="<?= htmlspecialchars("https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>">
-    <style>
-        @font-face {
-            font-family: 'Bebas Neue Bold';
-            src: url('/assets/font/BebasNeue Bold.otf') format('opentype');
-            font-weight: bold;
-            font-style: normal;
-        }
-    </style>
+  <style>
+    @font-face {
+      font-family: 'Bebas Neue Bold';
+      src: url('/assets/font/BebasNeue Bold.otf') format('opentype');
+      font-weight: bold;
+      font-style: normal;
+    }
+  </style>
 
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="/../assets/css/output.css">
@@ -80,17 +80,24 @@ include_once __DIR__ . '/notifications.php';
     window.siteNotifications = <?php echo json_encode($site_notifications, JSON_UNESCAPED_UNICODE); ?>;
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="
-  require_once __DIR__ . '/db.php';
-https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
-"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
-  <script src="
-https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
-"></script>
+  <script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js"></script>
   <script src="https://kit.fontawesome.com/9e7604a404.js" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="/../assets/js/notifications.js" defer></script>
+  <script>
+    // Инициализация маски телефона после загрузки jQuery и Inputmask
+    (function () {
+      if (typeof jQuery !== 'undefined' && typeof jQuery.fn.inputmask !== 'undefined') {
+        jQuery(function ($) {
+          $('input[type="tel"], input[name="phone"], #phone').each(function () {
+            try { $(this).inputmask('+7 (999) 999-99-99'); } catch (e) { }
+          });
+        });
+      }
+    })();
+  </script>
   <!-- Ссылка на редактор убрана из шапки по требованию -->
   <style>
     /* Стили для мобильного меню - новый подход */
