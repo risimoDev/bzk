@@ -74,6 +74,7 @@ include_once __DIR__ . '/notifications.php';
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="
+  require_once __DIR__ . '/db.php';
 https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
 "></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
@@ -83,6 +84,7 @@ https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/jquery.inputmask.min.js
   <script src="https://kit.fontawesome.com/9e7604a404.js" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="/../assets/js/notifications.js" defer></script>
+  <!-- Ссылка на редактор убрана из шапки по требованию -->
   <style>
     /* Стили для мобильного меню - новый подход */
     #mobile-menu {
