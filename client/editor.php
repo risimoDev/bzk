@@ -275,234 +275,241 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['editor_submit']) || 
 }
 
 ?>
-<!DOCTYPE html>
-<html lang="ru">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Редактор открытки</title>
-    <link rel="stylesheet" href="/assets/css/tailwind.css">
-    <style>
-        @font-face {
-            font-family: 'Bebas Neue Bold';
-            src: url('/assets/font/BebasNeue Bold.otf') format('opentype');
-            font-weight: bold;
-            font-style: normal;
-        }
-    </style>
-</head>
 
-<body class="bg-gray-50">
-    <?php include __DIR__ . '/../includes/header.php'; ?>
-    <div class="max-w-6xl mx-auto p-6">
-        <h1 class="text-2xl font-semibold mb-4">Редактор текста и фото</h1>
-        <?php if ($errors): ?>
-            <div class="bg-red-50 text-red-700 p-4 rounded mb-4">
-                <?php foreach ($errors as $err)
-                    echo '<div>' . e($err) . '</div>'; ?>
-            </div>
-        <?php endif; ?>
-        <form method="post" enctype="multipart/form-data"
-            class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-6 rounded shadow">
-            <div class="md:col-span-1 space-y-4">
-                <label class="block">
-                    <span class="text-sm">Имя и отчество</span>
-                    <input type="text" name="full_name" class="mt-1 w-full border rounded p-2"
-                        value="<?php echo e($_POST['full_name'] ?? ''); ?>" required>
-                </label>
-                <label class="block">
-                    <span class="text-sm">Заголовок</span>
-                    <input type="text" name="title" class="mt-1 w-full border rounded p-2"
-                        value="<?php echo e($_POST['title'] ?? 'С днем рождения!'); ?>">
-                </label>
-                <label class="block">
-                    <span class="text-sm">Подстрочный текст</span>
-                    <input type="text" name="subtitle" class="mt-1 w-full border rounded p-2"
-                        value="<?php echo e($_POST['subtitle'] ?? ''); ?>">
-                </label>
-                <label class="block">
-                    <span class="text-sm">Фотография (JPEG/PNG)</span>
-                    <input type="file" name="photo" accept="image/jpeg,image/png" class="mt-1 w-full">
-                </label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="block"><span class="text-sm">Смещение X</span><input type="number" step="1"
-                            name="offset_x" class="mt-1 w-full border rounded p-2"
-                            value="<?php echo e($_POST['offset_x'] ?? '0'); ?>"></label>
-                    <label class="block"><span class="text-sm">Смещение Y</span><input type="number" step="1"
-                            name="offset_y" class="mt-1 w-full border rounded p-2"
-                            value="<?php echo e($_POST['offset_y'] ?? '0'); ?>"></label>
-                    <label class="block"><span class="text-sm">Масштаб</span><input type="number" step="0.01"
-                            name="scale" class="mt-1 w-full border rounded p-2"
-                            value="<?php echo e($_POST['scale'] ?? '1'); ?>"></label>
-                </div>
-                <label class="block mt-2">
-                    <span class="text-sm">Размер шрифта (Имя и Отчество)</span>
-                    <input type="range" min="120" max="320" step="2" id="nameFontSize" class="w-full"
-                        value="<?php echo e($_POST['name_font_size'] ?? '266'); ?>">
-                    <input type="hidden" name="name_font_size" id="nameFontSizeHidden"
-                        value="<?php echo e($_POST['name_font_size'] ?? '266'); ?>">
-                </label>
 
-                <input type="hidden" name="photo_url" value="<?php echo e($photo_url ?? ''); ?>">
-                <input type="hidden" name="photo_full_path" value="<?php echo e($photo_full_path ?? ''); ?>">
-                <input type="hidden" name="text_bg_png_path" value="<?php echo e($text_bg_png_path ?? ''); ?>">
-                <input type="hidden" name="tx_offset_x" id="tx_offset_x" value="0">
-                <input type="hidden" name="tx_offset_y" id="tx_offset_y" value="0">
-                <input type="hidden" name="tx_scale" id="tx_scale" value="1">
-                <input type="hidden" name="tx_rotation" id="tx_rotation" value="0">
-                <?php echo csrf_field(); ?>
-                <div class="flex gap-3">
-                    <button type="submit" name="editor_submit" class="px-4 py-2 bg-blue-600 text-white rounded">Обновить
-                        превью</button>
-                    <button type="submit" name="export_final" id="exportFinalBtn"
-                        class="px-4 py-2 bg-green-600 text-white rounded">Скачать финальный файл</button>
-                </div>
-            </div>
-            <div class="md:col-span-2">
-                <div class="border rounded p-4 bg-gray-100">
-                    <h3 class="text-sm font-semibold mb-2">Интерактивное превью (three.js)</h3>
-                    <div id="three-preview" class="w-full max-w-[750px] h-[530px] bg-black/5 border rounded mx-auto">
-                    </div>
-                    <div class="text-xs text-gray-500 mt-3">ЛКМ — перемещение фото; колесо — масштаб; Shift+ЛКМ —
-                        поворот. Полигон фиксирован и не двигается. Тексты и наклоны — как в макете.</div>
-                </div>
-                <?php if ($final_png_path): ?>
-                    <div class="mt-4">
-                        <a href="<?php echo e($final_png_path); ?>" class="px-4 py-2 bg-green-600 text-white rounded"
-                            download>Скачать итоговый PNG</a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </form>
-    </div>
-    <?php include __DIR__ . '/../includes/footer.php'; ?>
-
-    <?php if (!empty($photo_url)): ?>
-        <script>
-            (function () {
-                // Canvas-превью вместо three.js: фон, тексты с матрицами, фото в клипе
-                const sizeInput = document.getElementById('nameFontSize');
-                const sizeHidden = document.getElementById('nameFontSizeHidden');
-                if (sizeInput && sizeHidden) sizeInput.addEventListener('input', () => sizeHidden.value = sizeInput.value);
-                const container = document.getElementById('three-preview');
-                let previewW = container.clientWidth;
-                let previewH = container.clientHeight;
-                const cvs = document.createElement('canvas');
-                container.innerHTML = '';
-                container.appendChild(cvs);
-                const ctx = cvs.getContext('2d');
-
-                const fullW = 3508, fullH = 2480.4;
-                let sx = 1, sy = 1;
-                function recalcScale() {
-                    previewW = container.clientWidth; previewH = container.clientHeight;
-                    cvs.width = previewW; cvs.height = previewH;
-                    const scalePreview = Math.min(previewW / fullW, previewH / fullH);
-                    sx = scalePreview; sy = scalePreview;
-                }
-                recalcScale();
-
-                const bgImg = new Image(); bgImg.src = '/assets/images/background.jpg';
-                const photoImg = new Image(); photoImg.src = '<?php echo e($photo_url); ?>';
-
-                let offsetX = 0, offsetY = 0, photoScale = 1, photoRot = 0;
-
-                const poly = [
-                    { x: 239.1, y: 2148.57 },
-                    { x: 1551.98, y: 1843.03 },
-                    { x: 1551.98, y: 294.89 },
-                    { x: 239.1, y: 598.51 }
-                ];
-                function polyCenter() { let cx = 0, cy = 0; for (const p of poly) { cx += p.x; cy += p.y; } return { x: cx / 4, y: cy / 4 }; }
-
-                function drawTextBlocks() {
-                    // Смещаем тексты чуть выше, чтобы соответствовать оригиналу
-                    const upTitle = 115;   // пиксели вверх для заголовка
-                    const upName = 105;     // пиксели вверх для имени
-                    const upSub = 40;      // пиксели вверх для подстрочного
-                    // ВАЖНО: после setTransform координаты fillText должны быть исходными из SVG (без доп. масштабирования)
-                    // Заголовок
-                    ctx.save(); ctx.setTransform(1.09478 * sx, -0.268557 * sx, -0.0773969 * sy, 1.04857 * sy, 1636.34 * sx, (-263.246 - upTitle) * sy);
-                    ctx.fillStyle = '#E31E24'; ctx.font = '269.87px "Bebas Neue Bold"'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-                    ctx.fillText('<?php echo e($title); ?>', 81.98, 1240.2 - upTitle); ctx.restore();
-                    // Имя
-                    ctx.save(); ctx.setTransform(0.991015 * sx, -0.237991 * sx, -0.0663663 * sy, 1.02388 * sy, -25.3858 * sx, (411.471 - upName) * sy);
-                    ctx.fillStyle = '#FFFFFF'; ctx.font = (parseInt(sizeHidden.value, 10) || 266) + 'px "Bebas Neue Bold"'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-                    ctx.fillText('<?php echo e($full_name); ?>', 1754, 1240.2 - upName); ctx.restore();
-                    // Подстрочный
-                    ctx.save(); ctx.setTransform(1.04747 * sx, -0.237991 * sx, -0.0776956 * sy, 0.971267 * sy, -101.443 * sx, (614.397 - upSub) * sy);
-                    ctx.fillStyle = '#FFFFFF'; ctx.font = '99.95px "Bebas Neue Bold"'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-                    ctx.fillText('<?php echo e($subtitle); ?>', 1754, 1240.2 - upSub); ctx.restore();
-                }
-
-                function drawAll() {
-                    ctx.clearRect(0, 0, previewW, previewH);
-                    // фон
-                    ctx.save(); ctx.setTransform(sx, 0, 0, sy, 0, 0); ctx.drawImage(bgImg, 0, 0, fullW, fullH); ctx.restore();
-                    // тексты
-                    drawTextBlocks();
-                    // фото внутри полигона
-                    const c = polyCenter();
-                    ctx.save(); ctx.setTransform(sx, 0, 0, sy, 0, 0);
-                    ctx.beginPath(); ctx.moveTo(poly[0].x, poly[0].y); for (let i = 1; i < poly.length; i++) { ctx.lineTo(poly[i].x, poly[i].y); } ctx.closePath(); ctx.clip();
-                    ctx.translate(c.x + offsetX, c.y + offsetY); ctx.rotate(photoRot);
-                    const iw = photoImg.naturalWidth || photoImg.width; const ih = photoImg.naturalHeight || photoImg.height;
-                    ctx.scale(photoScale, photoScale);
-                    if (iw && ih) ctx.drawImage(photoImg, -iw / 2, -ih / 2);
-                    ctx.restore();
-                }
-
-                function ready() { if (bgImg.complete && photoImg.complete) { recalcScale(); drawAll(); } }
-                bgImg.onload = ready; photoImg.onload = ready; if (bgImg.complete && photoImg.complete) ready();
-
-                // Управление фото
-                let isDrag = false, lastX = 0, lastY = 0, shift = false;
-                cvs.addEventListener('mousedown', (e) => {
-                    const rect = cvs.getBoundingClientRect();
-                    isDrag = true;
-                    lastX = (e.clientX - rect.left);
-                    lastY = (e.clientY - rect.top);
-                    shift = e.shiftKey;
-                    e.preventDefault();
-                });
-                window.addEventListener('mouseup', () => { isDrag = false; });
-                cvs.addEventListener('mouseleave', () => { isDrag = false; });
-                cvs.addEventListener('mousemove', (e) => { if (!isDrag) return; const rect = cvs.getBoundingClientRect(); const dx = (e.clientX - rect.left) - lastX; const dy = (e.clientY - rect.top) - lastY; lastX = (e.clientX - rect.left); lastY = (e.clientY - rect.top); if (shift) { photoRot += dx * 0.005; } else { offsetX += dx / sx; offsetY += dy / sy; } drawAll(); });
-                cvs.addEventListener('wheel', (e) => { e.preventDefault(); const s = (e.deltaY < 0 ? 1.05 : 0.95); photoScale *= s; drawAll(); });
-                sizeInput?.addEventListener('input', () => { drawAll(); });
-
-                // Респонсив: пересчёт при изменении размера окна/контейнера
-                window.addEventListener('resize', () => { recalcScale(); drawAll(); });
-
-                // Экспорт: полноразмерный Canvas 3508x2480, сохранение PNG
-                const exportBtn = document.getElementById('exportFinalBtn');
-                exportBtn?.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const out = document.createElement('canvas'); out.width = Math.round(fullW); out.height = Math.round(fullH);
-                    const octx = out.getContext('2d');
-                    // фон
-                    octx.drawImage(bgImg, 0, 0, fullW, fullH);
-                    // тексты в полном масштабе
-                    // Смещаем тексты выше и при экспорте
-                    const upTitle = 120, upName = 80, upSub = 60;
-                    // Заголовок
-                    octx.save(); octx.setTransform(1.09478, -0.268557, -0.0773969, 1.04857, 1636.34, -263.246 - upTitle); octx.fillStyle = '#E31E24'; octx.font = '269.87px "Bebas Neue Bold"'; octx.textBaseline = 'top'; octx.textAlign = 'left'; octx.fillText('<?php echo e($title); ?>', 81.98, 1240.2 - upTitle); octx.restore();
-                    // Имя
-                    octx.save(); octx.setTransform(0.991015, -0.237991, -0.0663663, 1.02388, -25.3858, 411.471 - upName); octx.fillStyle = '#FFFFFF'; octx.font = (parseInt(sizeHidden.value, 10) || 266) + 'px "Bebas Neue Bold"'; octx.textBaseline = 'top'; octx.textAlign = 'left'; octx.fillText('<?php echo e($full_name); ?>', 1754, 1240.2 - upName); octx.restore();
-                    // Подстрочный
-                    octx.save(); octx.setTransform(1.04747, -0.237991, -0.0776956, 0.971267, -101.443, 614.397 - upSub); octx.fillStyle = '#FFFFFF'; octx.font = '99.95px "Bebas Neue Bold"'; octx.textBaseline = 'top'; octx.textAlign = 'left'; octx.fillText('<?php echo e($subtitle); ?>', 1754, 1240.2 - upSub); octx.restore();
-                    // фото внутри полигона
-                    const c = polyCenter();
-                    octx.save(); octx.beginPath(); octx.moveTo(poly[0].x, poly[0].y); for (let i = 1; i < poly.length; i++) { octx.lineTo(poly[i].x, poly[i].y); } octx.closePath(); octx.clip();
-                    octx.translate(c.x + offsetX, c.y + offsetY); octx.rotate(photoRot);
-                    const iw = photoImg.naturalWidth || photoImg.width; const ih = photoImg.naturalHeight || photoImg.height;
-                    octx.scale(photoScale, photoScale); if (iw && ih) octx.drawImage(photoImg, -iw / 2, -ih / 2); octx.restore();
-                    out.toBlob(function (blob) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'final.png'; a.click(); URL.revokeObjectURL(url); }, 'image/png');
-                });
-            })();
-        </script>
+<?php include __DIR__ . '/../includes/header.php'; ?>
+<div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-semibold mb-4">Редактор текста и фото</h1>
+    <?php if ($errors): ?>
+        <div class="bg-red-50 text-red-700 p-4 rounded mb-4">
+            <?php foreach ($errors as $err)
+                echo '<div>' . e($err) . '</div>'; ?>
+        </div>
     <?php endif; ?>
+    <form method="post" enctype="multipart/form-data"
+        class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-6 rounded shadow">
+        <div class="md:col-span-1 space-y-4">
+            <label class="block">
+                <span class="text-sm">Имя и отчество</span>
+                <input type="text" name="full_name" class="mt-1 w-full border rounded p-2"
+                    value="<?php echo e($_POST['full_name'] ?? ''); ?>" required>
+            </label>
+            <label class="block">
+                <span class="text-sm">Заголовок</span>
+                <input type="text" name="title" class="mt-1 w-full border rounded p-2"
+                    value="<?php echo e($_POST['title'] ?? 'С днем рождения!'); ?>">
+            </label>
+            <label class="block">
+                <span class="text-sm">Подстрочный текст</span>
+                <input type="text" name="subtitle" class="mt-1 w-full border rounded p-2"
+                    value="<?php echo e($_POST['subtitle'] ?? ''); ?>">
+            </label>
+            <label class="block">
+                <span class="text-sm">Фотография (JPEG/PNG)</span>
+                <input type="file" name="photo" accept="image/jpeg,image/png" class="mt-1 w-full">
+            </label>
+            <label class="block mt-2">
+                <span class="text-sm">Размер шрифта (Имя и Отчество)</span>
+                <input type="range" min="120" max="320" step="2" id="nameFontSize" class="w-full"
+                    value="<?php echo e($_POST['name_font_size'] ?? '266'); ?>">
+                <input type="hidden" name="name_font_size" id="nameFontSizeHidden"
+                    value="<?php echo e($_POST['name_font_size'] ?? '266'); ?>">
+            </label>
+
+            <input type="hidden" name="photo_url" value="<?php echo e($photo_url ?? ''); ?>">
+            <input type="hidden" name="photo_full_path" value="<?php echo e($photo_full_path ?? ''); ?>">
+            <input type="hidden" name="text_bg_png_path" value="<?php echo e($text_bg_png_path ?? ''); ?>">
+            <input type="hidden" name="tx_offset_x" id="tx_offset_x" value="0">
+            <input type="hidden" name="tx_offset_y" id="tx_offset_y" value="0">
+            <input type="hidden" name="tx_scale" id="tx_scale" value="1">
+            <input type="hidden" name="tx_rotation" id="tx_rotation" value="0">
+            <?php echo csrf_field(); ?>
+            <div class="flex gap-3">
+                <button type="submit" name="editor_submit"
+                    class="inline-block bg-gradient-to-r from-[#118568] to-[#17B890] text-white py-4 px-8 rounded-xl hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 transform hover:scale-105 font-bold text-sm shadow-lg hover:shadow-xl">Обновить
+                    превью</button>
+                <button type="submit" name="export_final" id="exportFinalBtn"
+                    class="inline-block bg-gradient-to-r from-[#118568] to-[#17B890] text-white py-2 px-4 rounded-xl hover:from-[#0f755a] hover:to-[#118568] transition-all duration-300 transform hover:scale-105 font-bold text-sm shadow-lg hover:shadow-xl">Скачать
+                    финальный файл</button>
+            </div>
+        </div>
+        <div class="md:col-span-2">
+            <div class="border rounded p-4 bg-gray-100">
+                <h3 class="text-sm font-semibold mb-2">Превью</h3>
+                <div id="three-preview" class="w-full max-w-[750px] h-[530px] bg-black/5 border rounded mx-auto">
+                </div>
+                <div class="text-xs text-gray-500 mt-3">ЛКМ — перемещение фото; колесо - масштаб; Shift+ЛКМ -
+                    поворот. для моб.: один палец - перемещение; два - (масштаб) + поворот </div>
+            </div>
+            <?php if ($final_png_path): ?>
+                <div class="mt-4">
+                    <a href="<?php echo e($final_png_path); ?>" class="px-4 py-2 bg-green-600 text-white rounded"
+                        download>Скачать итоговый PNG</a>
+                </div>
+            <?php endif; ?>
+        </div>
+    </form>
+</div>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
+
+<?php if (!empty($photo_url)): ?>
+    <script>
+        (function () {
+            // Canvas-превью вместо three.js: фон, тексты с матрицами, фото в клипе
+            const sizeInput = document.getElementById('nameFontSize');
+            const sizeHidden = document.getElementById('nameFontSizeHidden');
+            if (sizeInput && sizeHidden) sizeInput.addEventListener('input', () => sizeHidden.value = sizeInput.value);
+            const container = document.getElementById('three-preview');
+            let previewW = container.clientWidth;
+            let previewH = container.clientHeight;
+            const cvs = document.createElement('canvas');
+            container.innerHTML = '';
+            container.appendChild(cvs);
+            const ctx = cvs.getContext('2d');
+
+            const fullW = 3508, fullH = 2480.4;
+            let sx = 1, sy = 1;
+            function recalcScale() {
+                previewW = container.clientWidth; previewH = container.clientHeight;
+                cvs.width = previewW; cvs.height = previewH;
+                const scalePreview = Math.min(previewW / fullW, previewH / fullH);
+                sx = scalePreview; sy = scalePreview;
+            }
+            recalcScale();
+
+            const bgImg = new Image(); bgImg.src = '/assets/images/background.jpg';
+            const photoImg = new Image(); photoImg.src = '<?php echo e($photo_url); ?>';
+
+            let offsetX = 0, offsetY = 0, photoScale = 1, photoRot = 0;
+
+            const poly = [
+                { x: 239.1, y: 2148.57 },
+                { x: 1551.98, y: 1843.03 },
+                { x: 1551.98, y: 294.89 },
+                { x: 239.1, y: 598.51 }
+            ];
+            function polyCenter() { let cx = 0, cy = 0; for (const p of poly) { cx += p.x; cy += p.y; } return { x: cx / 4, y: cy / 4 }; }
+
+            function drawTextBlocks() {
+                // Смещаем тексты чуть выше, чтобы соответствовать оригиналу
+                const upTitle = 115;   // пиксели вверх для заголовка
+                const upName = 105;     // пиксели вверх для имени
+                const upSub = 40;      // пиксели вверх для подстрочного
+                // ВАЖНО: после setTransform координаты fillText должны быть исходными из SVG (без доп. масштабирования)
+                // Заголовок
+                ctx.save(); ctx.setTransform(1.09478 * sx, -0.268557 * sx, -0.0773969 * sy, 1.04857 * sy, 1636.34 * sx, (-263.246 - upTitle) * sy);
+                ctx.fillStyle = '#E31E24'; ctx.font = '269.87px "Bebas Neue Bold"'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+                ctx.fillText('<?php echo e($title); ?>', 81.98, 1240.2 - upTitle); ctx.restore();
+                // Имя
+                ctx.save(); ctx.setTransform(0.991015 * sx, -0.237991 * sx, -0.0663663 * sy, 1.02388 * sy, -25.3858 * sx, (411.471 - upName) * sy);
+                ctx.fillStyle = '#FFFFFF'; ctx.font = (parseInt(sizeHidden.value, 10) || 266) + 'px "Bebas Neue Bold"'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+                ctx.fillText('<?php echo e($full_name); ?>', 1754, 1240.2 - upName); ctx.restore();
+                // Подстрочный
+                ctx.save(); ctx.setTransform(1.04747 * sx, -0.237991 * sx, -0.0776956 * sy, 0.971267 * sy, -101.443 * sx, (614.397 - upSub) * sy);
+                ctx.fillStyle = '#FFFFFF'; ctx.font = '99.95px "Bebas Neue Bold"'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+                ctx.fillText('<?php echo e($subtitle); ?>', 1754, 1240.2 - upSub); ctx.restore();
+            }
+
+            function drawAll() {
+                ctx.clearRect(0, 0, previewW, previewH);
+                // фон
+                ctx.save(); ctx.setTransform(sx, 0, 0, sy, 0, 0); ctx.drawImage(bgImg, 0, 0, fullW, fullH); ctx.restore();
+                // тексты
+                drawTextBlocks();
+                // фото внутри полигона
+                const c = polyCenter();
+                ctx.save(); ctx.setTransform(sx, 0, 0, sy, 0, 0);
+                ctx.beginPath(); ctx.moveTo(poly[0].x, poly[0].y); for (let i = 1; i < poly.length; i++) { ctx.lineTo(poly[i].x, poly[i].y); } ctx.closePath(); ctx.clip();
+                ctx.translate(c.x + offsetX, c.y + offsetY); ctx.rotate(photoRot);
+                const iw = photoImg.naturalWidth || photoImg.width; const ih = photoImg.naturalHeight || photoImg.height;
+                ctx.scale(photoScale, photoScale);
+                if (iw && ih) ctx.drawImage(photoImg, -iw / 2, -ih / 2);
+                ctx.restore();
+            }
+
+            function ready() { if (bgImg.complete && photoImg.complete) { recalcScale(); drawAll(); } }
+            bgImg.onload = ready; photoImg.onload = ready; if (bgImg.complete && photoImg.complete) ready();
+
+            // Управление фото
+            let isDrag = false, lastX = 0, lastY = 0, shift = false;
+            cvs.addEventListener('mousedown', (e) => {
+                const rect = cvs.getBoundingClientRect();
+                isDrag = true;
+                lastX = (e.clientX - rect.left);
+                lastY = (e.clientY - rect.top);
+                shift = e.shiftKey;
+                e.preventDefault();
+            });
+            window.addEventListener('mouseup', () => { isDrag = false; });
+            cvs.addEventListener('mouseleave', () => { isDrag = false; });
+            cvs.addEventListener('mousemove', (e) => { if (!isDrag) return; const rect = cvs.getBoundingClientRect(); const dx = (e.clientX - rect.left) - lastX; const dy = (e.clientY - rect.top) - lastY; lastX = (e.clientX - rect.left); lastY = (e.clientY - rect.top); if (shift) { photoRot += dx * 0.005; } else { offsetX += dx / sx; offsetY += dy / sy; } drawAll(); });
+            cvs.addEventListener('wheel', (e) => { e.preventDefault(); const s = (e.deltaY < 0 ? 1.05 : 0.95); photoScale *= s; drawAll(); });
+            sizeInput?.addEventListener('input', () => { drawAll(); });
+
+            // Респонсив: пересчёт при изменении размера окна/контейнера
+            window.addEventListener('resize', () => { recalcScale(); drawAll(); });
+
+            // Мобильные жесты: один палец — перемещение; два — pinch (масштаб) + поворот
+            function getTouchPos(t) { const rect = cvs.getBoundingClientRect(); return { x: t.clientX - rect.left, y: t.clientY - rect.top }; }
+            function dist(a, b) { const dx = a.x - b.x, dy = a.y - b.y; return Math.hypot(dx, dy); }
+            function ang(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
+            let touchState = { dragging: false, last: { x: 0, y: 0 }, two: false, d0: 0, a0: 0 };
+            cvs.addEventListener('touchstart', (e) => {
+                if (!e.touches) return; e.preventDefault();
+                if (e.touches.length === 1) {
+                    const p = getTouchPos(e.touches[0]); touchState.dragging = true; touchState.two = false; touchState.last = p;
+                } else if (e.touches.length === 2) {
+                    const p1 = getTouchPos(e.touches[0]); const p2 = getTouchPos(e.touches[1]);
+                    touchState.two = true; touchState.dragging = false; touchState.d0 = dist(p1, p2); touchState.a0 = ang(p1, p2);
+                }
+            }, { passive: false });
+            cvs.addEventListener('touchmove', (e) => {
+                if (!e.touches) return; e.preventDefault();
+                if (touchState.two && e.touches.length === 2) {
+                    const p1 = getTouchPos(e.touches[0]); const p2 = getTouchPos(e.touches[1]);
+                    const d = dist(p1, p2); const a = ang(p1, p2);
+                    if (touchState.d0 > 0) { const s = d / touchState.d0; photoScale *= s; touchState.d0 = d; }
+                    const da = a - touchState.a0; photoRot += da; touchState.a0 = a;
+                    drawAll();
+                } else if (touchState.dragging && e.touches.length === 1) {
+                    const p = getTouchPos(e.touches[0]);
+                    const dx = p.x - touchState.last.x; const dy = p.y - touchState.last.y;
+                    touchState.last = p; offsetX += dx / sx; offsetY += dy / sy; drawAll();
+                }
+            }, { passive: false });
+            cvs.addEventListener('touchend', (e) => {
+                e.preventDefault(); touchState.dragging = false; touchState.two = false;
+            }, { passive: false });
+
+            // Экспорт: полноразмерный Canvas 3508x2480, сохранение PNG
+            const exportBtn = document.getElementById('exportFinalBtn');
+            exportBtn?.addEventListener('click', (e) => {
+                e.preventDefault();
+                const out = document.createElement('canvas'); out.width = Math.round(fullW); out.height = Math.round(fullH);
+                const octx = out.getContext('2d');
+                // фон
+                octx.drawImage(bgImg, 0, 0, fullW, fullH);
+                // тексты в полном масштабе
+                // Смещения для экспорта должны совпадать с превью
+                const upTitle = 115, upName = 105, upSub = 40;
+                // Заголовок
+                octx.save(); octx.setTransform(1.09478, -0.268557, -0.0773969, 1.04857, 1636.34, -263.246 - upTitle); octx.fillStyle = '#E31E24'; octx.font = '269.87px "Bebas Neue Bold"'; octx.textBaseline = 'top'; octx.textAlign = 'left'; octx.fillText('<?php echo e($title); ?>', 81.98, 1240.2 - upTitle); octx.restore();
+                // Имя
+                octx.save(); octx.setTransform(0.991015, -0.237991, -0.0663663, 1.02388, -25.3858, 411.471 - upName); octx.fillStyle = '#FFFFFF'; octx.font = (parseInt(sizeHidden.value, 10) || 266) + 'px "Bebas Neue Bold"'; octx.textBaseline = 'top'; octx.textAlign = 'left'; octx.fillText('<?php echo e($full_name); ?>', 1754, 1240.2 - upName); octx.restore();
+                // Подстрочный
+                octx.save(); octx.setTransform(1.04747, -0.237991, -0.0776956, 0.971267, -101.443, 614.397 - upSub); octx.fillStyle = '#FFFFFF'; octx.font = '99.95px "Bebas Neue Bold"'; octx.textBaseline = 'top'; octx.textAlign = 'left'; octx.fillText('<?php echo e($subtitle); ?>', 1754, 1240.2 - upSub); octx.restore();
+                // фото внутри полигона
+                const c = polyCenter();
+                octx.save(); octx.beginPath(); octx.moveTo(poly[0].x, poly[0].y); for (let i = 1; i < poly.length; i++) { octx.lineTo(poly[i].x, poly[i].y); } octx.closePath(); octx.clip();
+                octx.translate(c.x + offsetX, c.y + offsetY); octx.rotate(photoRot);
+                const iw = photoImg.naturalWidth || photoImg.width; const ih = photoImg.naturalHeight || photoImg.height;
+                octx.scale(photoScale, photoScale); if (iw && ih) octx.drawImage(photoImg, -iw / 2, -ih / 2); octx.restore();
+                out.toBlob(function (blob) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'final.png'; a.click(); URL.revokeObjectURL(url); }, 'image/png');
+            });
+        })();
+    </script>
+<?php endif; ?>
 </body>
 
 </html>

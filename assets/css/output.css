@@ -776,10 +776,6 @@ video {
   grid-column: 1 / -1;
 }
 
-.col-span-2 {
-  grid-column: span 2 / span 2;
-}
-
 .m-0 {
   margin: 0px;
 }
@@ -1141,6 +1137,10 @@ video {
   height: 48px;
 }
 
+.h-\[530px\] {
+  height: 530px;
+}
+
 .h-\[560px\] {
   height: 560px;
 }
@@ -1151,18 +1151,6 @@ video {
 
 .h-full {
   height: 100%;
-}
-
-.h-\[400px\] {
-  height: 400px;
-}
-
-.h-\[350px\] {
-  height: 350px;
-}
-
-.h-\[530px\] {
-  height: 530px;
 }
 
 .max-h-12 {
@@ -1179,14 +1167,6 @@ video {
 
 .max-h-\[50px\] {
   max-height: 50px;
-}
-
-.max-h-\[600px\] {
-  max-height: 600px;
-}
-
-.max-h-\[400px\] {
-  max-height: 400px;
 }
 
 .min-h-\[200px\] {
@@ -1334,6 +1314,10 @@ video {
   max-width: 150px;
 }
 
+.max-w-\[750px\] {
+  max-width: 750px;
+}
+
 .max-w-lg {
   max-width: 32rem;
 }
@@ -1348,22 +1332,6 @@ video {
 
 .max-w-xs {
   max-width: 20rem;
-}
-
-.max-w-\[1000px\] {
-  max-width: 1000px;
-}
-
-.max-w-full {
-  max-width: 100%;
-}
-
-.max-w-\[600px\] {
-  max-width: 600px;
-}
-
-.max-w-\[750px\] {
-  max-width: 750px;
 }
 
 .flex-1 {
@@ -1476,10 +1444,6 @@ video {
 
 .grid-cols-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.grid-cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .flex-col {
@@ -1643,10 +1607,6 @@ video {
 
 .self-start {
   align-self: flex-start;
-}
-
-.overflow-auto {
-  overflow: auto;
 }
 
 .overflow-hidden {
@@ -2047,6 +2007,10 @@ video {
   background-color: rgb(0 0 0 / 0.4);
 }
 
+.bg-black\/5 {
+  background-color: rgb(0 0 0 / 0.05);
+}
+
 .bg-blue-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
@@ -2255,10 +2219,6 @@ video {
   background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));
 }
 
-.bg-black\/5 {
-  background-color: rgb(0 0 0 / 0.05);
-}
-
 .bg-opacity-20 {
   --tw-bg-opacity: 0.2;
 }
@@ -2455,6 +2415,10 @@ video {
   --tw-gradient-to: #16a34a var(--tw-gradient-to-position);
 }
 
+.to-indigo-600 {
+  --tw-gradient-to: #4f46e5 var(--tw-gradient-to-position);
+}
+
 .to-red-100 {
   --tw-gradient-to: #fee2e2 var(--tw-gradient-to-position);
 }
@@ -2477,10 +2441,6 @@ video {
 
 .to-yellow-600 {
   --tw-gradient-to: #ca8a04 var(--tw-gradient-to-position);
-}
-
-.to-indigo-600 {
-  --tw-gradient-to: #4f46e5 var(--tw-gradient-to-position);
 }
 
 .object-contain {

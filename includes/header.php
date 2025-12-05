@@ -63,7 +63,14 @@ include_once __DIR__ . '/notifications.php';
   <meta property="og:type" content="website">
   <meta property="og:url"
     content="<?= htmlspecialchars("https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>">
-
+    <style>
+        @font-face {
+            font-family: 'Bebas Neue Bold';
+            src: url('/assets/font/BebasNeue Bold.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+        }
+    </style>
 
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="/../assets/css/output.css">
